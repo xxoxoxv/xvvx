@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "amos_federation/events/experience.recorded.schema.json",
+  "$comment": "الهدف: تعريف عقد حدث تسجيل خبرة جديدة | النطاق: memory-service, evaluation-service, evolution | المالك: governance/schema-registry | تاريخ الإنشاء: 2026-08-15",
+  "title": "ExperienceRecordedEvent",
+  "description": "حدث يُنشر عند تسجيل خبرة جديدة في Experience Replay",
+  "type": "object",
+  "required": ["event_id", "timestamp", "event_type", "source", "data", "chain_hash"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event_type": {
+      "type": "string",
+      "const": "experience.recorded"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["agent-runtime", "critic", "evaluation-service"]
+    },
+    "data": {
+      "type": "object",
+      "required": ["experience_id", "task_id", "type", "provenance"],
+      "properties": {
+        "experience_id": {
+          "type": "string",
+          "pattern": "^exp-[a-z0-9-]+$"
+        },
+        "task_id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["success", "failure", "gap", "repair"]
+        },
+        "agent_id": {
+          "type": "string"
+        },
+        "model_used": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "object",
+          "properties": {
+            "result": { "type": "string" },
+            "quality_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "error_type": { "type": "string" }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "required": ["source", "verified"],
+          "properties": {
+            "source": {
+              "type": "string",
+              "enum": ["live_operation", "evaluation", "external_teacher"]
+            },
+            "verified": { "type": "boolean" },
+            "verifier_id": { "type": "string" }
+          }
+        }
+      }
+    },
+    "chain_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  }
+}

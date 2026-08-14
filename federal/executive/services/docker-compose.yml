@@ -1,0 +1,112 @@
+# AMOS-Federation Local Development Stack
+# الهدف: تشغيل كل خدمات النظام محليًا للتطوير
+# النطاق: بيئة التطوير المحلية (Docker Compose)
+# المالك: federal/executive/services
+# تاريخ الإنشاء: 2026-08-15
+#
+# Usage: docker compose up -d
+
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: amos-postgres
+    environment:
+      POSTGRES_DB: amos_federation
+      POSTGRES_USER: amos
+      POSTGRES_PASSWORD: dev_password_change_me
+    ports: ["5432:5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: amos-redis
+    command: redis-server --appendonly yes --maxmemory 512mb
+    ports: ["6379:6379"]
+    volumes:
+      - redis_data:/data
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: amos-nats
+    command: >
+      --jetstream
+      --store_dir /data
+      --max_mem_store 256MB
+      --max_file_store 1GB
+    ports: ["4222:4222", "8222:8222"]
+    volumes:
+      - nats_data:/data
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: amos-qdrant
+    ports: ["6333:6333", "6334:6334"]
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  minio:
+    image: minio/minio:latest
+    container_name: amos-minio
+    command: server /data --console-address ":9001"
+    ports: ["9000:9000", "9001:9001"]
+    environment:
+      MINIO_ROOT_USER: amos
+      MINIO_ROOT_PASSWORD: dev_password_change_me
+    volumes:
+      - minio_data:/data
+
+  temporal:
+    image: temporalio/auto-setup:1.23
+    container_name: amos-temporal
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal_dev
+      POSTGRES_SEEDS: temporal-postgres
+    depends_on: [temporal-postgres]
+    ports: ["7233:7233"]
+
+  temporal-postgres:
+    image: postgres:16-alpine
+    container_name: amos-temporal-pg
+    environment:
+      POSTGRES_DB: temporal
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal_dev
+    volumes:
+      - temporal_pg:/var/lib/postgresql/data
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60
+    container_name: amos-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    ports: ["16686:16686", "4317:4317", "4318:4318"]
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: amos-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports: ["3000:3000"]
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  minio_data:
+  nats_data:
+  temporal_pg:
+  grafana_data:

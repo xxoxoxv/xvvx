@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "amos_federation/events/task.created.schema.json",
+  "$comment": "الهدف: تعريف عقد حدث إنشاء مهمة جديدة | النطاق: جميع خدمات النظام | المالك: governance/schema-registry | تاريخ الإنشاء: 2026-08-15",
+  "title": "TaskCreatedEvent",
+  "description": "حدث يُنشر عند إنشاء مهمة جديدة في النظام",
+  "type": "object",
+  "required": ["event_id", "timestamp", "event_type", "source", "data", "chain_hash"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "معرّف فريد للحدث"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "وقت إنشاء الحدث (UTC ISO 8601)"
+    },
+    "event_type": {
+      "type": "string",
+      "const": "task.created"
+    },
+    "source": {
+      "type": "string",
+      "enum": ["api-gateway", "orchestrator", "scheduler"],
+      "description": "الخدمة التي أصدرت الحدث"
+    },
+    "data": {
+      "type": "object",
+      "required": ["task_id", "type", "description", "priority", "domain"],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "pattern": "^task-[a-z0-9-]+$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["analysis", "generation", "research", "transformation", "monitoring"]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "normal", "high", "critical"]
+        },
+        "domain": {
+          "type": "string",
+          "enum": ["finance", "law", "science", "health", "culture", "infrastructure", "federal"]
+        },
+        "tenant_id": {
+          "type": "string"
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "budget": {
+          "type": "object",
+          "properties": {
+            "max_tokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_cost": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "chain_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "بصمة SHA-256 للحدث السابق في سلسلة التدقيق"
+    }
+  }
+}

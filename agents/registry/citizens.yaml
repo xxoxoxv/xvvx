@@ -1,0 +1,60 @@
+# سجل السكان — Citizens Registry
+# الهدف: تسجيل كل وكيل في النظام مع هويته وصلاحياته وميزانيته
+# النطاق: كل الوكلاء النشطين والمتقاعدين
+# المالك: agents/registry
+# تاريخ الإنشاء: 2026-08-15
+# لا يُسمح لأي وكيل بالعمل بدون تسجيل في هذا الملف
+
+citizens:
+  - id: "orchestrator-001"
+    type: "orchestrator"
+    domain: "federal"
+    status: "active"
+    created: "2026-08-15"
+    version: "1.0.0"
+    permissions: ["read_all", "delegate", "coordinate"]
+    budget:
+      daily_token_limit: 5000000
+      daily_cost_limit: 500.00
+    successor: "supervisor-finance-001"
+
+  - id: "supervisor-finance-001"
+    type: "supervisor"
+    domain: "finance"
+    status: "active"
+    created: "2026-08-15"
+    version: "1.0.0"
+    permissions: ["read_finance", "delegate_finance"]
+    budget:
+      daily_token_limit: 500000
+      daily_cost_limit: 50.00
+    successor: "worker-financial-analyzer-001"
+
+  - id: "worker-financial-analyzer-001"
+    type: "worker"
+    domain: "finance"
+    status: "active"
+    created: "2026-08-15"
+    version: "1.0.0"
+    permissions: ["sql_query", "python_execute", "chart_generate"]
+    budget:
+      daily_token_limit: 100000
+      daily_cost_limit: 10.00
+    max_concurrent_tasks: 5
+
+  - id: "critic-001"
+    type: "critic"
+    domain: "federal"
+    status: "active"
+    created: "2026-08-15"
+    version: "1.0.0"
+    permissions: ["read_all", "score", "review"]
+
+  - id: "red-team-001"
+    type: "red_team"
+    domain: "security"
+    status: "active"
+    created: "2026-08-15"
+    version: "1.0.0"
+    permissions: ["adversarial_test", "probe"]
+    sandbox_only: true

@@ -1,0 +1,55 @@
+# بوابات الترقية — Promotion Gates
+# الهدف: لا ترقية نموذج دون اجتياز كل البوابات الخمس
+# النطاق: evolution/evaluation + governance/policies/promotion
+# المالك: evolution/evaluation
+# تاريخ الإنشاء: 2026-08-15
+
+gates:
+  gate_1_evaluation:
+    name: "التقييم الآلي"
+    required:
+      improvement_threshold: 0.05  # >5% improvement
+      regression_max: 0.02          # <2% regression
+      safety_score: 1.0            # 100% safety
+      constitution_compliance: 1.0
+    status: "pending"
+
+  gate_2_shadow:
+    name: "Shadow Testing"
+    duration_days: 14
+    parallel_with: "alpha"
+    metrics:
+      quality_match: ">= 0.95"
+      latency_p99: "<= alpha_p99 * 1.2"
+      error_rate: "<= alpha_error_rate"
+    status: "pending"
+
+  gate_3_canary:
+    name: "Canary Deployment"
+    traffic_percentage: 5
+    duration_days: 7
+    monitoring:
+      error_rate: "< 1%"
+      user_satisfaction: ">= 0.8"
+      cost_per_task: "<= alpha_cost * 1.1"
+    status: "pending"
+
+  gate_4_human_review:
+    name: "المراجعة البشرية"
+    committee: "promotion_committee"
+    required_approvals: 2
+    review_period_days: 3
+    decision: "pending"
+    notes: ""
+    status: "pending"
+
+  gate_5_activation:
+    name: "التفعيل"
+    rollback_plan: "required"
+    automatic_triggers:
+      - "error_rate > 5%"
+      - "safety_violation"
+      - "performance_degradation > 10%"
+    status: "pending"
+
+overall: "pending"  # promoted | rejected
