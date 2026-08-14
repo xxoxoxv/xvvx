@@ -1,0 +1,94 @@
+# AMOS-Federation Python Project
+# الهدف: إعداد مشروع Python للخدمات
+# النطاق: federal/executive/services
+# المالك: federal/executive/services
+# تاريخ الإنشاء: 2026-08-15
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amos-federation"
+version = "1.0.0"
+description = "AMOS-Federation — Digital Federal State for Agentic AI"
+requires-python = ">=3.12"
+authors = [
+    { name = "Driving H", email = "reeveero@gmail.com" }
+]
+
+dependencies = [
+    # Web framework
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.30.6",
+    # Database
+    "sqlalchemy==2.0.35",
+    "psycopg2-binary==2.9.9",
+    "alembic==1.13.3",
+    # Cache & Queue
+    "redis==5.1.1",
+    "nats-py==2.8.0",
+    # Vector DB
+    "qdrant-client==1.11.3",
+    # Object Storage
+    "minio==7.2.7",
+    # Observability
+    "opentelemetry-api==1.27.0",
+    "opentelemetry-sdk==1.27.0",
+    "opentelemetry-instrumentation-fastapi==0.48b0",
+    "opentelemetry-exporter-otlp==1.27.0",
+    # Auth
+    "pyjwt==2.9.0",
+    "cryptography==43.0.1",
+    # Config
+    "pydantic==2.9.2",
+    "pydantic-settings==2.5.2",
+    # HTTP
+    "httpx==0.27.2",
+    # Logging
+    "structlog==24.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.3",
+    "pytest-asyncio==0.24.0",
+    "pytest-cov==5.0.0",
+    "ruff==0.6.9",
+    "mypy==1.11.2",
+    "pre-commit==3.8.0",
+]
+training = [
+    "transformers==4.44.2",
+    "peft==0.12.0",
+    "datasets==2.21.0",
+    "torch==2.4.1",
+    "accelerate==0.34.2",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "TCH"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.setuptools.packages.find]
+where = ["src"]

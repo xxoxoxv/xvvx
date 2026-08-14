@@ -33,6 +33,11 @@ services:
     ports: ["6379:6379"]
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   nats:
     image: nats:2.10-alpine
@@ -45,6 +50,11 @@ services:
     ports: ["4222:4222", "8222:8222"]
     volumes:
       - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -63,6 +73,11 @@ services:
       MINIO_ROOT_PASSWORD: dev_password_change_me
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   temporal:
     image: temporalio/auto-setup:1.23
@@ -73,7 +88,9 @@ services:
       POSTGRES_USER: temporal
       POSTGRES_PWD: temporal_dev
       POSTGRES_SEEDS: temporal-postgres
-    depends_on: [temporal-postgres]
+    depends_on:
+      temporal-postgres:
+        condition: service_healthy
     ports: ["7233:7233"]
 
   temporal-postgres:
@@ -85,6 +102,11 @@ services:
       POSTGRES_PASSWORD: temporal_dev
     volumes:
       - temporal_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   jaeger:
     image: jaegertracing/all-in-one:1.60
