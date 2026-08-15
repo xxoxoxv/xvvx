@@ -25,7 +25,7 @@
 
 | المجال | مكتمل | الإجمالي | الحالة |
 |---|---:|---:|---|
-| المراحل | 4 | 9 | DOING |
+| المراحل | 5 | 9 | DOING |
 | المجالات المغطاة | 12 | 12 | DONE |
 | النوى المنشأة | 96 | 96 | DONE |
 | جداول قاعدة البيانات | 23 | 23 | DONE |
@@ -38,18 +38,18 @@
 
 | المجال | P0 | P1 | P2 | P3 | P4 | P5 | P6 | P7 | P8 | P9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| core | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| royal | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| federal | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| states | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| institutions | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| agents | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| tools | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| interfaces | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| runtime | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| docs | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| ops | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
-| tests | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| core | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| royal | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| federal | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| states | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| institutions | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| agents | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| tools | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| interfaces | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| runtime | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| docs | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| ops | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| tests | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
 
 ---
 
@@ -134,25 +134,25 @@
 
 ---
 
-## المرحلة 4 — ربط قاعدة البيانات
+## المرحلة 4 — ربط قاعدة البيانات (DONE)
 
 **الهدف:** ربط بنية المستودع بجداول Supabase.
 
 | المجال | الجداول المرتبطة | الحالة |
 |---|---|---|
-| agents | `agents`, `agent_population`, `school_results` | TODO |
-| tools | `tools`, `tool_generation_queue` | TODO |
-| runtime | `tasks`, `event_store` | TODO |
-| royal | `royal_guards`, `king_decrees`, `audit_entries`, `reviews` | TODO |
-| institutions | `institutions` | TODO |
-| federal | `treasury_transactions`, `treasury_budgets`, `treasury_reports` | TODO |
-| interfaces | `interface_registry` | TODO |
-| core | `memories`, `experiences` | TODO |
-| tools/models | `model_cache`, `model_cost_log` | TODO |
-| states/health | `agent_health_checks`, `agent_treatments` | TODO |
-| royal/security | `agent_isolations` | TODO |
+| agents | `agents`, `agent_population`, `school_results` | DONE |
+| tools | `tools`, `tool_generation_queue` | DONE |
+| runtime | `tasks`, `event_store` | DONE |
+| royal | `royal_guards`, `king_decrees`, `audit_entries`, `reviews` | DONE |
+| institutions | `institutions` | DONE |
+| federal | `treasury_transactions`, `treasury_budgets`, `treasury_reports` | DONE |
+| interfaces | `interface_registry` | DONE |
+| core | `memories`, `experiences` | DONE |
+| tools/models | `model_cache`, `model_cost_log` | DONE |
+| states/health | `agent_health_checks`, `agent_treatments` | DONE |
+| royal/security | `agent_isolations` | DONE |
 
-**تعريف الإنجاز:** لكل مجال: وثيقة ربط + استعلامات نموذجية + لا ترحيلات مدمرة.
+**تعريف الإنجاز:** لكل مجال: وثيقة ربط + استعلامات نموذجية + لا ترحيلات مدمرة. ✓ مكتمل — 11 وثيقة ربط + ملخص، 23+ جدول، 0 ترحيلات مدمرة
 
 ---
 
@@ -277,3 +277,4 @@
 | 2026-08-15 | P1 | 11 سجل وفهرس (كل المجالات) | (هذا الـ commit) |
 | 2026-08-15 | P2 | 12 مخطط JSON Schema + قالب ADR | (هذا الـ commit) |
 | 2026-08-15 | P3 | 11 stub + اختبارات دخان 11/11 PASS | (هذا الـ commit) |
+| 2026-08-15 | P4 | 11 وثيقة ربط قاعدة بيانات + ملخص | (هذا الـ commit) |
