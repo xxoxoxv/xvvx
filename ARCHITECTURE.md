@@ -13,7 +13,10 @@ AMOS-Federation دولة رقمية فدرالية. ليست مجرد أكواد
 3. اذهب إلى المجلد الذي يخص مهمتك واقرأ `NUCLEUS.md` فيه
 4. كل ملف نواة يخبرك: الهدف، الواجهة، الحالة، الخطوات التالية، اختبار الدخان
 5. إذا الحالة `stub` — يمكنك البناء فوقه. إذا `prototype` — حسّنه. إذا `active` — حافظ عليه.
-6. اقرأ [`EXECUTION_PLAN.md`](EXECUTION_PLAN.md) لمعرفة المرحلة الحالية وما يجب عمله.
+6. اقرأ [`docs/governance/WORKING_PRINCIPLE.md`](docs/governance/WORKING_PRINCIPLE.md) — **المبدأ الملزم**. لا تكتب سطرًا قبله.
+7. اقرأ [`docs/audit/PHASE_E_ROADMAP.md`](docs/audit/PHASE_E_ROADMAP.md) — خطة السجل (E0–E24).
+8. اقرأ [`docs/audit/TRUTH_MATRIX.md`](docs/audit/TRUTH_MATRIX.md) — **الحقيقة المقاسة**. لا تصدّق أي ملف يقول عن نفسه إنه مكتمل قبل مراجعتها.
+9. `EXECUTION_PLAN.md` (P0–P9) سجل تاريخي فقط — لم يعد خطة السجل.
 
 ## خريطة الأقاليم (12 مجالاً)
 
@@ -31,6 +34,12 @@ AMOS-Federation دولة رقمية فدرالية. ليست مجرد أكواد
 | `docs/` | التوثيق: المخططات، القرارات، الكتيبات | stub |
 | `ops/` | العمليات: المراقبة، النسخ الاحتياطي، الأزمات | stub |
 | `tests/` | الاختبارات: دخان خفيف لكل نواة | stub |
+
+## قاعدة الحقيقة
+
+> `DONE = Capability Proven`
+
+لا يُقال «تم» لأن الملف موجود. حالة أي إقليم تُقرأ من [`TRUTH_MATRIX.md`](docs/audit/TRUTH_MATRIX.md) المولَّدة آليًا، لا من جدول مكتوب يدويًا.
 
 ## قاعدة النواة
 

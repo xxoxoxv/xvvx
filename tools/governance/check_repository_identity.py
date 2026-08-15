@@ -36,7 +36,12 @@ def check_readme(directory: Path) -> list[str]:
 def check_file_header(directory: Path) -> list[str]:
     """تحقق من وجود ترويسة تعريفية في كل ملف .md و .py و .yaml و .rego و .sql."""
     errors = []
-    exempt_patterns = [".gitignore", ".gitattributes", ".example", "LICENSE"]
+    # ملفات معفاة: أمثلة صريحة، وملفات النظام، والمخرجات المولَّدة آليًا
+    # (المولَّد آليًا لا يحمل ترويسة يدوية — هويته موثّقة في README مجلده)
+    exempt_patterns = [
+        ".gitignore", ".gitattributes", ".example", "LICENSE",
+        "truth_matrix.json", "truth_baseline.json",
+    ]
 
     # Identity markers that count as a valid header
     md_identity_markers = [

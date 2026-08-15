@@ -72,6 +72,27 @@ jobs:
           python-version: "3.12"
       - run: python tools/governance/check_repository_identity.py .
 
+  truth-audit:
+    name: Truth Audit (E0 — Ratchet Gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: تدقيق الحقيقة — بوابة عدم التراجع
+        run: python tools/governance/truth_audit.py . --ratchet
+      - name: التحقق من أن المصفوفة المدفوعة محدّثة
+        run: |
+          git diff --exit-code docs/audit/TRUTH_MATRIX.md docs/audit/truth_matrix.json \
+            || (echo "::error::مصفوفة الحقيقة قديمة. شغّل truth_audit.py وادفع النتيجة." && exit 1)
+      - name: رفع مصفوفة الحقيقة
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: truth-matrix
+          path: docs/audit/
+
   smoke:
     name: Smoke Tests (12 domains)
     runs-on: ubuntu-latest

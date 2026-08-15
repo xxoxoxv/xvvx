@@ -2,7 +2,11 @@
 
 > **ابدأ من [ARCHITECTURE.md](ARCHITECTURE.md) — دستور البنية ودليل الوكيل الجديد.**
 >
-> **ثم اقرأ [EXECUTION_PLAN.md](EXECUTION_PLAN.md) — خطة التنفيذ المرحلية والتقدم الحالي.**
+> **ثم اقرأ [docs/governance/WORKING_PRINCIPLE.md](docs/governance/WORKING_PRINCIPLE.md) — مبدأ العمل الملزم.**
+>
+> **ثم [docs/audit/PHASE_E_ROADMAP.md](docs/audit/PHASE_E_ROADMAP.md) — خطة السجل: عصر التنفيذ E0–E24.**
+>
+> **وقبل أن تصدّق أي ادعاء اكتمال: [docs/audit/TRUTH_MATRIX.md](docs/audit/TRUTH_MATRIX.md) — الحقيقة المقاسة آليًا.**
 
 ## التعريف
 هذا المستودع ليس مجرد أكواد، بل دولة رقمية فدرالية لها دستور، وسلطات، وولايات، وسكان (وكلاء)، وموارد (أدوات)، وذاكرة، وجيش (أمن)، وديوان محاسبة (تدقيق)، وخزانة (ميزانيات)، وأرشيف للمستقبل. مصمم للبقاء 100 عام والتطور إلى إمبراطورية مؤسسية تحت حوكمة بشرية مطلقة.

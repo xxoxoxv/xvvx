@@ -8,7 +8,11 @@
 |---|---|
 | [`README.md`](../README.md) | بوابة المستودع |
 | [`ARCHITECTURE.md`](../ARCHITECTURE.md) | دستور البنية |
-| [`EXECUTION_PLAN.md`](../EXECUTION_PLAN.md) | خطة التنفيذ المرحلية |
+| [`EXECUTION_PLAN.md`](../EXECUTION_PLAN.md) | سجل تاريخي (P0–P9) — لم يعد خطة السجل |
+| [`governance/WORKING_PRINCIPLE.md`](governance/WORKING_PRINCIPLE.md) | **مبدأ العمل الملزم** |
+| [`audit/PHASE_E_ROADMAP.md`](audit/PHASE_E_ROADMAP.md) | **خطة السجل** — عصر التنفيذ E0–E24 |
+| [`audit/DEFINITION_OF_DONE.md`](audit/DEFINITION_OF_DONE.md) | تعريف الإنجاز ونظام الحالات |
+| [`audit/TRUTH_MATRIX.md`](audit/TRUTH_MATRIX.md) | مصفوفة الحقيقة (مولَّدة آليًا) |
 
 ## الأقسام
 
