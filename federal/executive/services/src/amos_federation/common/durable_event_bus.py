@@ -79,7 +79,7 @@ class DurableEventBus:
         connect_args = {}
         if url.startswith("sqlite"):
             connect_args = {"check_same_thread": False}
-        elif url.startswith("postgresql"):
+        elif url.startswith("postgresql"):  # pragma: no branch - requires PostgreSQL (production-only)
             connect_args = {"sslmode": "require", "connect_timeout": 15}
         self._engine = create_engine(
             url,
