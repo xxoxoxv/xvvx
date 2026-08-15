@@ -1,0 +1,417 @@
+"""
+AMOS-Federation Phase 12 — State Runtime
+الهدف: كل ولاية لها services/agents/tools منفصلة فعليًا، مع عزل قاعدة بيانات
+النطاق: services/governance/state_runtime
+المالك: federal/executive/services
+تاريخ الإنشاء: 2026-08-15
+
+المتطلبات (من خارطة الطريق):
+  12.1: State Runtime بحيث كل ولاية لها services/agents/tools منفصلة
+  12.2: عزل قاعدة بيانات لكل ولاية (schema منفصل)
+  12.3: Federal Message Bus بين الولايات
+  12.4: Federal Budget Allocation
+  12.5: Federal Policy Enforcement
+  12.6: البنية الإدارية لكل ولاية
+  12.7: اختبار عزل ولاية كاملة
+  12.8: إضافة ولاية جديدة بلا تعديل الدستور
+"""
+
+import json
+import uuid
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+from amos_federation.common.database import get_database_url
+from amos_federation.common.persistent import PersistentAuditStore
+
+
+class StateBase(DeclarativeBase):
+    pass
+
+
+class StateModel(StateBase):
+    """جدول الولايات الفدرالية."""
+    __tablename__ = "federal_states"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    state_id = Column(String, nullable=False, unique=True, index=True)
+    name = Column(String, nullable=False)
+    type = Column(String, nullable=False)  # finance, law, science, health, culture, infrastructure, industry, trade, education
+    status = Column(String, default="active")  # active, suspended, closed
+    head_agent_id = Column(String, nullable=True)
+    budget = Column(String, default="0")  # amos-credit
+    established_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    closed_at = Column(DateTime, nullable=True)
+    metadata_json = Column(Text, default="{}")
+
+
+class StateAgentAssignment(StateBase):
+    """تعيين الوكلاء في الولايات."""
+    __tablename__ = "state_agent_assignments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    state_id = Column(String, nullable=False, index=True)
+    agent_id = Column(String, nullable=False, index=True)
+    role = Column(String, nullable=False)  # coordinator, council, judge, monitor, factory_manager, worker, trainer, learner, accountant
+    assigned_at = Column(DateTime, default=lambda: datetime.now(UTC))
+
+
+class StateMessage(StateBase):
+    """رسائل بين الولايات عبر Federal Message Bus."""
+    __tablename__ = "state_messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    message_id = Column(String, nullable=False, unique=True)
+    from_state = Column(String, nullable=False, index=True)
+    to_state = Column(String, nullable=False, index=True)
+    subject = Column(String, nullable=False)
+    body = Column(Text, default="")
+    policy_check = Column(String, default="pending")  # pending, approved, denied
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    delivered_at = Column(DateTime, nullable=True)
+
+
+# الولايات التسع المعرفة في الدستور
+FEDERAL_STATES = {
+    "finance": {"name": "ولاية المال", "type": "finance", "target_population": 45},
+    "law": {"name": "ولاية القانون", "type": "law", "target_population": 40},
+    "science": {"name": "ولاية العلم", "type": "science", "target_population": 45},
+    "health": {"name": "ولاية الصحة", "type": "health", "target_population": 35},
+    "culture": {"name": "ولاية الثقافة", "type": "culture", "target_population": 40},
+    "infrastructure": {"name": "ولاية البنية التحتية", "type": "infrastructure", "target_population": 45},
+    "industry": {"name": "ولاية الصناعة", "type": "industry", "target_population": 50},
+    "trade": {"name": "ولاية التجارة", "type": "trade", "target_population": 30},
+    "education": {"name": "ولاية التعليم", "type": "education", "target_population": 40},
+}
+
+# البنية الإدارية الموحدة لكل ولاية
+STATE_ADMIN_STRUCTURE = {
+    "coordinator": {"count": 1, "role": "منسق الولاية"},
+    "council": {"count": 3, "role": "مجلس الولاية"},
+    "judge": {"count": 1, "role": "قاضي الولاية"},
+    "monitor": {"count": 1, "role": "مراقب الولاية"},
+    "factory_manager": {"count": 1, "role": "مدير المصنع"},
+    "worker": {"count": 10, "role": "عامل إنتاج"},
+    "trainer": {"count": 1, "role": "مدرب"},
+    "learner": {"count": 3, "role": "متعلم"},
+    "accountant": {"count": 1, "role": "محاسب"},
+}
+
+
+class StateRuntime:
+    """12.1: State Runtime — كل ولاية وحدة تشغيل معزولة."""
+
+    def __init__(self) -> None:
+        self._engine = create_engine(
+            get_database_url(),
+            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+        )
+        StateBase.metadata.create_all(self._engine)
+        self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
+        self._init_states()
+
+    def _init_states(self) -> None:
+        """تهيئة الولايات التسع إذا لم تكن موجودة."""
+        session = self._Session()
+        try:
+            for state_id, info in FEDERAL_STATES.items():
+                existing = session.query(StateModel).filter(StateModel.state_id == state_id).first()
+                if not existing:
+                    state = StateModel(
+                        state_id=state_id,
+                        name=info["name"],
+                        type=info["type"],
+                        budget="1000",  # ميزانية أولية
+                    )
+                    session.add(state)
+            session.commit()
+        finally:
+            session.close()
+
+    def register_state(self, state_id: str, name: str, state_type: str, budget: str = "0") -> dict[str, Any]:
+        """12.8: تسجيل ولاية جديدة — لا يتطلب تعديل الدستور."""
+        session = self._Session()
+        try:
+            existing = session.query(StateModel).filter(StateModel.state_id == state_id).first()
+            if existing:
+                return {"error": "state_already_exists", "state_id": state_id}
+            state = StateModel(
+                state_id=state_id,
+                name=name,
+                type=state_type,
+                budget=budget,
+            )
+            session.add(state)
+            session.commit()
+            # تسجيل في سجل التدقيق
+            audit = PersistentAuditStore()
+            audit.append("state.registered", "system", {"state_id": state_id, "name": name})
+            return {
+                "state_id": state_id,
+                "name": name,
+                "type": state_type,
+                "budget": budget,
+                "status": "active",
+                "registered": True,
+            }
+        finally:
+            session.close()
+
+    def get_state(self, state_id: str) -> dict[str, Any] | None:
+        """تفاصيل ولاية."""
+        session = self._Session()
+        try:
+            state = session.query(StateModel).filter(StateModel.state_id == state_id).first()
+            if not state:
+                return None
+            return {
+                "state_id": state.state_id,
+                "name": state.name,
+                "type": state.type,
+                "status": state.status,
+                "head_agent_id": state.head_agent_id,
+                "budget": state.budget,
+                "established_at": state.established_at.isoformat() if state.established_at else None,
+            }
+        finally:
+            session.close()
+
+    def list_states(self) -> list[dict[str, Any]]:
+        """قائمة كل الولايات."""
+        session = self._Session()
+        try:
+            states = session.query(StateModel).all()
+            return [
+                {
+                    "state_id": s.state_id,
+                    "name": s.name,
+                    "type": s.type,
+                    "status": s.status,
+                    "budget": s.budget,
+                }
+                for s in states
+            ]
+        finally:
+            session.close()
+
+    def suspend_state(self, state_id: str, reason: str = "") -> dict[str, Any]:
+        """12.7: إيقاف ولاية — لا يؤثر على بقية الولايات."""
+        session = self._Session()
+        try:
+            state = session.query(StateModel).filter(StateModel.state_id == state_id).first()
+            if not state:
+                return {"error": "state_not_found"}
+            state.status = "suspended"
+            session.commit()
+            audit = PersistentAuditStore()
+            audit.append("state.suspended", "system", {"state_id": state_id, "reason": reason})
+            return {"state_id": state_id, "status": "suspended", "reason": reason}
+        finally:
+            session.close()
+
+    def reactivate_state(self, state_id: str) -> dict[str, Any]:
+        """إعادة تفعيل ولاية."""
+        session = self._Session()
+        try:
+            state = session.query(StateModel).filter(StateModel.state_id == state_id).first()
+            if not state:
+                return {"error": "state_not_found"}
+            state.status = "active"
+            session.commit()
+            return {"state_id": state_id, "status": "active"}
+        finally:
+            session.close()
+
+    def assign_agent(self, state_id: str, agent_id: str, role: str) -> dict[str, Any]:
+        """12.6: تعيين وكيل في ولاية."""
+        session = self._Session()
+        try:
+            assignment = StateAgentAssignment(
+                state_id=state_id,
+                agent_id=agent_id,
+                role=role,
+            )
+            session.add(assignment)
+            session.commit()
+            return {
+                "state_id": state_id,
+                "agent_id": agent_id,
+                "role": role,
+                "assigned": True,
+            }
+        finally:
+            session.close()
+
+    def get_state_agents(self, state_id: str) -> list[dict[str, Any]]:
+        """وكلاء ولاية معينة."""
+        session = self._Session()
+        try:
+            assignments = session.query(StateAgentAssignment).filter(
+                StateAgentAssignment.state_id == state_id
+            ).all()
+            return [
+                {
+                    "agent_id": a.agent_id,
+                    "role": a.role,
+                    "assigned_at": a.assigned_at.isoformat() if a.assigned_at else None,
+                }
+                for a in assignments
+            ]
+        finally:
+            session.close()
+
+    def check_isolation(self, state_id: str) -> dict[str, Any]:
+        """12.1: فحص العزل — ولاية لا تصل لأدوات ولاية أخرى."""
+        session = self._Session()
+        try:
+            # كل ولاية لها وكلاؤها فقط
+            state_agents = session.query(StateAgentAssignment).filter(
+                StateAgentAssignment.state_id == state_id
+            ).all()
+            other_states = session.query(StateAgentAssignment).filter(
+                StateAgentAssignment.state_id != state_id
+            ).all()
+
+            # فحص: هل هناك وكيل مشترك بين ولايتين؟
+            state_agent_ids = {a.agent_id for a in state_agents}
+            other_agent_ids = {a.agent_id for a in other_states}
+            overlap = state_agent_ids & other_agent_ids
+
+            return {
+                "state_id": state_id,
+                "isolated": len(overlap) == 0,
+                "state_agents": len(state_agent_ids),
+                "other_agents": len(other_agent_ids),
+                "overlapping_agents": list(overlap),
+            }
+        finally:
+            session.close()
+
+    def allocate_budget(self, state_id: str, amount: str, reason: str = "") -> dict[str, Any]:
+        """12.4: توزيع الميزانية الفدرالية."""
+        session = self._Session()
+        try:
+            state = session.query(StateModel).filter(StateModel.state_id == state_id).first()
+            if not state:
+                return {"error": "state_not_found"}
+            current = int(state.budget or "0")
+            new_budget = current + int(amount)
+            state.budget = str(new_budget)
+            session.commit()
+            audit = PersistentAuditStore()
+            audit.append("state.budget_allocated", "treasury", {
+                "state_id": state_id, "amount": amount, "reason": reason
+            })
+            return {
+                "state_id": state_id,
+                "previous_budget": current,
+                "new_budget": new_budget,
+                "allocated": int(amount),
+            }
+        finally:
+            session.close()
+
+
+class FederalMessageBus:
+    """12.3: Federal Message Bus — توجيه الرسائل بين الولايات عبر فحص صلاحية."""
+
+    def __init__(self) -> None:
+        self._engine = create_engine(
+            get_database_url(),
+            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+        )
+        StateBase.metadata.create_all(self._engine)
+        self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
+
+    def send_message(self, from_state: str, to_state: str, subject: str, body: str = "") -> dict[str, Any]:
+        """إرسال رسالة بين ولايتين — تخضع لفحص السياسة."""
+        session = self._Session()
+        try:
+            message_id = f"msg-{uuid.uuid4().hex[:12]}"
+            # فحص السياسة: هل الولايتان موجودتان ونشطتان؟
+            from_ok = session.query(StateModel).filter(
+                StateModel.state_id == from_state, StateModel.status == "active"
+            ).first()
+            to_ok = session.query(StateModel).filter(
+                StateModel.state_id == to_state, StateModel.status == "active"
+            ).first()
+
+            policy_check = "approved" if (from_ok and to_ok) else "denied"
+
+            msg = StateMessage(
+                message_id=message_id,
+                from_state=from_state,
+                to_state=to_state,
+                subject=subject,
+                body=body,
+                policy_check=policy_check,
+                delivered_at=datetime.now(UTC) if policy_check == "approved" else None,
+            )
+            session.add(msg)
+            session.commit()
+
+            audit = PersistentAuditStore()
+            audit.append("state.message_sent", from_state, {
+                "message_id": message_id, "to": to_state, "subject": subject,
+                "policy_check": policy_check,
+            })
+
+            return {
+                "message_id": message_id,
+                "from_state": from_state,
+                "to_state": to_state,
+                "subject": subject,
+                "policy_check": policy_check,
+                "delivered": policy_check == "approved",
+            }
+        finally:
+            session.close()
+
+    def get_messages(self, state_id: str, direction: str = "received", limit: int = 50) -> list[dict[str, Any]]:
+        """استقبال رسائل ولاية."""
+        session = self._Session()
+        try:
+            if direction == "received":
+                msgs = session.query(StateMessage).filter(
+                    StateMessage.to_state == state_id
+                ).order_by(StateMessage.created_at.desc()).limit(limit).all()
+            else:
+                msgs = session.query(StateMessage).filter(
+                    StateMessage.from_state == state_id
+                ).order_by(StateMessage.created_at.desc()).limit(limit).all()
+            return [
+                {
+                    "message_id": m.message_id,
+                    "from_state": m.from_state,
+                    "to_state": m.to_state,
+                    "subject": m.subject,
+                    "body": m.body,
+                    "policy_check": m.policy_check,
+                    "created_at": m.created_at.isoformat() if m.created_at else None,
+                }
+                for m in msgs
+            ]
+        finally:
+            session.close()
+
+
+# Singletons
+_state_runtime: StateRuntime | None = None
+_message_bus: FederalMessageBus | None = None
+
+
+def get_state_runtime() -> StateRuntime:
+    global _state_runtime
+    if _state_runtime is None:
+        _state_runtime = StateRuntime()
+    return _state_runtime
+
+
+def get_federal_message_bus() -> FederalMessageBus:
+    global _message_bus
+    if _message_bus is None:
+        _message_bus = FederalMessageBus()
+    return _message_bus
