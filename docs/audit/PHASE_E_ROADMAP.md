@@ -82,7 +82,7 @@ Constitutional Federal Monarchy
 
 | المرحلة | الاسم | الحالة | التاريخ | الدليل |
 |---|---|---|---|---|
-| **E0** | Truth Audit — تدقيق الحقيقة | `PROVEN` | 2026-08-16 | `tools/governance/truth_audit.py` + [`TRUTH_MATRIX.md`](TRUTH_MATRIX.md) |
+| **E0** | Truth Audit — تدقيق الحقيقة | `PROVEN` | 2026-08-16 | `tools/governance/truth_audit.py` + [`TRUTH_MATRIX.md`](TRUTH_MATRIX.md) | `52761ca` 
 | E1 | Constitutional Kernel | `DESIGNED` | — | — |
 | E2 | Sovereignty Kernel | `DESIGNED` | — | — |
 | E3 | Identity Kernel | `DESIGNED` | — | — |
@@ -442,4 +442,4 @@ FOUNDATION → TRUTH → CONSTITUTION → SOVEREIGNTY → IDENTITY → SECURITY
 
 | التاريخ | المرحلة | ما تم | Commit |
 |---|---|---|---|
-| 2026-08-16 | E0 | تثبيت خطة Phase E ومبدأ العمل وتعريف الإنجاز + بناء محرك تدقيق الحقيقة وتوليد أول TRUTH_MATRIX | `(هذا الـcommit)` |
+| 2026-08-16 | E0 | تثبيت خطة Phase E ومبدأ العمل وتعريف الإنجاز + بناء محرك تدقيق الحقيقة وتوليد أول TRUTH_MATRIX | `52761ca` |
