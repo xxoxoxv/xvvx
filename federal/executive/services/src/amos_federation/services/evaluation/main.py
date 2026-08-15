@@ -12,13 +12,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from amos_federation.common.auth import require_auth
+from amos_federation.common.persistent import PersistentExperienceStore
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
 from amos_federation.services.evaluation.benchmark import analyze_gaps, run_benchmark
-from amos_federation.services.evaluation.store import InMemoryExperienceStore
 
 router = APIRouter(prefix="/v1", tags=["evaluation"])
-experience_store = InMemoryExperienceStore()
+experience_store = PersistentExperienceStore()
 
 
 class ExperienceRecord(BaseModel):

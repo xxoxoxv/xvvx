@@ -12,12 +12,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from amos_federation.common.auth import require_auth
+from amos_federation.common.persistent import PersistentCriticStore
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
 from amos_federation.services.critic.store import InMemoryCriticStore
 
 router = APIRouter(prefix="/v1", tags=["critic"])
-critic_store = InMemoryCriticStore()
+critic_store = PersistentCriticStore()
 
 
 class ReviewRequest(BaseModel):
