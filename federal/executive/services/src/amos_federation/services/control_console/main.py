@@ -1,0 +1,486 @@
+"""
+AMOS-Federation Control Console Service
+الهدف: واجهة تحكم بشري حقيقية — تعرض الوكلاء، المهام، النماذج، التكلفة، التدقيق
+النطاق: خدمة control-console على المنفذ 3000
+المالك: federal/executive/services
+تاريخ الإنشاء: 2026-08-15
+"""
+
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
+
+from amos_federation.common.auth import require_auth
+from amos_federation.common.registry import SERVICES
+from amos_federation.common.service import create_service_app
+
+router = APIRouter(prefix="/v1", tags=["control-console"])
+
+
+# === 7.1: Dashboard API — تجمع بيانات حقيقية من كل الخدمات ===
+
+@router.get("/dashboard", response_model=dict)
+async def get_dashboard(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """لوحة تحكم شاملة — كل الأرقام من خدمات حقيقية."""
+    from amos_federation.services.agent_runtime.population import get_population_registry
+    from amos_federation.common.event_bus import get_event_bus
+    from amos_federation.services.governance.canary import get_system_status
+    from amos_federation.services.model_gateway.model_layer import get_model_layer
+    from amos_federation.common.persistent import (
+        PersistentAuditStore,
+        PersistentToolStore,
+        PersistentMemoryStore,
+        PersistentExperienceStore,
+    )
+
+    # 7.2: Agents from real population registry
+    registry = get_population_registry()
+    agents = registry.list_agents()
+    agent_states: dict[str, int] = {}
+    for a in agents:
+        agent_states[a["state"]] = agent_states.get(a["state"], 0) + 1
+
+    # 7.7: Cost from real model layer
+    model_layer = get_model_layer()
+    cost_summary = model_layer.get_cost_summary()
+
+    # 7.3: Audit log from real persistent store
+    audit_store = PersistentAuditStore()
+    audit_entries = audit_store.list_all(limit=10)
+    audit_verify = audit_store.verify_chain()
+
+    # Events from real event bus
+    bus = get_event_bus()
+    event_count = bus.count()
+
+    # Tools from real persistent store
+    tool_store = PersistentToolStore()
+    tools = tool_store.list_all()
+
+    # Memory from real persistent store
+    memory_store = PersistentMemoryStore()
+
+    # Experiences from real persistent store
+    exp_store = PersistentExperienceStore()
+
+    # 7.6: Kill Switch status
+    system_status = get_system_status()
+
+    return {
+        "agents": {
+            "total": len(agents),
+            "by_state": agent_states,
+            "list": agents,
+        },
+        "cost": cost_summary,
+        "audit": {
+            "recent": audit_entries,
+            "chain_valid": audit_verify.get("valid", False),
+            "total_entries": audit_verify.get("entries", 0),
+        },
+        "events": {
+            "total": event_count,
+        },
+        "tools": {
+            "total": len(tools),
+        },
+        "experiences": {
+            "total": exp_store.count(),
+        },
+        "system_status": system_status,
+    }
+
+
+# === 7.2: Agent management ===
+
+@router.get("/agents", response_model=list[dict])
+async def list_agents(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    state: str | None = Query(default=None),
+) -> list[dict[str, Any]]:
+    """عرض كل الوكلاء من السجل الحقيقي."""
+    from amos_federation.services.agent_runtime.population import get_population_registry
+    return get_population_registry().list_agents(state=state)
+
+
+@router.get("/agents/{agent_id}", response_model=dict)
+async def get_agent(
+    agent_id: str,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """عرض وكيل واحد."""
+    from amos_federation.services.agent_runtime.population import get_population_registry
+    agent = get_population_registry().get_agent(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="الوكيل غير موجود")
+    return agent
+
+
+class AgentStateUpdate(BaseModel):
+    """تحديث حالة وكيل."""
+    state: str = Field(pattern="^(registered|training|testing|employed|active|paused|retired)$")
+
+
+@router.post("/agents/{agent_id}/state", response_model=dict)
+async def update_agent_state(
+    agent_id: str,
+    request: AgentStateUpdate,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """7.4: إيقاف/تفعيل وكيل من الواجهة — يستدعي API حقيقيًا."""
+    from amos_federation.services.agent_runtime.population import get_population_registry
+    from amos_federation.common.event_bus import get_event_bus
+
+    registry = get_population_registry()
+    success = registry.update_state(agent_id, request.state)
+    if not success:
+        raise HTTPException(status_code=404, detail="الوكيل غير موجود")
+
+    # نشر حدث
+    get_event_bus().publish("amos_federation.agent.state_changed", {
+        "agent_id": agent_id,
+        "new_state": request.state,
+    })
+
+    return {"agent_id": agent_id, "state": request.state, "updated": True}
+
+
+# === 7.3: Audit log ===
+
+@router.get("/audit", response_model=list[dict])
+async def list_audit(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    limit: int = Query(default=50, ge=1, le=500),
+) -> list[dict[str, Any]]:
+    """عرض سجل التدقيق من السلسلة الحقيقية."""
+    from amos_federation.common.persistent import PersistentAuditStore
+    return PersistentAuditStore().list_all(limit=limit)
+
+
+@router.get("/audit/verify", response_model=dict)
+async def verify_audit(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """التحقق من سلامة سلسلة التدقيق."""
+    from amos_federation.common.persistent import PersistentAuditStore
+    return PersistentAuditStore().verify_chain()
+
+
+# === 7.6: Kill Switch ===
+
+class KillSwitchRequest(BaseModel):
+    """طلب تفعيل Kill Switch."""
+    level: str = Field(pattern="^(normal|alert|degraded|halt)$")
+    reason: str = Field(min_length=1)
+    activated_by: str = Field(min_length=1)
+
+
+@router.post("/kill-switch", response_model=dict)
+async def activate_kill_switch(
+    request: KillSwitchRequest,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """تفعيل Kill Switch من الواجهة."""
+    from amos_federation.services.governance.canary import activate_kill_switch as _activate
+    from amos_federation.common.persistent import PersistentAuditStore
+
+    result = _activate(request.level, request.reason, request.activated_by)
+    PersistentAuditStore().append("kill_switch_activated", request.activated_by, result)
+    return result
+
+
+@router.post("/kill-switch/reset", response_model=dict)
+async def reset_kill_switch(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """إعادة ضبط Kill Switch."""
+    from amos_federation.services.governance.canary import reset_kill_switch
+    return reset_kill_switch()
+
+
+# === 7.5: Approval (placeholder — يكتمل في المرحلة 9) ===
+
+class ApprovalRequest(BaseModel):
+    """طلب موافقة/رفض."""
+    decision: str = Field(pattern="^(approve|reject)$")
+    signed_by: str = Field(min_length=1)
+    model_id: str | None = None
+    notes: str = ""
+
+
+@router.post("/approval", response_model=dict)
+async def sign_approval(
+    request: ApprovalRequest,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """7.5: زر الموافقة/الرفض — يُفعّل فعليًا في المرحلة 9 مع توقيع Ed25519."""
+    from amos_federation.common.persistent import PersistentAuditStore
+    from amos_federation.common.event_bus import get_event_bus
+
+    approval_id = f"approval-{__import__('uuid').uuid4().hex[:8]}"
+    result = {
+        "approval_id": approval_id,
+        "decision": request.decision,
+        "signed_by": request.signed_by,
+        "model_id": request.model_id,
+        "notes": request.notes,
+        "signature_pending": True,  # سيُوقّع بـ Ed25519 في المرحلة 9
+    }
+    PersistentAuditStore().append("approval.signed", request.signed_by, result)
+    get_event_bus().publish("amos_federation.approval.signed", {
+        "approval_id": approval_id,
+        "decision": request.decision,
+        "signed_by": request.signed_by,
+    })
+    return result
+
+
+# === 7.7: Cost ===
+
+@router.get("/cost", response_model=dict)
+async def get_cost(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """عرض التكلفة اللحظية والتراكمية."""
+    from amos_federation.services.model_gateway.model_layer import get_model_layer
+    return get_model_layer().get_cost_summary()
+
+
+# === 7.8: Events ===
+
+@router.get("/events", response_model=list[dict])
+async def list_events(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    subject: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=500),
+) -> list[dict[str, Any]]:
+    """عرض الأحداث."""
+    from amos_federation.common.event_bus import get_event_bus
+    return get_event_bus().get_events(subject=subject, limit=limit)
+
+
+# === HTML Interface ===
+
+@router.get("/ui", response_class=HTMLResponse)
+async def control_console_ui() -> str:
+    """واجهة التحكم البشري — HTML/JS حقيقية تُخدم من FastAPI."""
+    return CONTROL_CONSOLE_HTML
+
+
+CONTROL_CONSOLE_HTML = """<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMOS Federation — Control Console</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0d1117; color: #c9d1d9; }
+        .header { background: #161b22; padding: 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 24px; color: #58a6ff; }
+        .header .status { padding: 6px 16px; border-radius: 20px; font-size: 14px; }
+        .status-normal { background: #1a4731; color: #56d364; }
+        .status-alert { background: #4a3a1a; color: #e3b341; }
+        .status-degraded { background: #4a2a1a; color: #db6d28; }
+        .status-halt { background: #4a1a1a; color: #f85149; }
+        .container { padding: 20px; max-width: 1400px; margin: 0 auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
+        .card h2 { font-size: 14px; color: #8b949e; margin-bottom: 12px; text-transform: uppercase; }
+        .stat { font-size: 32px; font-weight: bold; color: #58a6ff; }
+        .stat-label { font-size: 12px; color: #8b949e; margin-top: 4px; }
+        .section { background: #161b22; border: 1px solid #30363d; border-radius: 8px; margin-bottom: 20px; }
+        .section-header { padding: 12px 16px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .section-header h2 { font-size: 16px; color: #58a6ff; }
+        .section-body { padding: 16px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid #21262d; font-size: 13px; }
+        th { color: #8b949e; font-weight: normal; }
+        .badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+        .badge-active { background: #1a4731; color: #56d364; }
+        .badge-registered { background: #1a2a4a; color: #58a6ff; }
+        .badge-training { background: #4a3a1a; color: #e3b341; }
+        .badge-employed { background: #1a4731; color: #56d364; }
+        .badge-paused { background: #4a2a1a; color: #db6d28; }
+        .badge-retired { background: #4a1a1a; color: #f85149; }
+        .btn { padding: 6px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-danger { background: #da3633; color: white; }
+        .btn-warning { background: #d29922; color: #1f2328; }
+        .btn-success { background: #2ea043; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .kill-switch-panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+        .kill-switch-panel h2 { color: #f85149; margin-bottom: 12px; }
+        .kill-buttons { display: flex; gap: 8px; }
+        #auth-token { width: 300px; padding: 6px; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; border-radius: 4px; }
+        .auth-bar { background: #161b22; padding: 12px 20px; border-bottom: 1px solid #30363d; display: flex; gap: 12px; align-items: center; }
+        .auth-bar label { color: #8b949e; font-size: 13px; }
+        .loading { text-align: center; padding: 40px; color: #8b949e; }
+        .cost-value { color: #56d364; font-size: 20px; font-weight: bold; }
+        .hash { font-family: monospace; font-size: 11px; color: #8b949e; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>AMOS Federation — Control Console</h1>
+        <div id="system-status" class="status status-normal">جارٍ التحميل...</div>
+    </div>
+    <div class="auth-bar">
+        <label>Token:</label>
+        <input id="auth-token" type="password" placeholder="Bearer token" />
+        <button class="btn btn-success" onclick="loadAll()">تحميل</button>
+    </div>
+    <div class="container">
+        <div class="grid" id="stats-grid">
+            <div class="card"><h2>الوكلاء</h2><div class="stat" id="stat-agents">—</div><div class="stat-label" id="stat-agents-label">إجمالي الوكلاء</div></div>
+            <div class="card"><h2>الأدوات</h2><div class="stat" id="stat-tools">—</div><div class="stat-label">أداة مسجلة</div></div>
+            <div class="card"><h2>الأحداث</h2><div class="stat" id="stat-events">—</div><div class="stat-label">حدث منشور</div></div>
+            <div class="card"><h2>الخبرات</h2><div class="stat" id="stat-experiences">—</div><div class="stat-label">خبرة مسجلة</div></div>
+            <div class="card"><h2>التكلفة</h2><div class="cost-value" id="stat-cost">$0.00</div><div class="stat-label" id="stat-cost-label">إجمالي التكلفة</div></div>
+            <div class="card"><h2>التدقيق</h2><div class="stat" id="stat-audit">—</div><div class="stat-label" id="stat-audit-label">سجل تدقيق</div></div>
+        </div>
+
+        <div class="kill-switch-panel">
+            <h2>Kill Switch</h2>
+            <div class="kill-buttons">
+                <button class="btn btn-success" onclick="setKillSwitch('normal')">Normal</button>
+                <button class="btn btn-warning" onclick="setKillSwitch('alert')">Alert</button>
+                <button class="btn btn-warning" onclick="setKillSwitch('degraded')">Degraded</button>
+                <button class="btn btn-danger" onclick="setKillSwitch('halt')">Halt</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header"><h2>الوكلاء</h2><span id="agents-count" style="color:#8b949e">—</span></div>
+            <div class="section-body">
+                <table>
+                    <thead><tr><th>المعرّف</th><th>الاسم</th><th>الدور</th><th>الحالة</th><th>الأدوات</th><th>إجراءات</th></tr></thead>
+                    <tbody id="agents-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header"><h2>سجل التدقيق (Hash Chain)</h2><span id="audit-status" style="color:#8b949e">—</span></div>
+            <div class="section-body">
+                <table>
+                    <thead><tr><th>الإجراء</th><th>الفاعل</th><th>الوقت</th><th>الـ Hash</th></tr></thead>
+                    <tbody id="audit-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header"><h2>الأحداث الأخيرة</h2></div>
+            <div class="section-body">
+                <table>
+                    <thead><tr><th>الموضوع</th><th>البيانات</th><th>الوقت</th></tr></thead>
+                    <tbody id="events-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getToken() { return document.getElementById('auth-token').value || 'dev-token'; }
+        function headers() { return { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' }; }
+
+        async function api(path, method='GET', body=null) {
+            const opts = { method, headers: headers() };
+            if (body) opts.body = JSON.stringify(body);
+            const resp = await fetch('/v1' + path, opts);
+            if (!resp.ok) throw new Error(resp.status);
+            return resp.json();
+        }
+
+        async function loadAll() {
+            try { await loadDashboard(); } catch(e) { console.error('Dashboard:', e); }
+            try { await loadAgents(); } catch(e) { console.error('Agents:', e); }
+            try { await loadAudit(); } catch(e) { console.error('Audit:', e); }
+            try { await loadEvents(); } catch(e) { console.error('Events:', e); }
+        }
+
+        async function loadDashboard() {
+            const d = await api('/dashboard');
+            document.getElementById('stat-agents').textContent = d.agents.total;
+            document.getElementById('stat-agents-label').textContent = Object.entries(d.agents.by_state).map(([k,v])=>k+':'+v).join(' | ');
+            document.getElementById('stat-tools').textContent = d.tools.total;
+            document.getElementById('stat-events').textContent = d.events.total;
+            document.getElementById('stat-experiences').textContent = d.experiences.total;
+            document.getElementById('stat-cost').textContent = '$' + (d.cost.total_cost_usd || 0).toFixed(6);
+            document.getElementById('stat-cost-label').textContent = (d.cost.total_tokens || 0) + ' tokens | ' + (d.cost.total_invocations || 0) + ' invocations';
+            document.getElementById('stat-audit').textContent = d.audit.total_entries;
+            document.getElementById('stat-audit-label').textContent = d.audit.chain_valid ? 'سلسلة سليمة' : 'سلسلة مكسورة';
+
+            const ss = d.system_status;
+            const el = document.getElementById('system-status');
+            el.className = 'status status-' + ss.level;
+            el.textContent = ss.level.toUpperCase() + (ss.reason ? ': ' + ss.reason : '');
+        }
+
+        async function loadAgents() {
+            const agents = await api('/agents');
+            document.getElementById('agents-count').textContent = agents.length + ' وكيل';
+            const tbody = document.getElementById('agents-table');
+            tbody.innerHTML = agents.map(a => `<tr>
+                <td class="hash">${a.agent_id}</td>
+                <td>${a.name}</td>
+                <td>${a.role}</td>
+                <td><span class="badge badge-${a.state}">${a.state}</span></td>
+                <td>${(a.allowed_tools||[]).join(', ')}</td>
+                <td><div class="actions">
+                    <button class="btn btn-warning" onclick="setAgentState('${a.agent_id}','paused')">إيقاف</button>
+                    <button class="btn btn-success" onclick="setAgentState('${a.agent_id}','active')">تفعيل</button>
+                    <button class="btn btn-danger" onclick="setAgentState('${a.agent_id}','retired')">تقاعد</button>
+                </div></td>
+            </tr>`).join('');
+        }
+
+        async function loadAudit() {
+            const audit = await api('/audit?limit=20');
+            const verify = await api('/audit/verify');
+            document.getElementById('audit-status').textContent = verify.valid ? 'سلسلة سليمة (' + verify.entries + ' إدخالات)' : 'مكسورة';
+            document.getElementById('audit-status').style.color = verify.valid ? '#56d364' : '#f85149';
+            const tbody = document.getElementById('audit-table');
+            tbody.innerHTML = audit.map(a => `<tr>
+                <td>${a.action}</td>
+                <td>${a.actor}</td>
+                <td>${a.timestamp || ''}</td>
+                <td class="hash">${(a.hash||'').substring(0,20)}...</td>
+            </tr>`).join('');
+        }
+
+        async function loadEvents() {
+            const events = await api('/events?limit=20');
+            const tbody = document.getElementById('events-table');
+            tbody.innerHTML = events.map(e => `<tr>
+                <td>${e.subject}</td>
+                <td class="hash">${JSON.stringify(e.data).substring(0,80)}...</td>
+                <td>${e.created_at || ''}</td>
+            </tr>`).join('');
+        }
+
+        async function setAgentState(agentId, state) {
+            await api('/agents/' + agentId + '/state', 'POST', { state });
+            await loadAll();
+        }
+
+        async function setKillSwitch(level) {
+            const reason = prompt('السبب؟');
+            if (!reason) return;
+            await api('/kill-switch', 'POST', { level, reason, activated_by: 'console' });
+            await loadAll();
+        }
+
+        loadAll();
+    </script>
+</body>
+</html>"""
+
+
+_service = SERVICES["control-console"]
+app = create_service_app(_service["name"], _service["port"], "واجهة التحكم البشري", [router])

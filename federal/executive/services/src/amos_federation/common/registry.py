@@ -83,4 +83,11 @@ SERVICES: dict[str, ServiceDefinition] = {
         "store": "PostgreSQL",
         "slo": "p99 < 100ms",
     },
+    "control-console": {
+        "name": "control-console",
+        "port": 3000,
+        "responsibility": "واجهة التحكم البشري",
+        "store": "—",
+        "slo": "p99 < 200ms",
+    },
 }
