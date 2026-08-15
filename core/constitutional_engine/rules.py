@@ -1,7 +1,7 @@
 """
 سجل القواعد الدستورية القابلة للتنفيذ — Executable Constitutional Rules (E1)
 الهدف: ترجمة نصوص المواد إلى قواعد تُقيَّم آليًا على كل طلب فعل، بحيث تُرفض المخالفة قبل وقوعها لا بعدها.
-النطاق: القواعد المشتقة من المواد 001–009 فقط. كل قاعدة مربوطة برقم مادة وبند محدد — لا قاعدة يتيمة.
+النطاق: القواعد المشتقة من المواد 001–010. كل قاعدة مربوطة برقم مادة وبند محدد — لا قاعدة يتيمة.
 المالك: core/constitutional_engine/
 تاريخ الإنشاء: 2026-08-16
 تاريخ آخر تعديل: 2026-08-16
@@ -14,6 +14,14 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+
+from core.sovereignty.crown import CrownNotProvisionedError, crown_is_provisioned
+from core.sovereignty.decree import DecreeError
+from core.sovereignty.prerogatives import (
+    bypasses_federalism,
+    is_royal_exclusive,
+    touches_royal_authority,
+)
 
 from .model import ActionRequest, Branch, Severity
 
@@ -343,6 +351,124 @@ def _r009_1(req: ActionRequest) -> str | None:
 # السجل الرسمي للقواعد
 # ===========================================================================
 
+# ===========================================================================
+# المادة العاشرة — السيادة الملكية
+# التاج خارج الفروع لا فرعًا منها. سلطته لا تُشتق من مؤسسة ولا تُنتزَع منه،
+# ولا تُمارَس إلا بمرسوم موقَّع تعميًّا.
+# ===========================================================================
+
+def _r010_1(req: ActionRequest) -> str | None:
+    """الاختصاص الملكي الحصري: لا يصح من غير الملك (المادة العاشرة · 2)."""
+    if not is_royal_exclusive(req.action):
+        return None
+    if req.actor is Branch.ROYAL:
+        return None
+    return (
+        f"الفعل «{req.action}» من الاختصاص الملكي الحصري، وقد طلبه «{req.actor.value}». "
+        "لا مؤسسة ولا فرع ولا ولاية ولا وكيل ولا النظام يملك هذا الحق، "
+        "ولا تُجيزه أي أغلبية ولا أي إجراء."
+    )
+
+
+def _r010_2(req: ActionRequest) -> str | None:
+    """المساس بالسلطة الملكية مرفوض من كل طرف (المادة العاشرة · 3 · 1 و 3 · 3).
+
+    ومن الملك نفسه: مرسوم يهدم مصدر سلطته لا يُفترض صحيحًا.
+    """
+    if not touches_royal_authority(req.action, req.target):
+        return None
+    hint = (
+        " والرفض يسري على التاج نفسه — حمايةً للملك من مرسوم مُنتحَل أو منتزَع "
+        "تحت إكراه (المادة العاشرة · 3 · 3)."
+        if req.actor is Branch.ROYAL
+        else ""
+    )
+    return (
+        f"الفعل «{req.action}»"
+        + (f" على «{req.target}»" if req.target else "")
+        + " مساس بالسلطة الملكية: تعديلًا أو تقييدًا أو نقلًا أو تفويضًا أو تعليقًا "
+        "أو إلغاءً أو تجاوزًا. مرفوض من كل طرف بلا استثناء" + hint
+    )
+
+
+def _r010_3(req: ActionRequest) -> str | None:
+    """كل فعل ملكي يلزمه مرسوم موقَّع Ed25519 (المادة العاشرة · 3 · 2)."""
+    if req.actor is not Branch.ROYAL:
+        return None
+    if not is_royal_exclusive(req.action):
+        return None
+    decree = req.royal_decree
+    if decree is None:
+        return (
+            f"فعل ملكي «{req.action}» بلا مرسوم ملكي. انتحال صفة الملك مرفوض: "
+            "لا يُمارَس الاختصاص الملكي إلا بمرسوم موقَّع تعميًّا (Ed25519)."
+        )
+    if getattr(decree, "action", None) != req.action:
+        return (
+            f"المرسوم «{getattr(decree, 'decree_id', '?')}» يخصّ الفعل "
+            f"«{getattr(decree, 'action', '?')}» والمطلوب «{req.action}». "
+            "المرسوم لا يُعاد توجيهه إلى فعل آخر."
+        )
+    try:
+        decree.verify()
+    except CrownNotProvisionedError as exc:
+        return (
+            f"التاج غير مُنصَّب فلا يُتحقق من المرسوم: {exc} "
+            "غياب التاج يُجمّد الاختصاص الملكي ولا ينقله لأي طرف."
+        )
+    except DecreeError as exc:
+        return f"مرسوم غير صحيح: {exc}"
+    return None
+
+
+def _r010_4(req: ActionRequest) -> str | None:
+    """تجاوز الفدرالية مخالفة بحد ذاتها (المادة العاشرة · 4 · 2 و 4 · 3)."""
+    if not bypasses_federalism(req.action):
+        return None
+    return (
+        f"الفعل «{req.action}» يُنشئ أو يستخدم مسار تنفيذ يتجاوز البوابة السيادية. "
+        "الفدرالية تسري على كل فعل وكل حركة بلا استثناء — بما في ذلك الأفعال الملكية "
+        "— ولا يوجد ولا يُنشَأ مسار تنفيذ خارج البوابة."
+    )
+
+
+def _r010_5(req: ActionRequest) -> str | None:
+    """غياب التاج يُجمّد الاختصاص الملكي ولا ينقله (المادة العاشرة · 6 · 2)."""
+    if not is_royal_exclusive(req.action):
+        return None
+    if crown_is_provisioned():
+        return None
+    return (
+        f"الفعل «{req.action}» من الاختصاص الملكي الحصري والتاج غير مُنصَّب. "
+        "الاختصاص مُجمَّد ولا يُمنَح لأي طرف آخر بديلًا: لا مجلس، ولا أغلبية، "
+        "ولا حالة ضرورة تُحلّ محلّ الملك."
+    )
+
+
+def _r010_6(req: ActionRequest) -> str | None:
+    """التعديل الدستوري يلزمه مرسوم ملكي فوق شروط المادة الخامسة (العاشرة · 2 · 1)."""
+    if req.action not in {"amend_constitution", "add_article", "delete_article"}:
+        return None
+    if req.royal_decree is not None and req.actor is Branch.ROYAL:
+        return None
+    return (
+        f"الفعل «{req.action}» تعديل دستوري بلا مرسوم ملكي. "
+        "إجراء المادة الخامسة (90 يومًا · 75% · توقيع) شرط لازم غير كاف: "
+        "مجلس السياسات يقترح، والملك وحده يُقرّ."
+    )
+
+
+def _r010_7(req: ActionRequest) -> str | None:
+    """الفصل بين السلطات لا يُقيّد التاج، ولا فرع ينقض مرسومًا (العاشرة · 5)."""
+    if req.action not in {"veto_royal_decree", "nullify_royal_decree", "review_royal_decree"}:
+        return None
+    return (
+        f"الفرع «{req.actor.value}» يحاول ممارسة رقابة على مرسوم ملكي عبر "
+        f"«{req.action}». لا فرع يحاسب الملك ولا يُقيّده ولا يشترط موافقته: "
+        "الفروع تُنفّذ المرسوم ولا تنقضه."
+    )
+
+
 RULES: tuple[ConstitutionalRule, ...] = (
     ConstitutionalRule("R-001-1", "A001", "الحقوق غير القابلة للتفاوض · 1 — الإنسان السلطة العليا",
                        Severity.FUNDAMENTAL, "ترقية/تكرار/إطلاق بلا موافقة بشرية", _r001_1),
@@ -382,6 +508,20 @@ RULES: tuple[ConstitutionalRule, ...] = (
                        Severity.HIGH, "إعادة تشغيل بلا موافقة صريحة", _r008_3),
     ConstitutionalRule("R-009-1", "A009", "القاعدة الذهبية",
                        Severity.HIGH, "إنشاء ملف أو مجلد بلا هوية", _r009_1),
+    ConstitutionalRule("R-010-1", "A010", "الاختصاص الملكي الحصري · 2",
+                       Severity.FUNDAMENTAL, "غير الملك يمارس اختصاصًا ملكيًا حصريًا", _r010_1),
+    ConstitutionalRule("R-010-2", "A010", "حصانة السلطة الملكية · 3 · 1",
+                       Severity.FUNDAMENTAL, "المساس بسلطة الملك تعديلًا أو تقييدًا أو تجاوزًا", _r010_2),
+    ConstitutionalRule("R-010-3", "A010", "منع انتحال الصفة الملكية · 3 · 2",
+                       Severity.FUNDAMENTAL, "فعل ملكي بلا مرسوم موقَّع Ed25519", _r010_3),
+    ConstitutionalRule("R-010-4", "A010", "الفدرالية لا تُتجاوَز · 4",
+                       Severity.FUNDAMENTAL, "مسار تنفيذ يتجاوز البوابة السيادية", _r010_4),
+    ConstitutionalRule("R-010-5", "A010", "التاج غير مُنصَّب · 6 · 2",
+                       Severity.CRITICAL, "اختصاص ملكي حصري والتاج غير مُنصَّب", _r010_5),
+    ConstitutionalRule("R-010-6", "A010", "التعديل الدستوري حصر للملك · 2 · 1",
+                       Severity.FUNDAMENTAL, "تعديل دستوري بلا مرسوم ملكي", _r010_6),
+    ConstitutionalRule("R-010-7", "A010", "التاج فوق رقابة الفروع · 5",
+                       Severity.CRITICAL, "فرع ينقض مرسومًا ملكيًا أو يراجعه", _r010_7),
 )
 
 

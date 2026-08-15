@@ -36,9 +36,10 @@ class TestVerifyGate:
         for i in range(1, 10):
             assert f"A{i:03d}" in out
 
-    def test_seal_writes_all_nine(self, capsys):
+    def test_seal_writes_all_ten(self, capsys):
+        """عشر مواد بعد إضافة المادة العاشرة بالمرسوم AMD-001."""
         assert main(["seal"]) == 0
-        assert "خُتمت 9 مادة" in capsys.readouterr().out
+        assert "خُتمت 10 مادة" in capsys.readouterr().out
 
 
 class TestEvaluateCommand:
