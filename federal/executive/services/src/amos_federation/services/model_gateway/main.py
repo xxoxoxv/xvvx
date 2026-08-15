@@ -232,5 +232,40 @@ async def cost_summary(
     }
 
 
+# === Model Layer endpoints ===
+
+@router.get("/models/cost-summary", response_model=dict)
+async def get_persistent_cost_summary(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """ملخص التكلفة الدائم من DB."""
+    from amos_federation.services.model_gateway.model_layer import get_model_layer
+    return get_model_layer().get_cost_summary()
+
+
+@router.post("/models/invoke-cached", response_model=dict)
+async def invoke_model_cached(
+    request: ModelInvokeRequest,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """استدعاء نموذج مع caching و cost tracking دائم."""
+    from amos_federation.services.model_gateway.model_layer import get_model_layer
+    model = request.model or settings.default_model or "local-fallback"
+    return get_model_layer().invoke_with_cache(
+        request.prompt, model, request.max_tokens
+    )
+
+
+@router.post("/models/benchmark", response_model=dict)
+async def benchmark_models(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    prompts: list[str] = Query(...),
+    models: list[str] = Query(default=["local-fallback"]),
+) -> dict[str, Any]:
+    """مقارنة أداء النماذج."""
+    from amos_federation.services.model_gateway.model_layer import get_model_layer
+    return get_model_layer().benchmark_models(prompts, models)
+
+
 _service = SERVICES["model-gateway"]
 app = create_service_app(_service["name"], _service["port"], "توجيه واستدعاء النماذج + Shadow Testing", [router])
