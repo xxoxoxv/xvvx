@@ -25,7 +25,12 @@ def _good_review_request() -> dict:
         "steps": [
             {"number": 1, "status": "completed", "result": {"data": "ok"}, "tool": "sql_query"},
             {"number": 2, "status": "completed", "result": {"stats": {}}, "tool": "data_analysis"},
-            {"number": 3, "status": "completed", "result": {"path": "/tmp/chart.png"}, "tool": "chart_generate"},
+            {
+                "number": 3,
+                "status": "completed",
+                "result": {"path": "/tmp/chart.png"},
+                "tool": "chart_generate",
+            },
         ],
         "result_summary": "اكتملت 3/3 خطوة",
     }
@@ -38,7 +43,12 @@ def _poor_review_request() -> dict:
         "agent_id": "worker-researcher",
         "steps": [
             {"number": 1, "status": "skipped", "result": None, "tool": "unknown"},
-            {"number": 2, "status": "completed", "result": {"error": "timeout"}, "tool": "research_apis"},
+            {
+                "number": 2,
+                "status": "completed",
+                "result": {"error": "timeout"},
+                "tool": "research_apis",
+            },
         ],
         "result_summary": "",
     }

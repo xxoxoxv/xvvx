@@ -36,6 +36,7 @@ class SecurityBase(DeclarativeBase):
 
 class RoleModel(SecurityBase):
     """16.1: RBAC roles."""
+
     __tablename__ = "security_roles"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -48,6 +49,7 @@ class RoleModel(SecurityBase):
 
 class UserSessionModel(SecurityBase):
     """جلسات المستخدمين."""
+
     __tablename__ = "security_sessions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -61,6 +63,7 @@ class UserSessionModel(SecurityBase):
 
 class SecretVaultModel(SecurityBase):
     """16.2: Secret Vault — أسرار مشفرة."""
+
     __tablename__ = "security_secrets"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -73,6 +76,7 @@ class SecretVaultModel(SecurityBase):
 
 class RateLimitModel(SecurityBase):
     """16.4: Rate Limiting."""
+
     __tablename__ = "security_rate_limits"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -85,6 +89,7 @@ class RateLimitModel(SecurityBase):
 
 class TLSCertificateModel(SecurityBase):
     """16.3: TLS Certificates."""
+
     __tablename__ = "security_certificates"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -100,10 +105,30 @@ class TLSCertificateModel(SecurityBase):
 # الأدوار الافتراضية
 DEFAULT_ROLES = [
     {"role_id": "public", "name": "عام", "permissions": ["read:public"], "level": 0},
-    {"role_id": "citizen", "name": "مواطن", "permissions": ["read:public", "write:feedback"], "level": 1},
-    {"role_id": "agent", "name": "وكيل", "permissions": ["read:public", "write:tasks", "execute:tools"], "level": 2},
-    {"role_id": "official", "name": "مسؤول", "permissions": ["read:all", "write:tasks", "execute:tools", "manage:agents"], "level": 3},
-    {"role_id": "royal", "name": "ملكي", "permissions": ["read:all", "write:all", "execute:all", "manage:all"], "level": 4},
+    {
+        "role_id": "citizen",
+        "name": "مواطن",
+        "permissions": ["read:public", "write:feedback"],
+        "level": 1,
+    },
+    {
+        "role_id": "agent",
+        "name": "وكيل",
+        "permissions": ["read:public", "write:tasks", "execute:tools"],
+        "level": 2,
+    },
+    {
+        "role_id": "official",
+        "name": "مسؤول",
+        "permissions": ["read:all", "write:tasks", "execute:tools", "manage:agents"],
+        "level": 3,
+    },
+    {
+        "role_id": "royal",
+        "name": "ملكي",
+        "permissions": ["read:all", "write:all", "execute:all", "manage:all"],
+        "level": 4,
+    },
     {"role_id": "king", "name": "المالك", "permissions": ["*"], "level": 5},
 ]
 
@@ -114,7 +139,9 @@ class RBACSystem:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         SecurityBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
@@ -124,14 +151,18 @@ class RBACSystem:
         session = self._Session()
         try:
             for role in DEFAULT_ROLES:
-                existing = session.query(RoleModel).filter(RoleModel.role_id == role["role_id"]).first()
+                existing = (
+                    session.query(RoleModel).filter(RoleModel.role_id == role["role_id"]).first()
+                )
                 if not existing:
-                    session.add(RoleModel(
-                        role_id=role["role_id"],
-                        name=role["name"],
-                        permissions=json.dumps(role["permissions"]),
-                        level=role["level"],
-                    ))
+                    session.add(
+                        RoleModel(
+                            role_id=role["role_id"],
+                            name=role["name"],
+                            permissions=json.dumps(role["permissions"]),
+                            level=role["level"],
+                        )
+                    )
             session.commit()
         finally:
             session.close()
@@ -145,6 +176,7 @@ class RBACSystem:
                 return {"error": "role_not_found"}
             token = hashlib.sha256(f"{username}:{role_id}:{uuid.uuid4().hex}".encode()).hexdigest()
             from datetime import timedelta
+
             user_session = UserSessionModel(
                 session_token=token,
                 username=username,
@@ -154,7 +186,12 @@ class RBACSystem:
             )
             session.add(user_session)
             session.commit()
-            return {"session_token": token, "username": username, "role_id": role_id, "level": role.level}
+            return {
+                "session_token": token,
+                "username": username,
+                "role_id": role_id,
+                "level": role.level,
+            }
         finally:
             session.close()
 
@@ -162,12 +199,16 @@ class RBACSystem:
         """فحص صلاحية."""
         session = self._Session()
         try:
-            user_session = session.query(UserSessionModel).filter(
-                UserSessionModel.session_token == session_token
-            ).first()
+            user_session = (
+                session.query(UserSessionModel)
+                .filter(UserSessionModel.session_token == session_token)
+                .first()
+            )
             if not user_session:
                 return False
-            role = session.query(RoleModel).filter(RoleModel.role_id == user_session.role_id).first()
+            role = (
+                session.query(RoleModel).filter(RoleModel.role_id == user_session.role_id).first()
+            )
             if not role:
                 return False
             permissions = json.loads(role.permissions or "[]")
@@ -191,7 +232,12 @@ class RBACSystem:
         try:
             roles = session.query(RoleModel).all()
             return [
-                {"role_id": r.role_id, "name": r.name, "permissions": json.loads(r.permissions or "[]"), "level": r.level}
+                {
+                    "role_id": r.role_id,
+                    "name": r.name,
+                    "permissions": json.loads(r.permissions or "[]"),
+                    "level": r.level,
+                }
                 for r in roles
             ]
         finally:
@@ -204,7 +250,9 @@ class SecretVault:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         SecurityBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
@@ -217,17 +265,21 @@ class SecretVault:
     def store_secret(self, key: str, value: str, scope: str = "global") -> dict[str, Any]:
         session = self._Session()
         try:
-            existing = session.query(SecretVaultModel).filter(SecretVaultModel.secret_key == key).first()
+            existing = (
+                session.query(SecretVaultModel).filter(SecretVaultModel.secret_key == key).first()
+            )
             if existing:
                 existing.encrypted_value = self._encrypt(value)
                 existing.scope = scope
                 existing.rotated_at = datetime.now(UTC)
             else:
-                session.add(SecretVaultModel(
-                    secret_key=key,
-                    encrypted_value=self._encrypt(value),
-                    scope=scope,
-                ))
+                session.add(
+                    SecretVaultModel(
+                        secret_key=key,
+                        encrypted_value=self._encrypt(value),
+                        scope=scope,
+                    )
+                )
             session.commit()
             audit = PersistentAuditStore()
             audit.append("security.secret_stored", "system", {"key": key, "scope": scope})
@@ -238,7 +290,9 @@ class SecretVault:
     def verify_secret(self, key: str, value: str) -> bool:
         session = self._Session()
         try:
-            secret = session.query(SecretVaultModel).filter(SecretVaultModel.secret_key == key).first()
+            secret = (
+                session.query(SecretVaultModel).filter(SecretVaultModel.secret_key == key).first()
+            )
             if not secret:
                 return False
             return secret.encrypted_value == self._encrypt(value)
@@ -260,23 +314,31 @@ class RateLimiter:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         SecurityBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
 
-    def check_rate(self, identifier: str, endpoint: str, max_requests: int = 100,
-                   window_minutes: int = 1) -> dict[str, Any]:
+    def check_rate(
+        self, identifier: str, endpoint: str, max_requests: int = 100, window_minutes: int = 1
+    ) -> dict[str, Any]:
         """فحص معدل الطلبات."""
         session = self._Session()
         try:
             from datetime import timedelta
+
             window_start = datetime.now(UTC) - timedelta(minutes=window_minutes)
-            record = session.query(RateLimitModel).filter(
-                RateLimitModel.identifier == identifier,
-                RateLimitModel.endpoint == endpoint,
-                RateLimitModel.window_start >= window_start,
-            ).first()
+            record = (
+                session.query(RateLimitModel)
+                .filter(
+                    RateLimitModel.identifier == identifier,
+                    RateLimitModel.endpoint == endpoint,
+                    RateLimitModel.window_start >= window_start,
+                )
+                .first()
+            )
 
             if record:
                 if record.request_count >= max_requests:
@@ -286,12 +348,14 @@ class RateLimiter:
                 session.commit()
                 return {"allowed": True, "count": record.request_count, "max": max_requests}
             else:
-                session.add(RateLimitModel(
-                    identifier=identifier,
-                    endpoint=endpoint,
-                    request_count=1,
-                    window_start=datetime.now(UTC),
-                ))
+                session.add(
+                    RateLimitModel(
+                        identifier=identifier,
+                        endpoint=endpoint,
+                        request_count=1,
+                        window_start=datetime.now(UTC),
+                    )
+                )
                 session.commit()
                 return {"allowed": True, "count": 1, "max": max_requests}
         finally:
@@ -304,13 +368,16 @@ class TLSCertManager:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         SecurityBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
 
     def issue_certificate(self, common_name: str, validity_days: int = 365) -> dict[str, Any]:
         from datetime import timedelta
+
         cert_id = f"cert-{uuid.uuid4().hex[:10]}"
         cert_hash = hashlib.sha256(f"{common_name}:{cert_id}".encode()).hexdigest()
         session = self._Session()
@@ -325,14 +392,22 @@ class TLSCertManager:
             session.commit()
             audit = PersistentAuditStore()
             audit.append("security.cert_issued", "system", {"cert_id": cert_id, "cn": common_name})
-            return {"cert_id": cert_id, "common_name": common_name, "valid_until": str(cert.valid_until)}
+            return {
+                "cert_id": cert_id,
+                "common_name": common_name,
+                "valid_until": str(cert.valid_until),
+            }
         finally:
             session.close()
 
     def verify_certificate(self, cert_id: str) -> dict[str, Any]:
         session = self._Session()
         try:
-            cert = session.query(TLSCertificateModel).filter(TLSCertificateModel.cert_id == cert_id).first()
+            cert = (
+                session.query(TLSCertificateModel)
+                .filter(TLSCertificateModel.cert_id == cert_id)
+                .first()
+            )
             if not cert:
                 return {"valid": False, "reason": "not_found"}
             if cert.status != "active":

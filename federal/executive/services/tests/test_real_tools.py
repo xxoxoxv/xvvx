@@ -28,6 +28,7 @@ def cleanup_kill_switch():
 
 # === 4.2: python_execute ===
 
+
 def test_python_execute_simple() -> None:
     """تنفيذ كود Python بسيط وإرجاع ناتج حقيقي."""
     sandbox = ToolSandbox("python_execute")
@@ -59,10 +60,12 @@ def test_python_execute_error_handling() -> None:
 
 # === 4.3: sql_query ===
 
+
 def test_sql_query_real_results() -> None:
     """استعلام SQL يعيد نتائج حقيقية."""
     # إنشاء قاعدة بيانات اختبار
     import sqlite3
+
     db_path = tempfile.mktemp(suffix=".db")
     conn = sqlite3.connect(db_path)
     conn.execute("CREATE TABLE test_data (id INTEGER, name TEXT)")
@@ -93,6 +96,7 @@ def test_sql_query_blocks_drop() -> None:
 
 # === 4.4: http_request ===
 
+
 def test_http_request_blocked_without_permission() -> None:
     """طلب HTTP محجوب بدون إذن شبكة."""
     sandbox = ToolSandbox("http_request")
@@ -101,6 +105,7 @@ def test_http_request_blocked_without_permission() -> None:
 
 
 # === 4.5: document_analysis ===
+
 
 def test_document_analysis_real_file() -> None:
     """تحليل ملف حقيقي."""
@@ -126,6 +131,7 @@ def test_document_analysis_nonexistent_file() -> None:
 
 # === 4.6: chart_generate ===
 
+
 def test_chart_generate_real_png() -> None:
     """إنشاء رسم بياني حقيقي (PNG)."""
     sandbox = ToolSandbox("chart_generate")
@@ -145,6 +151,7 @@ def test_chart_generate_pie() -> None:
 
 # === text_summary ===
 
+
 def test_text_summary_real() -> None:
     """تلخيص نص حقيقي."""
     text = "هذا الجملة الأولى وهي مهمة جدا. الجملة الثانية أقل أهمية. الجملة الثالثة مهمة أيضا وتتحدث عن البيانات."
@@ -158,9 +165,12 @@ def test_text_summary_real() -> None:
 
 # === 4.9: Policy Check قبل التنفيذ ===
 
+
 def test_execute_with_governance_allows_safe_tool() -> None:
     """أداة آمنة تنفذ بنجاح."""
-    result = execute_tool_with_governance("chart_generate", {"data": {"a": 1, "b": 2}}, role="admin")
+    result = execute_tool_with_governance(
+        "chart_generate", {"data": {"a": 1, "b": 2}}, role="admin"
+    )
     assert "error" not in result or result.get("error") != "policy_denied"
 
 
@@ -172,7 +182,9 @@ def test_execute_with_governance_denies_dangerous_for_user() -> None:
 
 def test_execute_with_governance_allows_dangerous_for_admin() -> None:
     """أداة خطيرة مسموحة للمشرف."""
-    result = execute_tool_with_governance("python_execute", {"code": "print('hello')"}, role="admin")
+    result = execute_tool_with_governance(
+        "python_execute", {"code": "print('hello')"}, role="admin"
+    )
     assert result.get("returncode") == 0
     assert "hello" in result.get("stdout", "")
 
@@ -180,14 +192,16 @@ def test_execute_with_governance_allows_dangerous_for_admin() -> None:
 def test_execute_with_governance_kill_switch_halt() -> None:
     """Kill Switch halt يمنع التنفيذ."""
     from amos_federation.services.governance.canary import activate_kill_switch
+
     activate_kill_switch("halt", "اختبار", "tester")
-    with pytest.raises(Exception):  # HTTPException
+    with pytest.raises(Exception, match="."):  # HTTPException — Kill Switch halt يمنع التنفيذ
         execute_tool_with_governance("chart_generate", {"data": {"a": 1}}, role="admin")
 
 
 def test_execute_with_governance_publishes_event() -> None:
     """تنفيذ أداة ينشر حدث."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.tool.executed")
     execute_tool_with_governance("chart_generate", {"data": {"a": 1, "b": 2}}, role="admin")
@@ -195,6 +209,7 @@ def test_execute_with_governance_publishes_event() -> None:
 
 
 # === 4.7: قيود الموارد ===
+
 
 def test_sandbox_workspace_isolation() -> None:
     """مساحة العمل معزولة."""

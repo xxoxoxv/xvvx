@@ -12,9 +12,7 @@ from amos_federation.common.auth import create_access_token
 from amos_federation.services.agent_runtime.main import app
 
 client = TestClient(app)
-AUTH_HEADERS = {
-    "Authorization": f"Bearer {create_access_token('tester', ['tasks:execute'])}"
-}
+AUTH_HEADERS = {"Authorization": f"Bearer {create_access_token('tester', ['tasks:execute'])}"}
 
 
 def test_execute_task_with_plan() -> None:
@@ -30,9 +28,24 @@ def test_execute_task_with_plan() -> None:
                 "domain": "finance",
             },
             "plan": [
-                {"number": 1, "description": "جمع البيانات", "tool": "research_apis", "agent": "worker-researcher"},
-                {"number": 2, "description": "تحليل", "tool": "data_analysis", "agent": "worker-analyst"},
-                {"number": 3, "description": "رسم بياني", "tool": "chart_generate", "agent": "worker-analyst"},
+                {
+                    "number": 1,
+                    "description": "جمع البيانات",
+                    "tool": "research_apis",
+                    "agent": "worker-researcher",
+                },
+                {
+                    "number": 2,
+                    "description": "تحليل",
+                    "tool": "data_analysis",
+                    "agent": "worker-analyst",
+                },
+                {
+                    "number": 3,
+                    "description": "رسم بياني",
+                    "tool": "chart_generate",
+                    "agent": "worker-analyst",
+                },
             ],
         },
     )
@@ -54,7 +67,12 @@ def test_execute_unknown_tool_is_skipped() -> None:
             "task": {"task_id": "task-test-002", "description": "اختبار"},
             "plan": [
                 {"number": 1, "description": "خطوة صحيحة", "tool": "generation", "agent": "worker"},
-                {"number": 2, "description": "أداة غير معروفة", "tool": "nonexistent_tool", "agent": "worker"},
+                {
+                    "number": 2,
+                    "description": "أداة غير معروفة",
+                    "tool": "nonexistent_tool",
+                    "agent": "worker",
+                },
             ],
         },
     )

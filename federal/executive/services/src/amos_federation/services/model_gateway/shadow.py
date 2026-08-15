@@ -114,7 +114,12 @@ def _alpha_response(prompt: str) -> dict[str, Any]:
     start = time.monotonic()
     text = f"[alpha] تمت معالجة: {prompt[:150]}"
     latency = int((time.monotonic() - start) * 1000)
-    return {"text": text, "model_used": "alpha-local", "tokens_used": len(text.split()), "latency_ms": latency}
+    return {
+        "text": text,
+        "model_used": "alpha-local",
+        "tokens_used": len(text.split()),
+        "latency_ms": latency,
+    }
 
 
 def _beta_response(prompt: str) -> dict[str, Any]:
@@ -122,7 +127,12 @@ def _beta_response(prompt: str) -> dict[str, Any]:
     start = time.monotonic()
     text = f"[beta] تمت معالجة الطلب: {prompt[:150]}"
     latency = int((time.monotonic() - start) * 1000) + 5  # بيتا أبطأ قليلاً
-    return {"text": text, "model_used": "beta-candidate", "tokens_used": len(text.split()), "latency_ms": latency}
+    return {
+        "text": text,
+        "model_used": "beta-candidate",
+        "tokens_used": len(text.split()),
+        "latency_ms": latency,
+    }
 
 
 def run_shadow_test(prompt: str) -> dict[str, Any]:

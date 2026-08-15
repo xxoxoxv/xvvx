@@ -15,7 +15,6 @@ from amos_federation.common.auth import require_auth
 from amos_federation.common.persistent import PersistentCriticStore
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
-from amos_federation.services.critic.store import InMemoryCriticStore
 
 router = APIRouter(prefix="/v1", tags=["critic"])
 critic_store = PersistentCriticStore()
@@ -78,7 +77,8 @@ def _score_review(request: ReviewRequest) -> tuple[float, str, bool, dict[str, A
 
     # معيار 5: جودة الخطوات (نتائج غير فارغة)
     non_empty_results = sum(
-        1 for s in request.steps
+        1
+        for s in request.steps
         if s.get("result") and isinstance(s["result"], dict) and s["result"].get("error") is None
     )
     result_quality = non_empty_results / total_steps if total_steps > 0 else 0.0
@@ -102,14 +102,16 @@ async def review_task(
 ) -> ReviewResponse:
     """مراجعة نتيجة مهمة وتعيين درجة جودة وتغذية راجعة."""
     score, feedback, approved, criteria = _score_review(request)
-    record = critic_store.review({
-        "task_id": request.task_id,
-        "agent_id": request.agent_id,
-        "quality_score": score,
-        "feedback": feedback,
-        "approved": approved,
-        "criteria": criteria,
-    })
+    record = critic_store.review(
+        {
+            "task_id": request.task_id,
+            "agent_id": request.agent_id,
+            "quality_score": score,
+            "feedback": feedback,
+            "approved": approved,
+            "criteria": criteria,
+        }
+    )
     return ReviewResponse(**record)
 
 

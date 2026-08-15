@@ -10,18 +10,28 @@ import pytest
 from fastapi.testclient import TestClient
 
 from amos_federation.common.auth import create_access_token
-from amos_federation.services.agent_runtime.population import get_population_registry
 from amos_federation.services.agent_runtime.health import (
-    HEALTHY, MONITOR, TREATMENT, ISOLATED,
-    HealthChecker, TreatmentSystem, IsolationSystem,
-    run_health_cycle, get_health_checker, get_isolation_system, get_treatment_system,
+    HEALTHY,
+    ISOLATED,
+    MONITOR,
+    TREATMENT,
+    HealthChecker,
+    IsolationSystem,
+    TreatmentSystem,
+    run_health_cycle,
 )
+from amos_federation.services.agent_runtime.population import get_population_registry
 from amos_federation.services.control_console.main import app
 
 AUTH_HEADERS = {
-    "Authorization": "Bearer " + create_access_token("tester", [
-        "governance:read", "governance:write",
-    ])
+    "Authorization": "Bearer "
+    + create_access_token(
+        "tester",
+        [
+            "governance:read",
+            "governance:write",
+        ],
+    )
 }
 client = TestClient(app)
 
@@ -29,12 +39,15 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def seed_and_clean():
     """بذر الوكلاء قبل الاختبارات وتنظيف الفحوصات بعدها."""
-    from amos_federation.services.governance.canary import reset_kill_switch
+    from sqlalchemy import delete
+
     from amos_federation.common.database import get_session_factory
     from amos_federation.services.agent_runtime.health import (
-        AgentHealthCheckModel, IsolationRecordModel, TreatmentRecordModel,
+        AgentHealthCheckModel,
+        IsolationRecordModel,
+        TreatmentRecordModel,
     )
-    from sqlalchemy import delete
+    from amos_federation.services.governance.canary import reset_kill_switch
 
     reset_kill_switch()
     registry = get_population_registry()
@@ -52,6 +65,7 @@ def seed_and_clean():
 
 
 # === 8.1: Periodic health check ===
+
 
 def test_check_agent_returns_one_of_four_statuses() -> None:
     """الفحص يعيد واحدة من أربع حالات."""
@@ -114,6 +128,7 @@ def test_check_all_agents() -> None:
 def test_check_agent_publishes_event() -> None:
     """الفحص ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.health.check_completed")
     agents = get_population_registry().list_agents()
@@ -149,6 +164,7 @@ def test_get_latest_status() -> None:
 
 
 # === 8.2: Treatment system ===
+
 
 def test_start_treatment_retrain() -> None:
     """علاج: إعادة تدريب."""
@@ -193,6 +209,7 @@ def test_treatment_invalid_type_raises() -> None:
 def test_treatment_publishes_event() -> None:
     """العلاج ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.health.treatment_completed")
     agents = get_population_registry().list_agents()
@@ -201,6 +218,7 @@ def test_treatment_publishes_event() -> None:
 
 
 # === 8.3: Isolation system ===
+
 
 def test_isolate_agent() -> None:
     """عزل وكيل."""
@@ -223,6 +241,7 @@ def test_isolated_agent_cannot_use_tools() -> None:
 def test_isolation_publishes_event() -> None:
     """العزل ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.health.agent_isolated")
     agents = get_population_registry().list_agents()
@@ -272,6 +291,7 @@ def test_list_active_isolations() -> None:
 
 # === Full health cycle ===
 
+
 def test_run_health_cycle() -> None:
     """دورة فحص صحي كاملة (محدودة)."""
     result = run_health_cycle(limit=5)
@@ -284,6 +304,7 @@ def test_run_health_cycle() -> None:
 
 
 # === 8.4: Control Console integration ===
+
 
 def test_ui_health_endpoint() -> None:
     """8.4: endpoint الحالة الصحية للوكلاء في واجهة التحكم."""
@@ -324,7 +345,9 @@ def test_ui_treat_endpoint() -> None:
     """8.4: endpoint علاج من الواجهة."""
     agents = get_population_registry().list_agents()
     agent_id = agents[0]["agent_id"]
-    resp = client.post(f"/v1/health/treat/{agent_id}?treatment_type=fix_tool&reason=test", headers=AUTH_HEADERS)
+    resp = client.post(
+        f"/v1/health/treat/{agent_id}?treatment_type=fix_tool&reason=test", headers=AUTH_HEADERS
+    )
     assert resp.status_code == 200
     assert resp.json()["status"] == "completed"
 

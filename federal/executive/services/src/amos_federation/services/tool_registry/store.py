@@ -6,9 +6,8 @@ AMOS-Federation Tool Registry Store
 تاريخ الإنشاء: 2026-08-15
 """
 
-import json
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Protocol
 
 from amos_federation.common.schemas import ToolManifestModel
 

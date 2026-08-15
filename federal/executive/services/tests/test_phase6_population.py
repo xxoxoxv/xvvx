@@ -4,8 +4,6 @@ AMOS-Federation Phase 6 — Population & School Tests
 النطاق: tests/test_phase6_population.py
 """
 
-import pytest
-
 
 class TestPopulationRegistry:
     """6.1: السجل السكاني فوق جدول agents الحقيقي."""
@@ -13,6 +11,7 @@ class TestPopulationRegistry:
     def test_register_agent(self):
         """6.1: تسجيل وكيل جديد."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         reg = get_population_registry()
         agent = reg.register_agent(
             name="وكيل اختبار",
@@ -27,6 +26,7 @@ class TestPopulationRegistry:
     def test_get_agent(self):
         """6.1: استرجاع وكيل."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         reg = get_population_registry()
         agent = reg.register_agent(name="وكيل استرجاع", role="monitor", category="security_monitor")
         retrieved = reg.get_agent(agent["agent_id"])
@@ -36,6 +36,7 @@ class TestPopulationRegistry:
     def test_list_agents(self):
         """6.1: قائمة الوكلاء."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         reg = get_population_registry()
         agents = reg.list_agents()
         assert isinstance(agents, list)
@@ -44,6 +45,7 @@ class TestPopulationRegistry:
     def test_list_by_state(self):
         """6.1: تصفية حسب الحالة."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         reg = get_population_registry()
         registered = reg.list_agents(state="registered")
         assert all(a["state"] == "registered" for a in registered)
@@ -51,8 +53,11 @@ class TestPopulationRegistry:
     def test_update_state(self):
         """6.4: تحديث حالة الوكيل — دورة الحياة."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         reg = get_population_registry()
-        agent = reg.register_agent(name="وكيل دورة حياة", role="executor", category="cognitive_executor")
+        agent = reg.register_agent(
+            name="وكيل دورة حياة", role="executor", category="cognitive_executor"
+        )
         # registered → training
         reg.update_state(agent["agent_id"], "training")
         updated = reg.get_agent(agent["agent_id"])
@@ -61,6 +66,7 @@ class TestPopulationRegistry:
     def test_population_stats(self):
         """6.1: إحصائيات السكان."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         reg = get_population_registry()
         stats = reg.population_stats()
         assert "total" in stats
@@ -73,12 +79,17 @@ class TestSchool:
     def test_curriculum_has_six_steps(self):
         """6.2: المنهج له ست خطوات."""
         from amos_federation.services.agent_runtime.population import AgentSchool
+
         school = AgentSchool()
         assert len(school.CURRICULUM) == 6
 
     def test_take_step(self):
         """6.2: تسجيل نتيجة خطوة."""
-        from amos_federation.services.agent_runtime.population import AgentSchool, get_population_registry
+        from amos_federation.services.agent_runtime.population import (
+            AgentSchool,
+            get_population_registry,
+        )
+
         reg = get_population_registry()
         agent = reg.register_agent(name="وكيل مدرسة", role="learner", category="learner")
         school = AgentSchool()
@@ -88,7 +99,11 @@ class TestSchool:
 
     def test_step_fail_below_threshold(self):
         """6.2: الرسوب تحت العتبة."""
-        from amos_federation.services.agent_runtime.population import AgentSchool, get_population_registry
+        from amos_federation.services.agent_runtime.population import (
+            AgentSchool,
+            get_population_registry,
+        )
+
         reg = get_population_registry()
         agent = reg.register_agent(name="وكيل راسب", role="learner", category="learner")
         school = AgentSchool()
@@ -97,7 +112,11 @@ class TestSchool:
 
     def test_graduation_requires_all_steps(self):
         """6.2: التخرج يتطلب اجتياز كل الخطوات الست."""
-        from amos_federation.services.agent_runtime.population import AgentSchool, get_population_registry
+        from amos_federation.services.agent_runtime.population import (
+            AgentSchool,
+            get_population_registry,
+        )
+
         reg = get_population_registry()
         agent = reg.register_agent(name="وكيل تخرج", role="learner", category="learner")
         school = AgentSchool()
@@ -110,7 +129,11 @@ class TestSchool:
 
     def test_full_graduation(self):
         """6.2: تخرج كامل بعد اجتياز كل الخطوات."""
-        from amos_federation.services.agent_runtime.population import AgentSchool, get_population_registry
+        from amos_federation.services.agent_runtime.population import (
+            AgentSchool,
+            get_population_registry,
+        )
+
         reg = get_population_registry()
         agent = reg.register_agent(name="وكيل متخرج", role="learner", category="learner")
         school = AgentSchool()
@@ -127,8 +150,11 @@ class TestAgentLifecycle:
     def test_full_lifecycle(self):
         """6.4: دورة حياة كاملة: registered → training → testing → specialized → employed → active."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         reg = get_population_registry()
-        agent = reg.register_agent(name="وكيل دورة كاملة", role="executor", category="cognitive_executor")
+        agent = reg.register_agent(
+            name="وكيل دورة كاملة", role="executor", category="cognitive_executor"
+        )
 
         states = ["training", "testing", "specialized", "employed", "active"]
         for state in states:
@@ -139,8 +165,11 @@ class TestAgentLifecycle:
     def test_retire_agent(self):
         """6.4: تقاعد الوكيل."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         reg = get_population_registry()
-        agent = reg.register_agent(name="وكيل متقاعد", role="executor", category="cognitive_executor")
+        agent = reg.register_agent(
+            name="وكيل متقاعد", role="executor", category="cognitive_executor"
+        )
         reg.update_state(agent["agent_id"], "retired")
         retired = reg.get_agent(agent["agent_id"])
         assert retired["state"] == "retired"
@@ -148,6 +177,7 @@ class TestAgentLifecycle:
     def test_agent_has_permissions(self):
         """6.1: كل وكيل له صلاحيات محددة."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         reg = get_population_registry()
         agent = reg.register_agent(
             name="وكيل بصلاحيات",
@@ -162,6 +192,7 @@ class TestAgentLifecycle:
     def test_agent_has_token_budget(self):
         """6.1: كل وكيل له ميزانية توكنز."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         reg = get_population_registry()
         agent = reg.register_agent(
             name="وكيل بميزانية",

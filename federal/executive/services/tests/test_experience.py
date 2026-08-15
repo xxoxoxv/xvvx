@@ -13,7 +13,8 @@ from amos_federation.services.evaluation.main import app
 
 client = TestClient(app)
 AUTH_HEADERS = {
-    "Authorization": "Bearer " + create_access_token('tester', ['experience:read', 'experience:write'])
+    "Authorization": "Bearer "
+    + create_access_token("tester", ["experience:read", "experience:write"])
 }
 
 

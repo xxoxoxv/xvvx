@@ -68,7 +68,7 @@ class InMemoryDataPipeline:
             by_type[t].append(s)
 
         balanced: list[dict[str, Any]] = []
-        for t, group in by_type.items():
+        for _t, group in by_type.items():
             # أخذ أول target_per_type عينة من كل نوع
             balanced.extend(group[:target_per_type])
         return balanced
@@ -78,9 +78,7 @@ class InMemoryDataPipeline:
         seen: set[str] = set()
         unique: list[dict[str, Any]] = []
         for s in samples:
-            key = hashlib.sha256(
-                f"{s['input']}:{s['output']}".encode()
-            ).hexdigest()
+            key = hashlib.sha256(f"{s['input']}:{s['output']}".encode()).hexdigest()
             if key not in seen:
                 seen.add(key)
                 unique.append(s)
@@ -100,9 +98,7 @@ class InMemoryDataPipeline:
             "total_samples": len(samples),
             "by_type": by_type,
             "by_domain": by_domain,
-            "hash": hashlib.sha256(
-                str(sorted(by_type.items())).encode()
-            ).hexdigest()[:16],
+            "hash": hashlib.sha256(str(sorted(by_type.items())).encode()).hexdigest()[:16],
             "version": "1.0",
         }
 
@@ -127,10 +123,7 @@ class InMemoryDataPipeline:
 
     def list_datasets(self, limit: int = 50) -> list[dict[str, Any]]:
         """عرض البيانات."""
-        return [
-            {k: v for k, v in d.items() if k != "samples"}
-            for d in self._datasets[:limit]
-        ]
+        return [{k: v for k, v in d.items() if k != "samples"} for d in self._datasets[:limit]]
 
     def get_dataset(self, dataset_id: str) -> dict[str, Any] | None:
         """إرجاع بيانات بالمعرّف."""

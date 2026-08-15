@@ -13,12 +13,11 @@ NATS الحقيقي مؤجل لحين توفر البنية.
 
 import json
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Callable
+from typing import Any
 
-from sqlalchemy import (
-    Column, DateTime, Integer, String, Text, Boolean, Index, create_engine, text
-)
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from amos_federation.common.database import get_database_url
@@ -30,6 +29,7 @@ class DurableEventBase(DeclarativeBase):
 
 class EventRecord(DurableEventBase):
     """جدول الأحداث المنشورة — دائم."""
+
     __tablename__ = "durable_events"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -42,13 +42,12 @@ class EventRecord(DurableEventBase):
     schema_version = Column(String, nullable=False, default="1.0")
     created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False, index=True)
 
-    __table_args__ = (
-        Index("ix_durable_events_subject_type", "subject", "event_type"),
-    )
+    __table_args__ = (Index("ix_durable_events_subject_type", "subject", "event_type"),)
 
 
 class ConsumerOffset(DurableEventBase):
     """جدول متابعي المستهلكين — يتيح ack و replay."""
+
     __tablename__ = "event_consumer_offsets"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -83,8 +82,11 @@ class DurableEventBus:
         elif url.startswith("postgresql"):
             connect_args = {"sslmode": "require", "connect_timeout": 15}
         self._engine = create_engine(
-            url, connect_args=connect_args,
-            pool_pre_ping=True, pool_size=5, max_overflow=10,
+            url,
+            connect_args=connect_args,
+            pool_pre_ping=True,
+            pool_size=5,
+            max_overflow=10,
         )
         DurableEventBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
@@ -111,9 +113,11 @@ class DurableEventBus:
 
         # التحقق من العقد
         from amos_federation.common.event_bus import validate_event
+
         is_valid, msg = validate_event(subject, data)
         if not is_valid:
             import structlog
+
             structlog.get_logger().warning("event.contract_violation", subject=subject, message=msg)
 
         event_record = {
@@ -150,6 +154,7 @@ class DurableEventBus:
                 handler(event_record)
             except Exception as e:
                 import structlog
+
                 structlog.get_logger().error("event.handler_error", subject=subject, error=str(e))
 
         return event_record
@@ -180,10 +185,14 @@ class DurableEventBus:
         session = self._Session()
         try:
             # الحصول على آخر offset للمستهلك
-            offset = session.query(ConsumerOffset).filter_by(
-                consumer_name=consumer_name,
-                subject=subject or "*",
-            ).first()
+            offset = (
+                session.query(ConsumerOffset)
+                .filter_by(
+                    consumer_name=consumer_name,
+                    subject=subject or "*",
+                )
+                .first()
+            )
 
             last_pk = offset.last_event_pk if offset else 0
 
@@ -219,10 +228,14 @@ class DurableEventBus:
             if not event:
                 return False
 
-            offset = session.query(ConsumerOffset).filter_by(
-                consumer_name=consumer_name,
-                subject=subject,
-            ).first()
+            offset = (
+                session.query(ConsumerOffset)
+                .filter_by(
+                    consumer_name=consumer_name,
+                    subject=subject,
+                )
+                .first()
+            )
 
             if offset:
                 offset.last_event_id = event_id
@@ -258,10 +271,14 @@ class DurableEventBus:
                 q = q.filter(EventRecord.subject == subject)
 
             if not from_beginning:
-                offset = session.query(ConsumerOffset).filter_by(
-                    consumer_name=consumer_name,
-                    subject=subject or "*",
-                ).first()
+                offset = (
+                    session.query(ConsumerOffset)
+                    .filter_by(
+                        consumer_name=consumer_name,
+                        subject=subject or "*",
+                    )
+                    .first()
+                )
                 if offset:
                     q = q.filter(EventRecord.id > offset.last_event_pk)
 

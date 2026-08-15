@@ -117,4 +117,6 @@ async def experience_stats(
 
 
 _service = SERVICES["evaluation"]
-app = create_service_app(_service["name"], _service["port"], "تقييم النماذج وتسجيل الخبرات", [router])
+app = create_service_app(
+    _service["name"], _service["port"], "تقييم النماذج وتسجيل الخبرات", [router]
+)

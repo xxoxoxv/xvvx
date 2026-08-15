@@ -23,9 +23,7 @@ class WorkerAgent(BaseAgent):
     ) -> None:
         super().__init__(agent_id, "worker", domain, permissions or ["*"])
 
-    async def execute(
-        self, task: dict[str, Any], plan: list[dict[str, Any]]
-    ) -> dict[str, Any]:
+    async def execute(self, task: dict[str, Any], plan: list[dict[str, Any]]) -> dict[str, Any]:
         """تنفيذ كل خطوة في الخطة بالترتيب وتجميع النتائج."""
         steps_results: list[dict[str, Any]] = []
         started_at = datetime.now(UTC)
@@ -37,27 +35,31 @@ class WorkerAgent(BaseAgent):
             step_number = step.get("number", len(steps_results) + 1)
 
             if not self.can_use_tool(tool_id):
-                steps_results.append({
-                    "number": step_number,
-                    "description": step_description,
-                    "tool": tool_id,
-                    "agent": agent,
-                    "status": "skipped",
-                    "reason": f"الصلاحية غير كافية لاستخدام: {tool_id}",
-                })
+                steps_results.append(
+                    {
+                        "number": step_number,
+                        "description": step_description,
+                        "tool": tool_id,
+                        "agent": agent,
+                        "status": "skipped",
+                        "reason": f"الصلاحية غير كافية لاستخدام: {tool_id}",
+                    }
+                )
                 continue
 
             tool_params = self._build_tool_params(tool_id, task, step_description)
             tool_result = self.sandbox.execute(tool_id, tool_params)
 
-            steps_results.append({
-                "number": step_number,
-                "description": step_description,
-                "tool": tool_id,
-                "agent": agent,
-                "status": "completed",
-                "result": tool_result,
-            })
+            steps_results.append(
+                {
+                    "number": step_number,
+                    "description": step_description,
+                    "tool": tool_id,
+                    "agent": agent,
+                    "status": "completed",
+                    "result": tool_result,
+                }
+            )
 
         completed_at = datetime.now(UTC)
         return {

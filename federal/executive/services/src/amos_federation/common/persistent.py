@@ -12,15 +12,12 @@ from datetime import UTC, datetime
 from typing import Any
 
 from amos_federation.common.database import (
-    AgentModel,
     AuditEntryModel,
-    Base,
     ExperienceModel,
     MemoryModel,
     ReviewModel,
     TaskModel,
     ToolModel,
-    get_engine,
     get_session_factory,
     init_db,
 )
@@ -39,11 +36,12 @@ class PersistentToolStore:
     def _seed_from_yaml(self) -> None:
         """تحميل الأدوات الأولية من tool-index.yaml إن وُجد ولم تُسجَّل بعد."""
         try:
-            import yaml
             from pathlib import Path
 
-            SessionLocal = get_session_factory()
-            session = SessionLocal()
+            import yaml
+
+            session_local = get_session_factory()
+            session = session_local()
             try:
                 if session.query(ToolModel).count() > 0:
                     return
@@ -69,8 +67,8 @@ class PersistentToolStore:
             pass
 
     def register(self, tool: ToolManifestModel) -> ToolManifestModel:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             db_tool = ToolModel(
                 id=tool.tool_id,
@@ -87,8 +85,8 @@ class PersistentToolStore:
             session.close()
 
     def get(self, tool_id: str) -> ToolManifestModel | None:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             row = session.query(ToolModel).filter(ToolModel.id == tool_id).first()
             if row is None:
@@ -105,8 +103,8 @@ class PersistentToolStore:
             session.close()
 
     def list_all(self) -> list[ToolManifestModel]:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             rows = session.query(ToolModel).all()
             return [
@@ -141,9 +139,11 @@ class PersistentToolStore:
 class PersistentTaskStore:
     """تخزين المهام الدائم."""
 
-    def create(self, task_id: str, task_type: str, description: str, tenant_id: str = "default") -> dict[str, Any]:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+    def create(
+        self, task_id: str, task_type: str, description: str, tenant_id: str = "default"
+    ) -> dict[str, Any]:
+        session_local = get_session_factory()
+        session = session_local()
         try:
             task = TaskModel(
                 id=task_id,
@@ -154,13 +154,18 @@ class PersistentTaskStore:
             )
             session.merge(task)
             session.commit()
-            return {"id": task_id, "type": task_type, "description": description, "status": "created"}
+            return {
+                "id": task_id,
+                "type": task_type,
+                "description": description,
+                "status": "created",
+            }
         finally:
             session.close()
 
     def get(self, task_id: str) -> dict[str, Any] | None:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             row = session.query(TaskModel).filter(TaskModel.id == task_id).first()
             if row is None:
@@ -178,8 +183,8 @@ class PersistentTaskStore:
             session.close()
 
     def list_all(self, limit: int = 50) -> list[dict[str, Any]]:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             rows = session.query(TaskModel).limit(limit).all()
             return [
@@ -190,8 +195,8 @@ class PersistentTaskStore:
             session.close()
 
     def update_status(self, task_id: str, status: str) -> None:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             row = session.query(TaskModel).filter(TaskModel.id == task_id).first()
             if row:
@@ -204,9 +209,15 @@ class PersistentTaskStore:
 class PersistentMemoryStore:
     """تخزين الذاكرة الدائم بـ SQLAlchemy."""
 
-    def store(self, key: str, value: str | dict, keywords: list[str] | None = None, tenant_id: str | None = None) -> dict[str, Any]:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+    def store(
+        self,
+        key: str,
+        value: str | dict,
+        keywords: list[str] | None = None,
+        tenant_id: str | None = None,
+    ) -> dict[str, Any]:
+        session_local = get_session_factory()
+        session = session_local()
         try:
             if tenant_id is None:
                 tenant_id = "default"
@@ -226,8 +237,8 @@ class PersistentMemoryStore:
             session.close()
 
     def get(self, key: str) -> dict[str, Any] | None:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             row = session.query(MemoryModel).filter(MemoryModel.key == key).first()
             if row is None:
@@ -236,12 +247,14 @@ class PersistentMemoryStore:
         finally:
             session.close()
 
-    def query(self, query_text: str, limit: int = 5, tenant_id: str | None = None) -> list[dict[str, Any]]:
+    def query(
+        self, query_text: str, limit: int = 5, tenant_id: str | None = None
+    ) -> list[dict[str, Any]]:
         """بحث بكلمات مفتاحية مع تشابه Jaccard."""
         if tenant_id is None:
             tenant_id = "default"
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             rows = session.query(MemoryModel).filter(MemoryModel.tenant_id == tenant_id).all()
             query_words = set(query_text.lower().split())
@@ -262,15 +275,20 @@ class PersistentMemoryStore:
                 union = len(query_words | mem_words)
                 similarity = intersection / union if union > 0 else 0.0
                 if similarity > 0:
-                    scored.append((similarity, {"key": row.key, "value": row.value, "keywords": row.keywords or []}))
+                    scored.append(
+                        (
+                            similarity,
+                            {"key": row.key, "value": row.value, "keywords": row.keywords or []},
+                        )
+                    )
             scored.sort(key=lambda x: -x[0])
             return [item for _, item in scored[:limit]]
         finally:
             session.close()
 
     def stats(self) -> dict[str, Any]:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             count = session.query(MemoryModel).count()
             return {"total_entries": count}
@@ -283,8 +301,8 @@ class PersistentExperienceStore:
 
     def record(self, data: dict[str, Any]) -> dict[str, Any]:
         exp_id = data.get("experience_id") or f"exp-{uuid.uuid4()}"
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             provenance = data.get("provenance", {})
             if not provenance:
@@ -309,8 +327,8 @@ class PersistentExperienceStore:
             session.close()
 
     def get(self, exp_id: str) -> dict[str, Any] | None:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             row = session.query(ExperienceModel).filter(ExperienceModel.id == exp_id).first()
             if row is None:
@@ -329,10 +347,15 @@ class PersistentExperienceStore:
         finally:
             session.close()
 
-    def list_all(self, exp_type: str | None = None, agent_id: str | None = None,
-                 min_score: float | None = None, limit: int = 50) -> list[dict[str, Any]]:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+    def list_all(
+        self,
+        exp_type: str | None = None,
+        agent_id: str | None = None,
+        min_score: float | None = None,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        session_local = get_session_factory()
+        session = session_local()
         try:
             q = session.query(ExperienceModel)
             if exp_type:
@@ -357,16 +380,16 @@ class PersistentExperienceStore:
             session.close()
 
     def count(self) -> int:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             return session.query(ExperienceModel).count()
         finally:
             session.close()
 
     def by_type(self) -> dict[str, int]:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             rows = session.query(ExperienceModel).all()
             counts: dict[str, int] = {}
@@ -382,8 +405,8 @@ class PersistentCriticStore:
 
     def review(self, data: dict[str, Any]) -> dict[str, Any]:
         rev_id = data.get("review_id") or f"rev-{uuid.uuid4()}"
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             rev = ReviewModel(
                 id=rev_id,
@@ -410,8 +433,8 @@ class PersistentCriticStore:
             session.close()
 
     def get(self, rev_id: str) -> dict[str, Any] | None:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             row = session.query(ReviewModel).filter(ReviewModel.id == rev_id).first()
             if row is None:
@@ -429,10 +452,11 @@ class PersistentCriticStore:
         finally:
             session.close()
 
-    def list_all(self, task_id: str | None = None, min_score: float | None = None,
-                 limit: int = 50) -> list[dict[str, Any]]:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+    def list_all(
+        self, task_id: str | None = None, min_score: float | None = None, limit: int = 50
+    ) -> list[dict[str, Any]]:
+        session_local = get_session_factory()
+        session = session_local()
         try:
             q = session.query(ReviewModel)
             if task_id:
@@ -456,16 +480,16 @@ class PersistentCriticStore:
             session.close()
 
     def count(self) -> int:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             return session.query(ReviewModel).count()
         finally:
             session.close()
 
     def average_score(self) -> float:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
             rows = session.query(ReviewModel).all()
             scores = [r.quality_score for r in rows if r.quality_score is not None]
@@ -489,19 +513,25 @@ class PersistentAuditStore:
             result = self.verify_chain()
             if not result.get("valid", True):
                 import structlog
-                structlog.get_logger().warning("audit.chain_broken_on_init", message=result.get("message"))
+
+                structlog.get_logger().warning(
+                    "audit.chain_broken_on_init", message=result.get("message")
+                )
         except Exception:
             pass  # قد لا يكون الجدول موجودًا بعد
 
     def append(self, action: str, actor: str, details: dict[str, Any]) -> dict[str, Any]:
         """إضافة سجل تدقيق — INSERT فقط، لا يمكن تعديل أو حذف السجلات السابقة."""
         import hashlib
+
         rev_id = f"audit-{uuid.uuid4()}"
         prev_hash = "0" * 64
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
-            last = session.query(AuditEntryModel).order_by(AuditEntryModel.created_at.desc()).first()
+            last = (
+                session.query(AuditEntryModel).order_by(AuditEntryModel.created_at.desc()).first()
+            )
             if last:
                 prev_hash = last.hash
             # استخدام json.dumps بدلاً من str() لضمان استقرار الـ hash
@@ -531,10 +561,15 @@ class PersistentAuditStore:
             session.close()
 
     def list_all(self, limit: int = 50) -> list[dict[str, Any]]:
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+        session_local = get_session_factory()
+        session = session_local()
         try:
-            rows = session.query(AuditEntryModel).order_by(AuditEntryModel.created_at.desc()).limit(limit).all()
+            rows = (
+                session.query(AuditEntryModel)
+                .order_by(AuditEntryModel.created_at.desc())
+                .limit(limit)
+                .all()
+            )
             return [
                 {
                     "audit_id": r.id,
@@ -553,8 +588,9 @@ class PersistentAuditStore:
     def verify_chain(self) -> dict[str, Any]:
         """التحقق من سلامة سلسلة hash — كشف أي تلاعب."""
         import hashlib
-        SessionLocal = get_session_factory()
-        session = SessionLocal()
+
+        session_local = get_session_factory()
+        session = session_local()
         try:
             rows = session.query(AuditEntryModel).order_by(AuditEntryModel.created_at).all()
             if not rows:
@@ -563,7 +599,11 @@ class PersistentAuditStore:
             for entry in rows:
                 # فحص الترابط
                 if entry.prev_hash != prev_hash:
-                    return {"valid": False, "entries": len(rows), "message": f"السلسلة مكسورة عند {entry.id} — prev_hash لا يطابق"}
+                    return {
+                        "valid": False,
+                        "entries": len(rows),
+                        "message": f"السلسلة مكسورة عند {entry.id} — prev_hash لا يطابق",
+                    }
                 # فحص إعادة الحساب (كشف التلاعب بمحتوى السجل)
                 # استخدام json.dumps بدلاً من str() لضمان استقرار الـ hash
                 details_str = json.dumps(entry.details or {}, sort_keys=True, default=str)
@@ -604,11 +644,19 @@ class PersistentAuditStore:
                 except Exception:
                     pass
                 # لا يطابق أي صيغة — هناك تلاعب
-                return {"valid": False, "entries": len(rows), "message": f"تلاعب في السجل {entry.id} — hash لا يطابق المحتوى"}
+                return {
+                    "valid": False,
+                    "entries": len(rows),
+                    "message": f"تلاعب في السجل {entry.id} — hash لا يطابق المحتوى",
+                }
             return {"valid": True, "entries": len(rows), "message": "السلسلة سليمة"}
         finally:
             session.close()
 
     def tamper_attempt(self, audit_id: str) -> dict[str, Any]:
         """محاولة تعديل سجل — مرفوضة دائمًا."""
-        return {"error": "INSERT-only: لا يمكن تعديل أو حذف سجلات التدقيق", "audit_id": audit_id, "blocked": True}
+        return {
+            "error": "INSERT-only: لا يمكن تعديل أو حذف سجلات التدقيق",
+            "audit_id": audit_id,
+            "blocked": True,
+        }

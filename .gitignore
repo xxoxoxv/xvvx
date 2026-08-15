@@ -41,6 +41,7 @@ Thumbs.db
 # Data (local dev)
 *.db
 *.sqlite
+*.sqlite3
 *.egg-info/
 federal/executive/services/src/amos_federation.egg-info/
 federal/executive/services/*.egg-info/

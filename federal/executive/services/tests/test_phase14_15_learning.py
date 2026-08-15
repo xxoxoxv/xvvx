@@ -4,14 +4,13 @@ AMOS-Federation Phase 14-15 — Learning Loop + Evaluation Tests
 النطاق: tests/test_phase14_15_learning.py
 """
 
-import pytest
-
 
 class TestExperienceCollection:
     """14.1-14.4: تجميع الخبرات وإزالة التكرار."""
 
     def test_collect_experiences(self):
         from amos_federation.services.governance.learning_cycle import get_learning_cycle
+
         cycle = get_learning_cycle()
         experiences = [
             {"task": "analyze", "outcome": {"success": True}, "data": "a"},
@@ -27,6 +26,7 @@ class TestExperienceCollection:
     def test_deduplication(self):
         """14.3: إزالة التكرار بـ SHA-256."""
         from amos_federation.services.governance.learning_cycle import get_learning_cycle
+
         cycle = get_learning_cycle()
         duplicate_exp = {"task": "same", "outcome": {"success": True}, "data": "x"}
         experiences = [duplicate_exp, duplicate_exp, duplicate_exp]
@@ -36,6 +36,7 @@ class TestExperienceCollection:
     def test_bom_hash(self):
         """14.4: Data BOM hash."""
         from amos_federation.services.governance.learning_cycle import get_learning_cycle
+
         cycle = get_learning_cycle()
         result = cycle.collect_experiences([{"task": "x", "outcome": {"success": True}}])
         assert len(result["bom_hash"]) == 64  # SHA-256 hex
@@ -46,6 +47,7 @@ class TestTrainingRun:
 
     def test_start_training(self):
         from amos_federation.services.governance.learning_cycle import get_learning_cycle
+
         cycle = get_learning_cycle()
         dataset = cycle.collect_experiences([{"task": "x", "outcome": {"success": True}}])
         result = cycle.start_training(dataset["dataset_id"], "amos-alpha")
@@ -54,6 +56,7 @@ class TestTrainingRun:
 
     def test_complete_training(self):
         from amos_federation.services.governance.learning_cycle import get_learning_cycle
+
         cycle = get_learning_cycle()
         dataset = cycle.collect_experiences([{"task": "x", "outcome": {"success": True}}])
         train = cycle.start_training(dataset["dataset_id"])
@@ -68,6 +71,7 @@ class TestTrainingRun:
     def test_stop_threshold_converged(self):
         """14.9: عتبة التوقف عند التقارب."""
         from amos_federation.services.governance.learning_cycle import get_learning_cycle
+
         cycle = get_learning_cycle()
         dataset = cycle.collect_experiences([{"task": "x", "outcome": {"success": True}}])
         train = cycle.start_training(dataset["dataset_id"])
@@ -78,6 +82,7 @@ class TestTrainingRun:
     def test_stop_threshold_no_improvement(self):
         """14.9: عتبة التوقف عند عدم التحسن."""
         from amos_federation.services.governance.learning_cycle import get_learning_cycle
+
         cycle = get_learning_cycle()
         dataset = cycle.collect_experiences([{"task": "x", "outcome": {"success": True}}])
         train = cycle.start_training(dataset["dataset_id"])
@@ -90,9 +95,11 @@ class TestEvaluation:
 
     def test_evaluate_model(self):
         from amos_federation.services.governance.learning_cycle import get_evaluation_system
+
         eval_sys = get_evaluation_system()
-        result = eval_sys.evaluate_model("amos-alpha", "bench-001", score=85, safety=95,
-                                          critic_notes="أداء جيد")
+        result = eval_sys.evaluate_model(
+            "amos-alpha", "bench-001", score=85, safety=95, critic_notes="أداء جيد"
+        )
         assert result["score"] == 85
         assert result["safety_score"] == 95
         assert result["regression"] is False
@@ -100,6 +107,7 @@ class TestEvaluation:
     def test_regression_detection(self):
         """15.3: كشف النسيان الكارثي."""
         from amos_federation.services.governance.learning_cycle import get_evaluation_system
+
         eval_sys = get_evaluation_system()
         # تقييم أول
         eval_sys.evaluate_model("amos-regression-test", "bench-001", score=90)
@@ -109,6 +117,7 @@ class TestEvaluation:
 
     def test_no_regression(self):
         from amos_federation.services.governance.learning_cycle import get_evaluation_system
+
         eval_sys = get_evaluation_system()
         eval_sys.evaluate_model("amos-no-regression", "bench-001", score=85)
         result = eval_sys.check_regression("amos-no-regression", current_score=88)
@@ -121,6 +130,7 @@ class TestModelPromotion:
     def test_three_tracks_initialized(self):
         """15.7: ثلاثة مسارات مهيأة."""
         from amos_federation.services.governance.learning_cycle import get_promotion_cycle
+
         cycle = get_promotion_cycle()
         versions = cycle.list_versions()
         tracks = {v["track"] for v in versions}
@@ -131,6 +141,7 @@ class TestModelPromotion:
     def test_shadow_testing(self):
         """15.9: Shadow Testing."""
         from amos_federation.services.governance.learning_cycle import get_promotion_cycle
+
         cycle = get_promotion_cycle()
         versions = cycle.list_versions()
         alpha = next(v for v in versions if v["track"] == "alpha")
@@ -141,6 +152,7 @@ class TestModelPromotion:
     def test_canary_deployment(self):
         """15.11: Canary Deployment."""
         from amos_federation.services.governance.learning_cycle import get_promotion_cycle
+
         cycle = get_promotion_cycle()
         versions = cycle.list_versions()
         beta = next(v for v in versions if v["track"] == "beta")
@@ -151,6 +163,7 @@ class TestModelPromotion:
     def test_promote_beta_to_alpha(self):
         """15.12: ترقية Beta إلى Alpha."""
         from amos_federation.services.governance.learning_cycle import get_promotion_cycle
+
         cycle = get_promotion_cycle()
         versions = cycle.list_versions()
         beta = next(v for v in versions if v["track"] == "beta")

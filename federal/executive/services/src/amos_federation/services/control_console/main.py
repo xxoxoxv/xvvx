@@ -21,21 +21,22 @@ router = APIRouter(prefix="/v1", tags=["control-console"])
 
 # === 7.1: Dashboard API — تجمع بيانات حقيقية من كل الخدمات ===
 
+
 @router.get("/dashboard", response_model=dict)
 async def get_dashboard(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
     """لوحة تحكم شاملة — كل الأرقام من خدمات حقيقية."""
-    from amos_federation.services.agent_runtime.population import get_population_registry
     from amos_federation.common.event_bus import get_event_bus
-    from amos_federation.services.governance.canary import get_system_status
-    from amos_federation.services.model_gateway.model_layer import get_model_layer
     from amos_federation.common.persistent import (
         PersistentAuditStore,
-        PersistentToolStore,
-        PersistentMemoryStore,
         PersistentExperienceStore,
+        PersistentMemoryStore,
+        PersistentToolStore,
     )
+    from amos_federation.services.agent_runtime.population import get_population_registry
+    from amos_federation.services.governance.canary import get_system_status
+    from amos_federation.services.model_gateway.model_layer import get_model_layer
 
     # 7.2: Agents from real population registry
     registry = get_population_registry()
@@ -62,7 +63,7 @@ async def get_dashboard(
     tools = tool_store.list_all()
 
     # Memory from real persistent store
-    memory_store = PersistentMemoryStore()
+    PersistentMemoryStore()
 
     # Experiences from real persistent store
     exp_store = PersistentExperienceStore()
@@ -97,6 +98,7 @@ async def get_dashboard(
 
 # === 7.2: Agent management ===
 
+
 @router.get("/agents", response_model=list[dict])
 async def list_agents(
     _: Annotated[dict[str, object], Depends(require_auth)],
@@ -104,6 +106,7 @@ async def list_agents(
 ) -> list[dict[str, Any]]:
     """عرض كل الوكلاء من السجل الحقيقي."""
     from amos_federation.services.agent_runtime.population import get_population_registry
+
     return get_population_registry().list_agents(state=state)
 
 
@@ -114,6 +117,7 @@ async def get_agent(
 ) -> dict[str, Any]:
     """عرض وكيل واحد."""
     from amos_federation.services.agent_runtime.population import get_population_registry
+
     agent = get_population_registry().get_agent(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail="الوكيل غير موجود")
@@ -122,6 +126,7 @@ async def get_agent(
 
 class AgentStateUpdate(BaseModel):
     """تحديث حالة وكيل."""
+
     state: str = Field(pattern="^(registered|training|testing|employed|active|paused|retired)$")
 
 
@@ -132,8 +137,8 @@ async def update_agent_state(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
     """7.4: إيقاف/تفعيل وكيل من الواجهة — يستدعي API حقيقيًا."""
-    from amos_federation.services.agent_runtime.population import get_population_registry
     from amos_federation.common.event_bus import get_event_bus
+    from amos_federation.services.agent_runtime.population import get_population_registry
 
     registry = get_population_registry()
     success = registry.update_state(agent_id, request.state)
@@ -141,15 +146,19 @@ async def update_agent_state(
         raise HTTPException(status_code=404, detail="الوكيل غير موجود")
 
     # نشر حدث
-    get_event_bus().publish("amos_federation.agent.state_changed", {
-        "agent_id": agent_id,
-        "new_state": request.state,
-    })
+    get_event_bus().publish(
+        "amos_federation.agent.state_changed",
+        {
+            "agent_id": agent_id,
+            "new_state": request.state,
+        },
+    )
 
     return {"agent_id": agent_id, "state": request.state, "updated": True}
 
 
 # === 7.3: Audit log ===
+
 
 @router.get("/audit", response_model=list[dict])
 async def list_audit(
@@ -158,6 +167,7 @@ async def list_audit(
 ) -> list[dict[str, Any]]:
     """عرض سجل التدقيق من السلسلة الحقيقية."""
     from amos_federation.common.persistent import PersistentAuditStore
+
     return PersistentAuditStore().list_all(limit=limit)
 
 
@@ -167,13 +177,16 @@ async def verify_audit(
 ) -> dict[str, Any]:
     """التحقق من سلامة سلسلة التدقيق."""
     from amos_federation.common.persistent import PersistentAuditStore
+
     return PersistentAuditStore().verify_chain()
 
 
 # === 7.6: Kill Switch ===
 
+
 class KillSwitchRequest(BaseModel):
     """طلب تفعيل Kill Switch."""
+
     level: str = Field(pattern="^(normal|alert|degraded|halt)$")
     reason: str = Field(min_length=1)
     activated_by: str = Field(min_length=1)
@@ -185,8 +198,8 @@ async def activate_kill_switch(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
     """تفعيل Kill Switch من الواجهة."""
-    from amos_federation.services.governance.canary import activate_kill_switch as _activate
     from amos_federation.common.persistent import PersistentAuditStore
+    from amos_federation.services.governance.canary import activate_kill_switch as _activate
 
     result = _activate(request.level, request.reason, request.activated_by)
     PersistentAuditStore().append("kill_switch_activated", request.activated_by, result)
@@ -199,13 +212,16 @@ async def reset_kill_switch(
 ) -> dict[str, Any]:
     """إعادة ضبط Kill Switch."""
     from amos_federation.services.governance.canary import reset_kill_switch
+
     return reset_kill_switch()
 
 
 # === 7.5: Approval (placeholder — يكتمل في المرحلة 9) ===
 
+
 class ApprovalRequest(BaseModel):
     """طلب موافقة/رفض."""
+
     decision: str = Field(pattern="^(approve|reject)$")
     signed_by: str = Field(min_length=1)
     model_id: str | None = None
@@ -218,8 +234,8 @@ async def sign_approval(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
     """7.5: زر الموافقة/الرفض — يُفعّل فعليًا في المرحلة 9 مع توقيع Ed25519."""
-    from amos_federation.common.persistent import PersistentAuditStore
     from amos_federation.common.event_bus import get_event_bus
+    from amos_federation.common.persistent import PersistentAuditStore
 
     approval_id = f"approval-{__import__('uuid').uuid4().hex[:8]}"
     result = {
@@ -231,15 +247,19 @@ async def sign_approval(
         "signature_pending": True,  # سيُوقّع بـ Ed25519 في المرحلة 9
     }
     PersistentAuditStore().append("approval.signed", request.signed_by, result)
-    get_event_bus().publish("amos_federation.approval.signed", {
-        "approval_id": approval_id,
-        "decision": request.decision,
-        "signed_by": request.signed_by,
-    })
+    get_event_bus().publish(
+        "amos_federation.approval.signed",
+        {
+            "approval_id": approval_id,
+            "decision": request.decision,
+            "signed_by": request.signed_by,
+        },
+    )
     return result
 
 
 # === 7.7: Cost ===
+
 
 @router.get("/cost", response_model=dict)
 async def get_cost(
@@ -247,10 +267,12 @@ async def get_cost(
 ) -> dict[str, Any]:
     """عرض التكلفة اللحظية والتراكمية."""
     from amos_federation.services.model_gateway.model_layer import get_model_layer
+
     return get_model_layer().get_cost_summary()
 
 
 # === 7.8: Events ===
+
 
 @router.get("/events", response_model=list[dict])
 async def list_events(
@@ -260,10 +282,12 @@ async def list_events(
 ) -> list[dict[str, Any]]:
     """عرض الأحداث."""
     from amos_federation.common.event_bus import get_event_bus
+
     return get_event_bus().get_events(subject=subject, limit=limit)
 
 
 # === 8.4: Health System endpoints ===
+
 
 @router.get("/health/agents/{agent_id}", response_model=dict)
 async def get_agent_health(
@@ -271,7 +295,11 @@ async def get_agent_health(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
     """عرض الحالة الصحية لوكيل."""
-    from amos_federation.services.agent_runtime.health import get_health_checker, get_isolation_system
+    from amos_federation.services.agent_runtime.health import (
+        get_health_checker,
+        get_isolation_system,
+    )
+
     checker = get_health_checker()
     history = checker.get_agent_health_history(agent_id, limit=5)
     latest = history[0] if history else {"status": "unknown"}
@@ -291,18 +319,21 @@ async def get_all_health(
     """عرض الحالة الصحية لكل الوكلاء."""
     from amos_federation.services.agent_runtime.health import get_health_checker
     from amos_federation.services.agent_runtime.population import get_population_registry
+
     checker = get_health_checker()
     agents = get_population_registry().list_agents()
     results = []
     for a in agents:
         history = checker.get_agent_health_history(a["agent_id"], limit=1)
-        results.append({
-            "agent_id": a["agent_id"],
-            "name": a["name"],
-            "role": a["role"],
-            "health_status": history[0]["status"] if history else "unknown",
-            "performance_score": history[0]["performance_score"] if history else None,
-        })
+        results.append(
+            {
+                "agent_id": a["agent_id"],
+                "name": a["name"],
+                "role": a["role"],
+                "health_status": history[0]["status"] if history else "unknown",
+                "performance_score": history[0]["performance_score"] if history else None,
+            }
+        )
     return results
 
 
@@ -313,6 +344,7 @@ async def run_health_check(
 ) -> dict[str, Any]:
     """تشغيل فحص صحي (وكيل واحد أو الكل)."""
     from amos_federation.services.agent_runtime.health import get_health_checker, run_health_cycle
+
     if agent_id:
         return get_health_checker().check_agent(agent_id)
     else:
@@ -325,6 +357,7 @@ async def list_isolations(
 ) -> list[dict[str, Any]]:
     """عرض حالات العزل النشطة."""
     from amos_federation.services.agent_runtime.health import get_isolation_system
+
     return get_isolation_system().list_active_isolations()
 
 
@@ -336,6 +369,7 @@ async def isolate_agent(
 ) -> dict[str, Any]:
     """8.3: عزل وكيل من الواجهة."""
     from amos_federation.services.agent_runtime.health import get_isolation_system
+
     return get_isolation_system().isolate(agent_id, reason)
 
 
@@ -348,6 +382,7 @@ async def treat_agent(
 ) -> dict[str, Any]:
     """8.2: بدء علاج وكيل من الواجهة."""
     from amos_federation.services.agent_runtime.health import get_treatment_system
+
     return get_treatment_system().start_treatment(agent_id, treatment_type, reason)
 
 
@@ -359,10 +394,12 @@ async def release_agent(
 ) -> dict[str, Any]:
     """8.3: إنهاء عزل وكيل."""
     from amos_federation.services.agent_runtime.health import get_isolation_system
+
     return get_isolation_system().release(isolation_id, decision)
 
 
 # === 9.2-9.8: Federation Governance endpoints ===
+
 
 @router.get("/approvals", response_model=list[dict])
 async def list_approvals(
@@ -370,6 +407,7 @@ async def list_approvals(
 ) -> list[dict[str, Any]]:
     """9.2: عرض الموافقات."""
     from amos_federation.services.governance.federation import get_approval_system
+
     return get_approval_system().list_approvals()
 
 
@@ -379,6 +417,7 @@ async def list_legislations(
 ) -> list[dict[str, Any]]:
     """9.6: عرض التشريعات."""
     from amos_federation.services.governance.federation import get_legislative_branch
+
     return get_legislative_branch().list_legislations()
 
 
@@ -388,6 +427,7 @@ async def list_court_cases(
 ) -> list[dict[str, Any]]:
     """9.7: عرض القضايا."""
     from amos_federation.services.governance.federation import get_judicial_branch
+
     return get_judicial_branch().list_cases()
 
 
@@ -397,6 +437,7 @@ async def list_compliance_reports(
 ) -> list[dict[str, Any]]:
     """9.8: عرض تقارير الامتثال."""
     from amos_federation.services.governance.federation import get_supreme_oversight
+
     return get_supreme_oversight().list_reports()
 
 
@@ -406,10 +447,12 @@ async def list_executive_roles(
 ) -> list[dict[str, Any]]:
     """9.5: عرض الأدوار التنفيذية."""
     from amos_federation.services.governance.federation import get_executive_branch
+
     return get_executive_branch().list_roles()
 
 
 # === 10.x: Treasury endpoints ===
+
 
 @router.get("/treasury/balance", response_model=dict)
 async def get_treasury_balance(
@@ -418,6 +461,7 @@ async def get_treasury_balance(
 ) -> dict[str, Any]:
     """10.1: رصيد amos-credit."""
     from amos_federation.services.governance.treasury import get_treasury
+
     return get_treasury().get_balance(agent_id=agent_id)
 
 
@@ -428,6 +472,7 @@ async def list_treasury_transactions(
 ) -> list[dict[str, Any]]:
     """10.1: عرض المعاملات."""
     from amos_federation.services.governance.treasury import get_treasury
+
     return get_treasury().list_transactions(limit=limit)
 
 
@@ -437,6 +482,7 @@ async def verify_treasury_chain(
 ) -> dict[str, Any]:
     """10.1: التحقق من سلسلة المعاملات."""
     from amos_federation.services.governance.treasury import get_treasury
+
     return get_treasury().verify_chain()
 
 
@@ -449,6 +495,7 @@ async def reward_agent(
 ) -> dict[str, Any]:
     """10.2: مكافأة وكيل."""
     from amos_federation.services.governance.treasury import get_treasury
+
     return get_treasury().reward_task_completion(agent_id, experience_id, quality_score)
 
 
@@ -461,6 +508,7 @@ async def charge_agent(
 ) -> dict[str, Any]:
     """10.3: خصم رسوم."""
     from amos_federation.services.governance.treasury import get_treasury
+
     return get_treasury().charge_model_invoke(agent_id, cost_usd, model_name)
 
 
@@ -470,6 +518,7 @@ async def list_treasury_reports(
 ) -> list[dict[str, Any]]:
     """10.4: عرض التقارير المالية."""
     from amos_federation.services.governance.treasury import get_treasury
+
     return get_treasury().list_reports()
 
 
@@ -481,10 +530,12 @@ async def generate_treasury_report(
 ) -> dict[str, Any]:
     """10.4: توليد تقرير مالي."""
     from amos_federation.services.governance.treasury import get_treasury
+
     return get_treasury().generate_financial_report(period=period, report_type=report_type)
 
 
 # === 11.x: Expansion endpoints ===
+
 
 @router.get("/expansion/stats", response_model=dict)
 async def get_expansion_stats(
@@ -492,6 +543,7 @@ async def get_expansion_stats(
 ) -> dict[str, Any]:
     """11.1: إحصائيات التوسع السكاني."""
     from amos_federation.services.governance.expansion import get_expansion
+
     return get_expansion().expansion_stats()
 
 
@@ -502,6 +554,7 @@ async def run_expansion(
 ) -> dict[str, Any]:
     """11.1: تشغيل التوسع السكاني."""
     from amos_federation.services.governance.expansion import get_expansion
+
     return get_expansion().run_full_expansion(batch_size=batch_size)
 
 
@@ -511,6 +564,7 @@ async def get_specialization_tracks(
 ) -> dict[str, Any]:
     """11.2: مسارات التخصص."""
     from amos_federation.services.governance.expansion import get_specialization
+
     return get_specialization().get_tracks()
 
 
@@ -522,6 +576,7 @@ async def enroll_specialization(
 ) -> dict[str, Any]:
     """11.2: تسجيل في مسار تخصص."""
     from amos_federation.services.governance.expansion import get_specialization
+
     return get_specialization().enroll_agent(agent_id, track)
 
 
@@ -534,6 +589,7 @@ async def take_specialization_exam(
 ) -> dict[str, Any]:
     """11.2: اختبار تخصص."""
     from amos_federation.services.governance.expansion import get_specialization
+
     return get_specialization().take_exam(agent_id, track, score)
 
 
@@ -545,6 +601,7 @@ async def list_university_outputs(
 ) -> list[dict[str, Any]]:
     """11.3: مخرجات الجامعة."""
     from amos_federation.services.governance.expansion import get_university
+
     return get_university().list_outputs(track=track, approved_only=approved_only)
 
 
@@ -554,6 +611,7 @@ async def produce_university_output(
 ) -> dict[str, Any]:
     """11.3: إنتاج أول مخرج جامعي."""
     from amos_federation.services.governance.expansion import get_university
+
     return get_university().produce_first_output()
 
 
@@ -563,6 +621,7 @@ async def list_retired(
 ) -> list[dict[str, Any]]:
     """11.4: الوكلاء المتقاعدون."""
     from amos_federation.services.governance.expansion import get_retirement
+
     return get_retirement().get_retired_agents()
 
 
@@ -574,10 +633,12 @@ async def retire_agent(
 ) -> dict[str, Any]:
     """11.4: تقاعد وكيل."""
     from amos_federation.services.governance.expansion import get_retirement
+
     return get_retirement().retire_agent(agent_id, reason)
 
 
 # === HTML Interface ===
+
 
 @router.get("/ui", response_class=HTMLResponse)
 async def control_console_ui() -> str:

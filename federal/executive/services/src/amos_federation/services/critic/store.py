@@ -71,7 +71,8 @@ class InMemoryCriticStore:
             results = [r for r in results if r.get("task_id") == task_id]
         if min_score is not None:
             results = [
-                r for r in results
+                r
+                for r in results
                 if r.get("quality_score") is not None and r["quality_score"] >= min_score
             ]
         return results[:limit]

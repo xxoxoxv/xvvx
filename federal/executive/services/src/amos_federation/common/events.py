@@ -84,6 +84,7 @@ class EventPublisher:
 
         # Fallback: EventBus محلي دائم
         from amos_federation.common.event_bus import get_event_bus
+
         self._local_bus = get_event_bus()
         logger.info("event_publisher.using_local_bus")
 
@@ -184,6 +185,7 @@ class EventPublisher:
         else:
             # محاولة استخدام EventBus بدون اتصال صريح
             from amos_federation.common.event_bus import get_event_bus
+
             get_event_bus().publish(subject, event_with_hash)
             logger.info("event.published_fallback", event_id=event_id, subject=subject)
 

@@ -6,10 +6,12 @@ AMOS-Federation Event Bus
 تاريخ الإنشاء: 2026-08-15
 """
 
+import contextlib
 import json
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Callable
+from typing import Any
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
@@ -23,6 +25,7 @@ class EventBase(DeclarativeBase):
 
 class EventModel(EventBase):
     """جدول الأحداث المنشورة."""
+
     __tablename__ = "event_store"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -40,7 +43,9 @@ class EventBus:
         connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
         if url.startswith("postgresql"):
             connect_args = {"sslmode": "require", "connect_timeout": 15}
-        self._engine = create_engine(url, connect_args=connect_args, pool_pre_ping=True, pool_size=5, max_overflow=10)
+        self._engine = create_engine(
+            url, connect_args=connect_args, pool_pre_ping=True, pool_size=5, max_overflow=10
+        )
         EventBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
         self._handlers: dict[str, list[Callable[[dict[str, Any]], None]]] = {}
@@ -84,10 +89,8 @@ class EventBus:
                     handlers = handlers + pattern_handlers
 
         for handler in handlers:
-            try:
-                handler(data)
-            except Exception:
-                pass  # لا نوقف النشر بسبب فشل معالج
+            with contextlib.suppress(Exception):
+                handler(data)  # لا نوقف النشر بسبب فشل معالج
 
         return event
 

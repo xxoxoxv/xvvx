@@ -12,9 +12,7 @@ from amos_federation.common.auth import create_access_token
 from amos_federation.services.model_gateway.main import app
 
 client = TestClient(app)
-AUTH_HEADERS = {
-    "Authorization": f"Bearer {create_access_token('tester', ['models:invoke'])}"
-}
+AUTH_HEADERS = {"Authorization": f"Bearer {create_access_token('tester', ['models:invoke'])}"}
 
 
 def test_route_model_returns_recommendation() -> None:

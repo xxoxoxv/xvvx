@@ -17,11 +17,14 @@ from amos_federation.common.event_bus import (
 def test_publish_and_retrieve_event() -> None:
     """نشر حدث واسترجاعه من المخزن."""
     bus = EventBus()
-    bus.publish("amos_federation.task.created", {
-        "task_id": "evt-test-001",
-        "type": "analysis",
-        "description": "تحليل بيانات",
-    })
+    bus.publish(
+        "amos_federation.task.created",
+        {
+            "task_id": "evt-test-001",
+            "type": "analysis",
+            "description": "تحليل بيانات",
+        },
+    )
     events = bus.get_events("amos_federation.task.created")
     assert len(events) > 0
     last = events[0]
@@ -31,11 +34,14 @@ def test_publish_and_retrieve_event() -> None:
 def test_event_persistence_across_instances() -> None:
     """الأحداث تبقى بعد إنشاء نسخة جديدة."""
     bus1 = EventBus()
-    bus1.publish("amos_federation.task.created", {
-        "task_id": "persist-evt-001",
-        "type": "report",
-        "description": "تقرير",
-    })
+    bus1.publish(
+        "amos_federation.task.created",
+        {
+            "task_id": "persist-evt-001",
+            "type": "report",
+            "description": "تقرير",
+        },
+    )
     bus2 = EventBus()
     events = bus2.get_events("amos_federation.task.created")
     found = [e for e in events if e["data"].get("task_id") == "persist-evt-001"]
@@ -86,8 +92,10 @@ def test_event_count() -> None:
 def test_handler_failure_doesnt_block_publish() -> None:
     """فشل معالج لا يوقف النشر."""
     bus = EventBus()
+
     def bad_handler(data):
         raise ValueError("خطأ مقصود")
+
     bus.subscribe("amos_federation.fault.test", bad_handler)
     # لا يجب أن يرمي استثناء
     result = bus.publish("amos_federation.fault.test", {"ok": True})
@@ -102,6 +110,7 @@ def test_get_event_bus_singleton() -> None:
 
 
 # === Contract Tests ===
+
 
 def test_all_event_contracts_defined() -> None:
     """كل عقود الأحداث معرّفة."""
@@ -125,22 +134,28 @@ def test_all_event_contracts_defined() -> None:
 
 def test_validate_valid_event() -> None:
     """التحقق من حدث صالح."""
-    valid, msg = validate_event("amos_federation.task.created", {
-        "task_id": "t1",
-        "type": "analysis",
-        "description": "تحليل",
-    })
+    valid, msg = validate_event(
+        "amos_federation.task.created",
+        {
+            "task_id": "t1",
+            "type": "analysis",
+            "description": "تحليل",
+        },
+    )
     assert valid is True
     assert msg == "صالح"
 
 
 def test_validate_missing_required_field() -> None:
     """التحقق من حدث ينقصه حقل مطلوب."""
-    valid, msg = validate_event("amos_federation.task.created", {
-        "task_id": "t1",
-        "type": "analysis",
-        # description مفقود
-    })
+    valid, msg = validate_event(
+        "amos_federation.task.created",
+        {
+            "task_id": "t1",
+            "type": "analysis",
+            # description مفقود
+        },
+    )
     assert valid is False
     assert "description" in msg
 
@@ -154,10 +169,13 @@ def test_validate_unknown_subject() -> None:
 def test_contract_schema_drift_detection() -> None:
     """اكتشاف انحراف المخطط: حقل مطلوب مفقود يفشل التحقق."""
     # محاولة نشر حدث ناقص
-    valid, msg = validate_event("amos_federation.experience.recorded", {
-        "experience_id": "e1",
-        # type مفقود
-    })
+    valid, msg = validate_event(
+        "amos_federation.experience.recorded",
+        {
+            "experience_id": "e1",
+            # type مفقود
+        },
+    )
     assert valid is False
     assert "type" in msg
 
@@ -167,29 +185,56 @@ def test_full_event_chain_task_to_experience() -> None:
     bus = EventBus()
 
     # 1. task.created
-    bus.publish("amos_federation.task.created", {
-        "task_id": "chain-001", "type": "analysis", "description": "سلسلة اختبار",
-    })
+    bus.publish(
+        "amos_federation.task.created",
+        {
+            "task_id": "chain-001",
+            "type": "analysis",
+            "description": "سلسلة اختبار",
+        },
+    )
     # 2. task.planned
-    bus.publish("amos_federation.task.planned", {
-        "task_id": "chain-001", "plan": [{"step": 1}],
-    })
+    bus.publish(
+        "amos_federation.task.planned",
+        {
+            "task_id": "chain-001",
+            "plan": [{"step": 1}],
+        },
+    )
     # 3. agent.assigned
-    bus.publish("amos_federation.agent.assigned", {
-        "task_id": "chain-001", "agent_id": "worker-1",
-    })
+    bus.publish(
+        "amos_federation.agent.assigned",
+        {
+            "task_id": "chain-001",
+            "agent_id": "worker-1",
+        },
+    )
     # 4. tool.executed
-    bus.publish("amos_federation.tool.executed", {
-        "tool_id": "sql_query", "agent_id": "worker-1", "result": {"rows": 10},
-    })
+    bus.publish(
+        "amos_federation.tool.executed",
+        {
+            "tool_id": "sql_query",
+            "agent_id": "worker-1",
+            "result": {"rows": 10},
+        },
+    )
     # 5. agent.completed
-    bus.publish("amos_federation.agent.completed", {
-        "agent_id": "worker-1", "task_id": "chain-001", "result": {"status": "done"},
-    })
+    bus.publish(
+        "amos_federation.agent.completed",
+        {
+            "agent_id": "worker-1",
+            "task_id": "chain-001",
+            "result": {"status": "done"},
+        },
+    )
     # 6. experience.recorded
-    bus.publish("amos_federation.experience.recorded", {
-        "experience_id": "exp-chain-001", "type": "success",
-    })
+    bus.publish(
+        "amos_federation.experience.recorded",
+        {
+            "experience_id": "exp-chain-001",
+            "type": "success",
+        },
+    )
 
     # التحقق من تخزين كل الأحداث
     all_events = bus.get_events(limit=100)

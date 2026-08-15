@@ -12,7 +12,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from amos_federation.common.auth import require_auth
-from amos_federation.common.service import create_service_app
+from amos_federation.services.training.data_pipeline import InMemoryDataPipeline
+from amos_federation.services.training.model_registry import InMemoryModelRegistry
 
 router = APIRouter(prefix="/v1", tags=["training"])
 
@@ -46,10 +47,7 @@ def _make_service(port: int, description: str) -> Any:
     return app
 
 
-# استيراد المخازن
-from amos_federation.services.training.data_pipeline import InMemoryDataPipeline
-from amos_federation.services.training.model_registry import InMemoryModelRegistry
-
+# تهيئة المخازن
 _pipeline = InMemoryDataPipeline()
 _registry = InMemoryModelRegistry()
 
@@ -106,7 +104,9 @@ async def get_dataset(
     """إرجاع مجموعة بيانات بالمعرّف."""
     ds = _pipeline.get_dataset(dataset_id)
     if ds is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="مجموعة البيانات غير موجودة")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="مجموعة البيانات غير موجودة"
+        )
     return ds
 
 
@@ -138,22 +138,24 @@ async def train_model(
     loss = round(0.05 + (seed % 10) / 100, 4)  # 0.05-0.15
 
     # تسجيل النموذج
-    model = _registry.register({
-        "name": f"lora-{request.base_model}-{train_hash[:8]}",
-        "base_model": request.base_model,
-        "training_method": request.training_method,
-        "dataset_id": request.dataset_id,
-        "hyperparameters": request.hyperparameters,
-        "description": request.description,
-        "intended_use": request.intended_use,
-        "metrics": {
-            "accuracy": accuracy,
-            "loss": loss,
-            "train_hash": train_hash[:16],
-        },
-        "knowledge_injection": True,  # anti-forgetting enabled
-        "status": "trained",
-    })
+    model = _registry.register(
+        {
+            "name": f"lora-{request.base_model}-{train_hash[:8]}",
+            "base_model": request.base_model,
+            "training_method": request.training_method,
+            "dataset_id": request.dataset_id,
+            "hyperparameters": request.hyperparameters,
+            "description": request.description,
+            "intended_use": request.intended_use,
+            "metrics": {
+                "accuracy": accuracy,
+                "loss": loss,
+                "train_hash": train_hash[:16],
+            },
+            "knowledge_injection": True,  # anti-forgetting enabled
+            "status": "trained",
+        }
+    )
 
     return model
 

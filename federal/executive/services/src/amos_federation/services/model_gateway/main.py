@@ -11,8 +11,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query, status
-from fastapi import HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from amos_federation.common.auth import require_auth
@@ -23,7 +22,6 @@ from amos_federation.services.model_gateway.shadow import (
     InMemoryShadowStore,
     _alpha_response,
     _beta_response,
-    _text_similarity,
 )
 
 router = APIRouter(prefix="/v1", tags=["model-gateway"])
@@ -74,7 +72,7 @@ def _local_fallback(prompt: str, max_tokens: int) -> tuple[str, int]:
     """مولد حتمي محلي عند غياب مفتاح Claude API."""
     prompt_preview = prompt[:200]
     text = (
-        f"[local-fallback] تم استلام الطلب: \"{prompt_preview}...\". "
+        f'[local-fallback] تم استلام الطلب: "{prompt_preview}...". '
         f"لا يتوفر مفتاح Claude API — هذه استجابة محلية حتمية للاختبارات."
     )
     tokens = len(text.split())
@@ -144,15 +142,17 @@ async def invoke_model(
         model = "local-fallback"
     latency = int((time.monotonic() - start) * 1000)
     cost = round(tokens * COST_PER_1K_TOKENS.get(model, 0.0) / 1000, 6)
-    _cost_log.append({
-        "invocation_id": f"inv-{uuid.uuid4()}",
-        "timestamp": datetime.now(UTC).isoformat(),
-        "model": model,
-        "tokens": tokens,
-        "cost_usd": cost,
-        "latency_ms": latency,
-        "source": source,
-    })
+    _cost_log.append(
+        {
+            "invocation_id": f"inv-{uuid.uuid4()}",
+            "timestamp": datetime.now(UTC).isoformat(),
+            "model": model,
+            "tokens": tokens,
+            "cost_usd": cost,
+            "latency_ms": latency,
+            "source": source,
+        }
+    )
     return ModelInvokeResponse(
         text=text,
         model_used=model,
@@ -234,12 +234,14 @@ async def cost_summary(
 
 # === Model Layer endpoints ===
 
+
 @router.get("/models/cost-summary", response_model=dict)
 async def get_persistent_cost_summary(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
     """ملخص التكلفة الدائم من DB."""
     from amos_federation.services.model_gateway.model_layer import get_model_layer
+
     return get_model_layer().get_cost_summary()
 
 
@@ -250,22 +252,26 @@ async def invoke_model_cached(
 ) -> dict[str, Any]:
     """استدعاء نموذج مع caching و cost tracking دائم."""
     from amos_federation.services.model_gateway.model_layer import get_model_layer
+
     model = request.model or settings.default_model or "local-fallback"
-    return get_model_layer().invoke_with_cache(
-        request.prompt, model, request.max_tokens
-    )
+    return get_model_layer().invoke_with_cache(request.prompt, model, request.max_tokens)
 
 
 @router.post("/models/benchmark", response_model=dict)
 async def benchmark_models(
     _: Annotated[dict[str, object], Depends(require_auth)],
-    prompts: list[str] = Query(...),
-    models: list[str] = Query(default=["local-fallback"]),
+    prompts: Annotated[list[str], Query()] = ...,  # type: ignore[assignment]
+    models: Annotated[list[str], Query()] = None,
 ) -> dict[str, Any]:
     """مقارنة أداء النماذج."""
+    if models is None:
+        models = ["local-fallback"]
     from amos_federation.services.model_gateway.model_layer import get_model_layer
+
     return get_model_layer().benchmark_models(prompts, models)
 
 
 _service = SERVICES["model-gateway"]
-app = create_service_app(_service["name"], _service["port"], "توجيه واستدعاء النماذج + Shadow Testing", [router])
+app = create_service_app(
+    _service["name"], _service["port"], "توجيه واستدعاء النماذج + Shadow Testing", [router]
+)

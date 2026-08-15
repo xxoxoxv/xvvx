@@ -18,22 +18,16 @@ from sqlalchemy import (
     DateTime,
     Float,
     Integer,
-    JSON,
     String,
     Text,
     create_engine,
-    delete,
     desc,
-    func,
     select,
 )
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from amos_federation.common.database import get_database_url
 from amos_federation.services.agent_runtime.population import (
-    AgentPopulationModel,
-    PopulationBase,
-    PopulationRegistry,
     get_population_registry,
     get_school,
 )
@@ -41,13 +35,16 @@ from amos_federation.services.agent_runtime.population import (
 
 class _ExpansionBase(DeclarativeBase):
     """قاعدة نماذج التوسع."""
+
     pass
 
 
 # === Models ===
 
+
 class SpecializationResultModel(_ExpansionBase):
     """نتائج اختبار التخصص لكل وكيل."""
+
     __tablename__ = "specialization_results"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -61,6 +58,7 @@ class SpecializationResultModel(_ExpansionBase):
 
 class UniversityOutputModel(_ExpansionBase):
     """مخرجات الجامعة — أوراق بحثية، أدوات، منهج محسّن."""
+
     __tablename__ = "university_outputs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -78,6 +76,7 @@ class UniversityOutputModel(_ExpansionBase):
 
 class RetirementRecordModel(_ExpansionBase):
     """سجلات التقاعد."""
+
     __tablename__ = "retirement_records"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -90,6 +89,7 @@ class RetirementRecordModel(_ExpansionBase):
 
 class ExpansionBatchModel(_ExpansionBase):
     """دفعات التوسع السكاني."""
+
     __tablename__ = "expansion_batches"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -347,6 +347,7 @@ UNIVERSITY_RESEARCH_TOPICS = {
 
 # === Population Expansion ===
 
+
 class PopulationExpansion:
     """التوسع السكاني التدريجي عبر المدرسة بدفعات."""
 
@@ -361,7 +362,9 @@ class PopulationExpansion:
         self._engine = engine
         self._Session = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
-    def create_batch(self, category: str, target_count: int, min_score: float = 85.0) -> dict[str, Any]:
+    def create_batch(
+        self, category: str, target_count: int, min_score: float = 85.0
+    ) -> dict[str, Any]:
         """إنشاء دفعة توسع لفئة معينة."""
         batch_id = f"batch-{uuid.uuid4().hex[:8]}"
         session = self._Session()
@@ -378,9 +381,15 @@ class PopulationExpansion:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.expansion.batch_created", {
-            "batch_id": batch_id, "category": category, "target": target_count,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.expansion.batch_created",
+            {
+                "batch_id": batch_id,
+                "category": category,
+                "target": target_count,
+            },
+        )
         return {"batch_id": batch_id, "category": category, "target_count": target_count}
 
     def enroll_batch(self, batch_id: str, count: int) -> list[dict[str, Any]]:
@@ -394,7 +403,9 @@ class PopulationExpansion:
                 return []
 
             cat_key = batch.category
-            cat_spec = FULL_POPULATION_CATEGORIES.get(cat_key, FULL_POPULATION_CATEGORIES["reserve"])
+            cat_spec = FULL_POPULATION_CATEGORIES.get(
+                cat_key, FULL_POPULATION_CATEGORIES["reserve"]
+            )
             registry = get_population_registry()
 
             enrolled = []
@@ -415,7 +426,9 @@ class PopulationExpansion:
         finally:
             session.close()
 
-    def graduate_batch(self, batch_id: str, scores: list[list[int]] | None = None) -> dict[str, Any]:
+    def graduate_batch(
+        self, batch_id: str, scores: list[list[int]] | None = None
+    ) -> dict[str, Any]:
         """تخرير دفعة عبر المدرسة — يتطلب ≥85% متوسط."""
         session = self._Session()
         try:
@@ -427,7 +440,11 @@ class PopulationExpansion:
 
             # جلب الوكلاء المسجلين في هذه الفئة
             registry = get_population_registry()
-            agents = registry.list_agents(category=FULL_POPULATION_CATEGORIES.get(batch.category, {}).get("category", "reserve"))
+            agents = registry.list_agents(
+                category=FULL_POPULATION_CATEGORIES.get(batch.category, {}).get(
+                    "category", "reserve"
+                )
+            )
 
             school = get_school()
             graduated = 0
@@ -488,9 +505,14 @@ class PopulationExpansion:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.expansion.batch_employed", {
-            "batch_id": batch_id, "employed": employed,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.expansion.batch_employed",
+            {
+                "batch_id": batch_id,
+                "employed": employed,
+            },
+        )
         return {"batch_id": batch_id, "employed": employed, "health_failed": health_failed}
 
     def run_full_expansion(self, batch_size: int = 50) -> dict[str, Any]:
@@ -499,7 +521,11 @@ class PopulationExpansion:
         current_count = len(registry.list_agents())
         remaining = TOTAL_TARGET_POPULATION - current_count
         if remaining <= 0:
-            return {"status": "already_full", "current": current_count, "target": TOTAL_TARGET_POPULATION}
+            return {
+                "status": "already_full",
+                "current": current_count,
+                "target": TOTAL_TARGET_POPULATION,
+            }
 
         results = []
         for cat_key, cat_spec in FULL_POPULATION_CATEGORIES.items():
@@ -557,11 +583,14 @@ class PopulationExpansion:
             "by_state": by_state,
             "by_category": by_category,
             "target_vs_actual": target_vs_actual,
-            "fill_rate": len(agents) / TOTAL_TARGET_POPULATION if TOTAL_TARGET_POPULATION > 0 else 0,
+            "fill_rate": len(agents) / TOTAL_TARGET_POPULATION
+            if TOTAL_TARGET_POPULATION > 0
+            else 0,
         }
 
 
 # === Specialization (11.2) ===
+
 
 class SpecializationProgram:
     """مسار التخصص — مالي، قانوني، علمي، صحي، ثقافي، صناعي."""
@@ -605,9 +634,14 @@ class SpecializationProgram:
         registry.update_state(agent_id, "specialized", specialization=track)
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.specialization.enrolled", {
-            "agent_id": agent_id, "track": track,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.specialization.enrolled",
+            {
+                "agent_id": agent_id,
+                "track": track,
+            },
+        )
 
         return {
             "agent_id": agent_id,
@@ -640,9 +674,16 @@ class SpecializationProgram:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.specialization.exam_completed", {
-            "agent_id": agent_id, "track": track, "passed": passed, "score": score,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.specialization.exam_completed",
+            {
+                "agent_id": agent_id,
+                "track": track,
+                "passed": passed,
+                "score": score,
+            },
+        )
 
         return {
             "agent_id": agent_id,
@@ -656,11 +697,15 @@ class SpecializationProgram:
         """عرض تخصص وكيل."""
         session = self._Session()
         try:
-            results = session.execute(
-                select(SpecializationResultModel)
-                .where(SpecializationResultModel.agent_id == agent_id)
-                .order_by(desc(SpecializationResultModel.taken_at))
-            ).scalars().all()
+            results = (
+                session.execute(
+                    select(SpecializationResultModel)
+                    .where(SpecializationResultModel.agent_id == agent_id)
+                    .order_by(desc(SpecializationResultModel.taken_at))
+                )
+                .scalars()
+                .all()
+            )
             return {
                 "agent_id": agent_id,
                 "exams": [
@@ -698,6 +743,7 @@ class SpecializationProgram:
 
 
 # === University (11.3) ===
+
 
 class University:
     """الجامعة — البحث والتطوير."""
@@ -754,9 +800,15 @@ class University:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.university.output_submitted", {
-            "output_id": output_id, "type": output_type, "title": title,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.university.output_submitted",
+            {
+                "output_id": output_id,
+                "type": output_type,
+                "title": title,
+            },
+        )
 
         return {
             "output_id": output_id,
@@ -772,7 +824,9 @@ class University:
         session = self._Session()
         try:
             output = session.execute(
-                select(UniversityOutputModel).where(UniversityOutputModel.output_id == output_id).limit(1)
+                select(UniversityOutputModel)
+                .where(UniversityOutputModel.output_id == output_id)
+                .limit(1)
             ).scalar_one_or_none()
             if not output:
                 return {"error": "not_found"}
@@ -783,12 +837,19 @@ class University:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.university.output_approved", {
-            "output_id": output_id, "quality": quality_score,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.university.output_approved",
+            {
+                "output_id": output_id,
+                "quality": quality_score,
+            },
+        )
         return {"output_id": output_id, "approved": True, "quality_score": quality_score}
 
-    def list_outputs(self, track: str | None = None, approved_only: bool = False) -> list[dict[str, Any]]:
+    def list_outputs(
+        self, track: str | None = None, approved_only: bool = False
+    ) -> list[dict[str, Any]]:
         """عرض المخرجات الجامعية."""
         session = self._Session()
         try:
@@ -855,6 +916,7 @@ class University:
 
 # === Retirement (11.4) ===
 
+
 class RetirementSystem:
     """نظام التقاعد والأرشفة."""
 
@@ -881,6 +943,7 @@ class RetirementSystem:
 
         # حساب عدد الفشل الصحي
         from amos_federation.services.agent_runtime.health import get_health_checker
+
         health_checker = get_health_checker()
         health_failures = 0
         try:
@@ -906,9 +969,15 @@ class RetirementSystem:
         registry.update_state(agent_id, "retired")
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.lifecycle.retired", {
-            "agent_id": agent_id, "reason": reason, "health_failures": health_failures,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.lifecycle.retired",
+            {
+                "agent_id": agent_id,
+                "reason": reason,
+                "health_failures": health_failures,
+            },
+        )
 
         return {
             "agent_id": agent_id,
@@ -922,9 +991,13 @@ class RetirementSystem:
         """عرض الوكلاء المتقاعدين."""
         session = self._Session()
         try:
-            records = session.execute(
-                select(RetirementRecordModel).order_by(desc(RetirementRecordModel.retired_at))
-            ).scalars().all()
+            records = (
+                session.execute(
+                    select(RetirementRecordModel).order_by(desc(RetirementRecordModel.retired_at))
+                )
+                .scalars()
+                .all()
+            )
             return [
                 {
                     "agent_id": r.agent_id,
@@ -942,7 +1015,9 @@ class RetirementSystem:
         session = self._Session()
         try:
             record = session.execute(
-                select(RetirementRecordModel).where(RetirementRecordModel.agent_id == agent_id).limit(1)
+                select(RetirementRecordModel)
+                .where(RetirementRecordModel.agent_id == agent_id)
+                .limit(1)
             ).scalar_one_or_none()
             if not record:
                 return {"error": "not_found"}

@@ -6,19 +6,15 @@
 تاريخ الإنشاء: 2026-08-15
 """
 
-import pytest
-
 from amos_federation.services.agent_runtime.population import (
-    AgentSchool,
     DAILY_SCHEDULE,
+    AgentSchool,
     PopulationRegistry,
-    get_population_registry,
-    get_school,
     run_daily_routine,
 )
 
-
 # === 6.1: Population Registry ===
+
 
 def test_register_agent() -> None:
     """تسجيل وكيل جديد."""
@@ -87,6 +83,7 @@ def test_population_stats() -> None:
 
 # === 6.2: School (six-step curriculum) ===
 
+
 def test_school_curriculum_six_steps() -> None:
     """المنهج من ست خطوات."""
     assert len(AgentSchool.CURRICULUM) == 6
@@ -152,6 +149,7 @@ def test_school_85_percent_threshold() -> None:
 
 # === 6.3: 20 real agents ===
 
+
 def test_20_agents_seeded_and_graduated() -> None:
     """20 وكيل يُسجَّلون ويتخرجون."""
     registry = PopulationRegistry()
@@ -208,6 +206,7 @@ def test_agent_persists_across_restart() -> None:
 
 # === 6.5: Daily operational schedule ===
 
+
 def test_daily_schedule_four_points() -> None:
     """اليوم التشغيلي أربع نقاط."""
     assert len(DAILY_SCHEDULE) == 4
@@ -221,6 +220,7 @@ def test_daily_schedule_four_points() -> None:
 def test_run_daily_routine_publishes_events() -> None:
     """تشغيل اليوم التشغيلي ينشر أحداثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.daily.health_check")
     results = run_daily_routine()
@@ -230,13 +230,16 @@ def test_run_daily_routine_publishes_events() -> None:
 
 # === Integration: agent executes real task ===
 
+
 def test_agent_can_execute_tool() -> None:
     """وكيل متخرج ينفذ مهمة حقيقية بأداة حقيقية."""
     from amos_federation.services.tool_registry.sandbox import execute_tool_with_governance
 
     registry = PopulationRegistry()
     agent = registry.register_agent(
-        "وكيل منفذ", "cognitive_executor", "cognitive",
+        "وكيل منفذ",
+        "cognitive_executor",
+        "cognitive",
         permissions=["task:execute", "tool:use"],
         allowed_tools=["python_execute"],
     )

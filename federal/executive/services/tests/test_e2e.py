@@ -9,9 +9,9 @@
 from fastapi.testclient import TestClient
 
 from amos_federation.common.auth import create_access_token
-from amos_federation.services.orchestrator.main import app as orchestrator_app
 from amos_federation.services.agent_runtime.main import app as agent_app
 from amos_federation.services.api_gateway.main import app as gateway_app
+from amos_federation.services.orchestrator.main import app as orchestrator_app
 
 orchestrator_client = TestClient(orchestrator_app)
 agent_client = TestClient(agent_app)

@@ -14,14 +14,15 @@ AMOS-Federation Event Wiring — Phase 2
 6. agent.completed → إكمال المهمة
 """
 
+import contextlib
 import uuid
 from typing import Any
 
 from amos_federation.common.durable_event_bus import get_durable_event_bus
 from amos_federation.common.persistent import (
-    PersistentTaskStore,
-    PersistentExperienceStore,
     PersistentAuditStore,
+    PersistentExperienceStore,
+    PersistentTaskStore,
 )
 
 # مراجع للمخازن
@@ -34,7 +35,10 @@ _audit_store = PersistentAuditStore()
 # === 2.2: task.created ===
 # ========================
 
-def publish_task_created(task_id: str, task_type: str, description: str, tenant_id: str = "default") -> dict[str, Any]:
+
+def publish_task_created(
+    task_id: str, task_type: str, description: str, tenant_id: str = "default"
+) -> dict[str, Any]:
     """نشر حدث إنشاء مهمة — يُستهلك من قبل Orchestrator."""
     bus = get_durable_event_bus()
     return bus.publish(
@@ -52,6 +56,7 @@ def publish_task_created(task_id: str, task_type: str, description: str, tenant_
 # ========================
 # === 2.3: agent.assigned ===
 # ========================
+
 
 def publish_agent_assigned(task_id: str, agent_id: str, plan: str = "") -> dict[str, Any]:
     """نشر حدث تعيين وكيل — يُستهلك من قبل Agent Runtime."""
@@ -72,7 +77,10 @@ def publish_agent_assigned(task_id: str, agent_id: str, plan: str = "") -> dict[
 # === 2.4: tool.executed ===
 # ========================
 
-def publish_tool_executed(tool_id: str, agent_id: str, result: dict[str, Any], task_id: str = "") -> dict[str, Any]:
+
+def publish_tool_executed(
+    tool_id: str, agent_id: str, result: dict[str, Any], task_id: str = ""
+) -> dict[str, Any]:
     """نشر حدث تنفيذ أداة — يُستهلك للتدقيق."""
     bus = get_durable_event_bus()
     return bus.publish(
@@ -90,6 +98,7 @@ def publish_tool_executed(tool_id: str, agent_id: str, result: dict[str, Any], t
 # ========================
 # === 2.5: experience.recorded ===
 # ========================
+
 
 def publish_experience_recorded(
     experience_id: str,
@@ -117,6 +126,7 @@ def publish_experience_recorded(
 # === 2.6: approval.signed ===
 # ========================
 
+
 def publish_approval_signed(
     approval_id: str,
     decision: str,
@@ -140,6 +150,7 @@ def publish_approval_signed(
 # ========================
 # === agent.completed ===
 # ========================
+
 
 def publish_agent_completed(
     agent_id: str,
@@ -165,6 +176,7 @@ def publish_agent_completed(
 # === المستهلكات (Consumers) ===
 # ========================
 
+
 class OrchestratorConsumer:
     """مستهلك task.created → منتج agent.assigned.
 
@@ -184,10 +196,8 @@ class OrchestratorConsumer:
         agent_id = f"agent-{uuid.uuid4().hex[:8]}"
 
         # تحديث حالة المهمة
-        try:
+        with contextlib.suppress(Exception):
             _task_store.update_status(task_id, "assigned")
-        except Exception:
-            pass
 
         # نشر حدث تعيين الوكيل
         publish_agent_assigned(
@@ -197,10 +207,14 @@ class OrchestratorConsumer:
         )
 
         # تدقيق
-        _audit_store.append("task.assigned", "orchestrator", {
-            "task_id": task_id,
-            "agent_id": agent_id,
-        })
+        _audit_store.append(
+            "task.assigned",
+            "orchestrator",
+            {
+                "task_id": task_id,
+                "agent_id": agent_id,
+            },
+        )
 
 
 class AgentRuntimeConsumer:
@@ -247,10 +261,14 @@ class AgentRuntimeConsumer:
         )
 
         # تدقيق
-        _audit_store.append("task.completed", agent_id, {
-            "task_id": task_id,
-            "result": "success",
-        })
+        _audit_store.append(
+            "task.completed",
+            agent_id,
+            {
+                "task_id": task_id,
+                "result": "success",
+            },
+        )
 
 
 class AuditConsumer:
@@ -263,11 +281,15 @@ class AuditConsumer:
     def _handle_tool_executed(self, event: dict[str, Any]) -> None:
         """تدقيق كل استدعاء أداة."""
         data = event["data"]
-        _audit_store.append("tool.executed", data.get("agent_id", "unknown"), {
-            "tool_id": data.get("tool_id"),
-            "task_id": data.get("task_id"),
-            "result_status": data.get("result", {}).get("status", "unknown"),
-        })
+        _audit_store.append(
+            "tool.executed",
+            data.get("agent_id", "unknown"),
+            {
+                "tool_id": data.get("tool_id"),
+                "task_id": data.get("task_id"),
+                "result_status": data.get("result", {}).get("status", "unknown"),
+            },
+        )
 
 
 class MemoryConsumer:
@@ -280,16 +302,14 @@ class MemoryConsumer:
     def _handle_experience(self, event: dict[str, Any]) -> None:
         """تخزين الخبرة في الذاكرة المؤسسية."""
         data = event["data"]
-        try:
-            _exp_store.record(
+        with contextlib.suppress(Exception):
+            _exp_store.record(  # قد تكون الخبرة مسجّلة بالفعل
                 experience_id=data["experience_id"],
                 exp_type=data.get("type", "generic"),
                 agent_id=data.get("agent_id", ""),
                 task_id=data.get("task_id", ""),
                 quality_score=data.get("quality_score", 0.0),
             )
-        except Exception:
-            pass  # قد تكون الخبرة مسجّلة بالفعل
 
 
 # ========================
@@ -314,6 +334,7 @@ def init_event_consumers() -> None:
 # ========================
 # === السلسلة الكاملة (Smoke Test) ===
 # ========================
+
 
 def run_full_event_chain(task_description: str = "مهمة تجريبية") -> dict[str, Any]:
     """تشغيل السلسلة الكاملة: task.created → agent.assigned → tool.executed → experience.recorded.

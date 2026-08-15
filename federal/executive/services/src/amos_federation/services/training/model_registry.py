@@ -73,9 +73,7 @@ class InMemoryModelRegistry:
                 return m
         return None
 
-    def list_all(
-        self, status: str | None = None, limit: int = 50
-    ) -> list[dict[str, Any]]:
+    def list_all(self, status: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
         """عرض النماذج مع فلترة اختيارية."""
         results = self._models
         if status:
