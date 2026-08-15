@@ -84,6 +84,26 @@ python_files = "test_*.py"
 python_functions = "test_*"
 addopts = "-v --tb=short"
 
+[tool.coverage.run]
+source = ["amos_federation"]
+branch = true
+omit = [
+    "*/services/*/main.py",
+    "*/__main__.py",
+    "*/tests/*",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true

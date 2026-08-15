@@ -10,3 +10,11 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+
+# Test & coverage artifacts
+.coverage
+coverage.xml
+coverage
+*.db
+amos_federation_test.db*
+htmlcov/

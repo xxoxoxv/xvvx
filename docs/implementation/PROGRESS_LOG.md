@@ -6,6 +6,23 @@
 
 ## 2026-08-15
 
+### [P9] رفع التغطية إلى 80%+ (L5) + إصلاح اختبار فاشل
+- **Commit:** (هذا الـ commit)
+- **ما تم:**
+  - `federal/executive/services/src/amos_federation/governance/schema-registry/task.created.schema.json` — مخطط JSON (Draft-07، x-amos، additionalProperties: false) لحدث إنشاء المهمة (كان مفقودًا فأخفق اختبار)
+  - `governance/NUCLEUS.md` + `governance/schema-registry/NUCLEUS.md` — نواتان (العدد 105)
+  - `federal/executive/services/pyproject.toml` — إعداد `[tool.coverage]` (source, branch, fail_under=80, omit main.py)
+  - `.github/workflows/ci.yml` — وظيفة `coverage` (L5) تفرض ≥80% وترفع تقريرًا
+  - `.gitignore` — تجاهل `.coverage`/`coverage.xml`/`*.db`
+  - `docs/maturity/ci_maturity.md` — L5 محقّق (87.8%) + قسم التغطية
+  - `EXECUTION_PLAN.md` — سطر تغطية 80%→87.8%
+- **الحالة:** DONE
+- **التحقق:** 591 passed / 0 failed، تغطية أسطر 87.8%، fail_under=80 PASS
+
+---
+
+## 2026-08-15
+
 ### [تحسين] CI + مؤشر الوثائق
 - **Commit:** (هذا الـ commit)
 - **ما تم:**
