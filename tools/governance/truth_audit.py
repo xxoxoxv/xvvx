@@ -327,8 +327,8 @@ class TruthAudit:
     def _scan_python(self, p: Path, rel: str, rep: DomainReport):
         text = self._read(p)
         lines = text.splitlines()
-        rep.code_lines += len([l for l in lines
-                               if l.strip() and not l.strip().startswith("#")])
+        rep.code_lines += len([ln for ln in lines
+                               if ln.strip() and not ln.strip().startswith("#")])
 
         rep.real_source_hits += len(RE_REAL_SOURCE.findall(text))
         rep.observed_hits += len(RE_OBSERVED.findall(text))
@@ -383,7 +383,13 @@ class TruthAudit:
                     and n.attr in {"error", "warning", "exception", "critical"}
                     for n in ast.walk(node)
                 )
-                if not raises and not logs:
+                # الاستثناء ليس مبتلعًا إذا انتقلت معلومته إلى الخارج:
+                # اسم الاستثناء مُستخدم فعليًا داخل الجسم (رسالة تُرجَع، أو مخالفة تُسجَّل).
+                propagates = bool(node.name) and any(
+                    isinstance(n, ast.Name) and n.id == node.name
+                    for n in ast.walk(ast.Module(body=node.body, type_ignores=[]))
+                )
+                if not raises and not logs and not propagates:
                     seg = "\n".join(lines[node.lineno - 1:node.end_lineno or node.lineno])
                     sev = "HIGH" if RE_FALLBACK_WORD.search(seg) or len(body) > 1 else "MEDIUM"
                     f = Finding("SILENT_FALLBACK", rel, node.lineno,

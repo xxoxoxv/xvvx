@@ -18,3 +18,6 @@ coverage
 *.db
 amos_federation_test.db*
 htmlcov/
+
+# السجل الدستوري — يُولَّد وقت التشغيل، لا يُدفع (السلسلة تُحقَّق محليًا وفي CI)
+core/constitution/ledger/*.jsonl

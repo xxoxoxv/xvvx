@@ -19,18 +19,18 @@
 |---|---:|
 | الأقاليم المفحوصة | 12 |
 | الأقاليم بحالة PROVEN | 0 |
-| إجمالي المخالفات | 129 |
+| إجمالي المخالفات | 111 |
 | ملفات بلا ترويسة هوية (المادة 009) | 322 |
 | منها CRITICAL | 15 |
-| منها HIGH | 71 |
-| منها MEDIUM | 43 |
+| منها HIGH | 68 |
+| منها MEDIUM | 28 |
 
 ### توزيع المخالفات حسب النوع
 
 | النوع | العدد | المعنى |
 |---|---:|---|
 | IN_MEMORY_STORE | 64 | مخزن ذاكرة يُستخدم بديلًا عن تخزين دائم |
-| SILENT_FALLBACK | 50 | استثناء يُبتلع بلا تسجيل ولا رفع |
+| SILENT_FALLBACK | 32 | استثناء يُبتلع بلا تسجيل ولا رفع |
 | HARDCODED_TRUTH | 10 | قيمة ثابتة تُقدَّم كحقيقة تشغيلية بدل قاعدة البيانات |
 | HARDCODED_SECRET | 4 | سر/كلمة مرور مكتوبة داخل الكود أو الإعداد |
 | SANDBOX_DISABLED | 1 | أداة خطرة مسجّلة بلا عزل |
@@ -41,7 +41,7 @@
 
 | الإقليم | موثّق | منفّذ | مصدر حقيقي | زائف/مخبأ | مدمج | مختبَر | مؤمَّن | مُراقَب | منشور | **مُثبَت** | الحالة |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|---|
-| `core/` | ❌ | ❌ | ❌ | ⚠️ | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `DESIGNED` |
+| `core/` | ❌ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
 | `royal/` | ❌ | ✅ | ✅ | — | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `INTEGRATED` |
 | `federal/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ❌ | ✅ | ✅ | **❌** | `UNIT_TESTED` |
 | `states/` | ✅ | ❌ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
@@ -62,18 +62,18 @@
 
 | الإقليم | md | py | yaml | أسطر كود | نوى | بلا ترويسة هوية | حالات النوى |
 |---|---:|---:|---:|---:|---:|---:|---|
-| `core/` | 52 | 2 | 0 | 46 | 13 | 3 | unspecified=13 |
+| `core/` | 54 | 9 | 0 | 965 | 13 | 3 | unspecified=13 |
 | `royal/` | 47 | 2 | 1 | 83 | 14 | 4 | unspecified=14 |
 | `federal/` | 48 | 121 | 3 | 19338 | 7 | 6 | unspecified=7 |
 | `states/` | 46 | 2 | 0 | 23 | 7 | 3 | unspecified=7 |
 | `institutions/` | 12 | 2 | 0 | 80 | 6 | 3 | unspecified=6 |
 | `agents/` | 320 | 4 | 283 | 525 | 11 | 286 | unspecified=11 |
-| `tools/` | 35 | 4 | 2 | 751 | 12 | 4 | unspecified=12 |
+| `tools/` | 35 | 4 | 2 | 754 | 12 | 4 | unspecified=12 |
 | `interfaces/` | 9 | 2 | 0 | 21 | 4 | 3 | unspecified=4 |
 | `runtime/` | 12 | 2 | 0 | 62 | 7 | 3 | unspecified=7 |
 | `docs/` | 36 | 2 | 0 | 38 | 7 | 3 | unspecified=7 |
 | `ops/` | 36 | 2 | 0 | 84 | 12 | 2 | unspecified=12 |
-| `tests/` | 5 | 3 | 0 | 123 | 5 | 2 | unspecified=5 |
+| `tests/` | 6 | 5 | 0 | 622 | 5 | 2 | unspecified=5 |
 
 ---
 
@@ -99,7 +99,7 @@
 | `tools/registry/tool-index.yaml:49` | SANDBOX_DISABLED | CRITICAL | أداة مسجّلة بلا عزل (sandbox=false) |
 | `tools/stubs/registry_check.py:18` | HARDCODED_TRUTH | CRITICAL | `TOOLS` بيانات ثابتة بديلة عن قاعدة البيانات |
 
-### HIGH (71)
+### HIGH (68)
 
 | الموقع | النوع | الخطورة | التفصيل |
 |---|---|---|---|
@@ -135,8 +135,6 @@
 | `federal/executive/services/tests/test_edge_branches.py:41` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_edge_branches.py:45` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_edge_branches.py:53` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_governance_phase3.py:228` | SILENT_FALLBACK | HIGH | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/tests/test_governance_phase3.py:244` | SILENT_FALLBACK | HIGH | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/tests/test_inmemory_stores.py:12` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryCriticStore` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_inmemory_stores.py:13` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryExperienceStore` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_inmemory_stores.py:15` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryVectorStore` يُستخدم كمصدر حقيقة |
@@ -173,9 +171,8 @@
 | `federal/executive/services/tests/test_training.py:86` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_training.py:98` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_training.py:110` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة |
-| `tests/smoke/run_smoke_tests.py:62` | SILENT_FALLBACK | HIGH | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 
-### MEDIUM (43)
+### MEDIUM (28)
 
 | الموقع | النوع | الخطورة | التفصيل |
 |---|---|---|---|
@@ -190,7 +187,6 @@
 | `federal/executive/services/src/amos_federation/common/service.py:25` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/common/tracing.py:22` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/common/tracing.py:36` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/agent_runtime/sandbox.py:38` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/api_gateway/main.py:51` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/api_gateway/main.py:70` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/api_gateway/store.py:66` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
@@ -201,24 +197,10 @@
 | `federal/executive/services/src/amos_federation/services/governance/policy_engine.py:51` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/governance/policy_engine.py:56` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/governance/policy_engine.py:61` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/governance/system_life.py:107` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/governance/system_life.py:116` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/governance/system_life.py:125` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/governance/system_life.py:134` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/governance/system_life.py:166` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/governance/system_life.py:183` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/governance/system_life.py:199` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/governance/system_life.py:230` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/governance/system_life.py:244` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:117` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:119` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:157` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:185` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:208` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:246` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:248` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/tool_registry/store.py:58` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `tools/governance/check_repository_identity.py:87` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
+| `tools/governance/check_repository_identity.py:86` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `tools/governance/truth_audit.py:243` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `tools/governance/truth_audit.py:271` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `tools/governance/truth_audit.py:348` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |

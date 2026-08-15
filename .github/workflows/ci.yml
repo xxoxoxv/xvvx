@@ -72,6 +72,47 @@ jobs:
           python-version: "3.12"
       - run: python tools/governance/check_repository_identity.py .
 
+  constitutional-kernel:
+    name: Constitutional Kernel (E1 — بوابات الدستور)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: تثبيت التبعيات
+        run: pip install pytest pytest-cov
+
+      - name: بوابة 1 — نص الدستور غير مُعدَّل (المادة الخامسة)
+        run: python -m core.constitutional_engine.cli verify
+
+      - name: بوابة 2 — لا مادة سارية بلا قاعدة تنفيذية
+        run: python -m core.constitutional_engine.cli coverage
+
+      - name: بوابة 3 — الدستور يرفض فعلاً مخالفًا فعليًا
+        run: |
+          set +e   # الرفض الدستوري يُرجع رمز 2 وهو النتيجة المطلوبة هنا
+          python -m core.constitutional_engine.cli evaluate \
+            --actor executive --action legislate --target policy/ci-probe \
+            --ledger /tmp/ci_probe.jsonl > /tmp/verdict.txt
+          code=$?
+          cat /tmp/verdict.txt
+          if [ "$code" -ne 2 ]; then
+            echo "::error::المتوقع رمز خروج 2 (DENY) والفعلي $code — المادة الثالثة لا تُنفَّذ."
+            exit 1
+          fi
+          grep -q "A003" /tmp/verdict.txt || { echo "::error::الرفض لم يُعلل برقم المادة."; exit 1; }
+          grep -q "R-003-1" /tmp/verdict.txt || { echo "::error::الرفض لم يُسمّ القاعدة."; exit 1; }
+
+      - name: بوابة 4 — سلسلة السجل سليمة
+        run: python -m core.constitutional_engine.cli ledger-verify --ledger /tmp/ci_probe.jsonl
+
+      - name: بوابة 5 — اختبارات النواة بتغطية فروع لا تقل عن 90%
+        run: |
+          python -m pytest tests/constitutional/ -q \
+            --cov=core.constitutional_engine --cov-branch \
+            --cov-report=term-missing --cov-fail-under=90
+
   truth-audit:
     name: Truth Audit (E0 — Ratchet Gate)
     runs-on: ubuntu-latest
