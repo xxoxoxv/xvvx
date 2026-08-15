@@ -17,6 +17,7 @@
 | [`adr/`](adr/NUCLEUS.md) | قرارات العمارة (Architecture Decision Records) | stub |
 | [`blueprints/`](blueprints/NUCLEUS.md) | المخططات المستقبلية | stub |
 | [`implementation/`](implementation/NUCLEUS.md) | سجلات التنفيذ | active |
+| [`maturity/`](maturity/NUCLEUS.md) | معايير النضج والفصل المستقبلي (P9) | active |
 | [`runbooks/`](runbooks/NUCLEUS.md) | كتيبات التشغيل | stub |
 | `glossary.md` | مسرد المصطلحات | موجود |
 
@@ -29,4 +30,4 @@
 - [ ] إنشاء أول قرار عمارة (ADR-001)
 - [ ] توثيق المصطلحات في glossary.md
 - [ ] إنشاء كتيبات التشغيل للمراحل الحرجة
-- [ ] ربط الوثائق بـ NUCLEUS.md ذات الصلة
+- [x] ربط الوثائق بـ NUCLEUS.md ذات الصلة (كل الأدلة الجديدة لها نواة)
