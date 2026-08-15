@@ -34,6 +34,7 @@ from amos_federation.services.governance.canary import (
     update_canary_metrics,
 )
 from amos_federation.services.governance.policy import POLICIES, check_policy
+from amos_federation.services.governance.policy_engine import get_policy_engine
 
 router = APIRouter(prefix="/v1", tags=["governance"])
 
@@ -54,6 +55,15 @@ class PolicyCheckRequest(BaseModel):
 
     policy_name: str
     context: dict[str, Any] = Field(default_factory=dict)
+
+
+class EngineEvaluateRequest(BaseModel):
+    """طلب تقييم بمحرك السياسات الحقيقي."""
+
+    context: dict[str, Any] = Field(default_factory=dict)
+    tool: str | None = None
+    role: str | None = None
+    system_state: str | None = None
 
 
 class KillSwitchRequest(BaseModel):
@@ -320,6 +330,47 @@ async def list_event_contracts(
     """عرض عقود الأحداث المعرفة."""
     from amos_federation.common.event_bus import EVENT_CONTRACTS
     return EVENT_CONTRACTS
+
+
+# === Policy Engine (Rego-like) ===
+
+@router.get("/policy/rules", response_model=list[dict])
+async def list_policy_rules(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> list[dict[str, Any]]:
+    """عرض قواعد محرك السياسات."""
+    return get_policy_engine().list_rules()
+
+
+@router.post("/policy/evaluate", response_model=dict)
+async def evaluate_policy_engine(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    req: EngineEvaluateRequest,
+) -> dict[str, Any]:
+    """تقييم سياق بمحرك السياسات الحقيقي."""
+    engine = get_policy_engine()
+    if req.tool and req.role:
+        state = req.system_state or get_system_status()["level"]
+        result = engine.evaluate_tool_access(req.tool, req.role, state)
+    else:
+        result = engine.evaluate(req.context)
+    # تسجيل التقييم في audit
+    _append_audit("policy.evaluate", "system", result)
+    return result
+
+
+@router.post("/policy/check-tool", response_model=dict)
+async def check_tool_access(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    tool: str = Query(...),
+    role: str = Query(...),
+) -> dict[str, Any]:
+    """فحص وصول أداة عبر Policy Engine."""
+    engine = get_policy_engine()
+    state = get_system_status()["level"]
+    result = engine.evaluate_tool_access(tool, role, state)
+    _append_audit("tool.access_check", role, {"tool": tool, "result": result})
+    return result
 
 
 _service = SERVICES["governance"]
