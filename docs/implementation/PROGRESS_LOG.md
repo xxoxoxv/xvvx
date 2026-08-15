@@ -6,6 +6,29 @@
 
 ## 2026-08-15
 
+### [P4] 11 وثيقة ربط قاعدة بيانات + ملخص
+- **Commit:** (هذا الـ commit)
+- **ما تم:**
+  - `agents/db_link.md` — ربط `agents` + `agent_population` + `school_results`
+  - `tools/db_link.md` — ربط `tools` + `tool_generation_queue`
+  - `runtime/db_link.md` — ربط `tasks` + `event_store`
+  - `royal/db_link.md` — ربط `royal_guards` + `king_decrees` + `audit_entries` + `reviews`
+  - `institutions/db_link.md` — ربط `institutions`
+  - `federal/db_link.md` — ربط `treasury_transactions` + `treasury_budgets` + `treasury_reports`
+  - `interfaces/db_link.md` — ربط `interface_registry`
+  - `core/db_link.md` — ربط `memories` + `experiences`
+  - `tools/models/db_link.md` — ربط `model_cache` + `model_cost_log`
+  - `states/health/db_link.md` — ربط `agent_health_checks` + `agent_treatments`
+  - `royal/security/db_link.md` — ربط `agent_isolations`
+  - `docs/implementation/db_linking_summary.md` — ملخص شامل (23 جدول، 11 مجال)
+  - كل وثيقة: أعمدة + أنواع + استعلامات SQL نموذجية + تأكيد عدم وجود ترحيلات مدمرة
+  - تحديث `EXECUTION_PLAN.md` (P4 → DONE، 5/9 مراحل)
+- **الحالة:** DONE
+
+---
+
+## 2026-08-15
+
 ### [P3] 11 stub + اختبارات دخان 11/11 PASS
 - **Commit:** (هذا الـ commit)
 - **ما تم:**
