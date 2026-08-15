@@ -6,6 +6,23 @@
 
 ## 2026-08-15
 
+### [P5] حلقة التشغيل الأساسية — أول نبضة قلب
+- **Commit:** (هذا الـ commit)
+- **ما تم:**
+  - `runtime/specs/task_lifecycle.md` — دورة حياة المهمة (6 حالات + 7 انتقالات + ربط event_store)
+  - `runtime/specs/event_logging.md` — تسجيل الأحداث (بنية الحدث + نمط تسمية amos_federation.<domain>.<action> + ضمانات append-only + سلسلة سببية causation_id/correlation_id)
+  - `royal/specs/audit_trail.md` — مسار التدقيق (سلسلة task→agent→tool→event→audit→memory + عتبات مراجعة + ضمانات)
+  - `core/specs/memory_update.md` — تحديث الذاكرة (آلية Extract→Classify→Link→Persist→Emit + سياسة اضمحلال + حلقة استرجاع)
+  - `runtime/scenarios/single_task_execution.md` — سيناريو مرجعي للحلقة الكاملة (7 خطوات + مخطط زمني + رسم Mermaid)
+  - `docs/contracts/schemas/execution_loop.schema.json` — مخطط JSON Schema للحلقة (Draft-07، pattern للنمط، x-amos metadata)
+  - NUCLEUS.md للأدلة الجديدة: runtime/specs، runtime/scenarios، royal/specs، core/specs
+  - تحديث `EXECUTION_PLAN.md` (P5 → DONE، 6/9 مراحل، مصفوفة P5 DONE)
+- **الحالة:** DONE
+
+---
+
+## 2026-08-15
+
 ### [P4] 11 وثيقة ربط قاعدة بيانات + ملخص
 - **Commit:** (هذا الـ commit)
 - **ما تم:**

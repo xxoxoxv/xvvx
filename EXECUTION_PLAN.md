@@ -25,7 +25,7 @@
 
 | المجال | مكتمل | الإجمالي | الحالة |
 |---|---:|---:|---|
-| المراحل | 5 | 9 | DOING |
+| المراحل | 6 | 9 | DOING |
 | المجالات المغطاة | 12 | 12 | DONE |
 | النوى المنشأة | 96 | 96 | DONE |
 | جداول قاعدة البيانات | 23 | 23 | DONE |
@@ -38,18 +38,18 @@
 
 | المجال | P0 | P1 | P2 | P3 | P4 | P5 | P6 | P7 | P8 | P9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| core | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
-| royal | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| core | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| royal | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | federal | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
 | states | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
 | institutions | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
-| agents | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
-| tools | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| agents | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
+| tools | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | interfaces | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
-| runtime | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
-| docs | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| runtime | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
+| docs | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | ops | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
-| tests | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| tests | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 
 ---
 
@@ -156,17 +156,17 @@
 
 ---
 
-## المرحلة 5 — حلقة التشغيل الأساسية
+## المرحلة 5 — حلقة التشغيل الأساسية (DONE)
 
 **الهدف:** إنشاء أول حلقة كاملة: مهمة ← وكيل ← أداة ← حدث ← تدقيق ← ذاكرة.
 
 | المهمة | المجال | الحالة |
 |---|---|---|
-| دورة حياة المهمة | runtime | TODO |
-| مواصفات تسجيل الأحداث | runtime | TODO |
-| مواصفات مسار التدقيق | royal | TODO |
-| مواصفات تحديث الذاكرة | core | TODO |
-| سيناريو "تنفيذ مهمة واحدة" | runtime + agents + tools | TODO |
+| دورة حياة المهمة | runtime | DONE |
+| مواصفات تسجيل الأحداث | runtime | DONE |
+| مواصفات مسار التدقيق | royal | DONE |
+| مواصفات تحديث الذاكرة | core | DONE |
+| سيناريو "تنفيذ مهمة واحدة" | runtime + agents + tools | DONE |
 
 **تعريف الإنجاز:** حلقة كاملة موثقة وقابلة للتنفيذ. أول نبضة قلب للدولة.
 
@@ -278,3 +278,4 @@
 | 2026-08-15 | P2 | 12 مخطط JSON Schema + قالب ADR | (هذا الـ commit) |
 | 2026-08-15 | P3 | 11 stub + اختبارات دخان 11/11 PASS | (هذا الـ commit) |
 | 2026-08-15 | P4 | 11 وثيقة ربط قاعدة بيانات + ملخص | (هذا الـ commit) |
+| 2026-08-15 | P5 | حلقة التشغيل الأساسية: 5 مواصفات + مخطط + سيناريو | (هذا الـ commit) |
