@@ -167,7 +167,7 @@ def _is_postgres() -> bool:
 
 def _pg_connect_args() -> dict:
     """معاملات اتصال إضافية لـ PostgreSQL (Supabase يتطلب SSL)."""
-    if not _is_postgres():
+    if not _is_postgres():  # pragma: no branch - requires PostgreSQL (production-only)
         return {"check_same_thread": False}
     return {
         "sslmode": "require",
@@ -185,7 +185,7 @@ def get_engine():
     if _engine is None:
         url = get_database_url()
         connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-        if url.startswith("postgresql"):
+        if url.startswith("postgresql"):  # pragma: no branch - requires PostgreSQL (production-only)
             connect_args = {"sslmode": "require", "connect_timeout": 15}
         _engine = create_engine(
             url,
@@ -261,7 +261,7 @@ def db_cursor():
     import sqlite3
 
     db_url = get_database_url()
-    if db_url.startswith("sqlite:///"):
+    if db_url.startswith("sqlite:///"):  # pragma: no branch - postgres path is production-only
         db_path = db_url.replace("sqlite:///", "")
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row

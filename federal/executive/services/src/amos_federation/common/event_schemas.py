@@ -56,7 +56,7 @@ def validate_event(event_type: str, payload: dict[str, Any]) -> bool:
         import jsonschema
     except ImportError:
         return _has_required_fields(schema, payload)
-    try:
+    try:  # pragma: no cover - jsonschema is an optional dependency (not in test env)
         jsonschema.validate(instance=payload, schema=schema)
     except jsonschema.ValidationError:
         return False

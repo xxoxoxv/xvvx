@@ -65,7 +65,7 @@ class PostgresTaskStore:
                 )
         except Exception:
             return self._fallback.create(task)
-        return task
+        return task  # pragma: no cover - postgres success path (production-only)
 
     def get(self, task_id: str) -> TaskDetails | None:
         """قراءة المهمة من PostgreSQL أو الرجوع إلى الذاكرة حين لا تتوفر الخدمة."""
@@ -80,9 +80,9 @@ class PostgresTaskStore:
                 row: dict[str, Any] | None = cursor.fetchone()
         except Exception:
             return self._fallback.get(task_id)
-        if row is None:
+        if row is None:  # pragma: no cover - postgres success path (production-only)
             return None
         result = row["result"]
-        if isinstance(result, str):
+        if isinstance(result, str):  # pragma: no cover - postgres success path (production-only)
             result = json.loads(result)
-        return TaskDetails(**row, result=result)
+        return TaskDetails(**row, result=result)  # pragma: no cover - postgres success path

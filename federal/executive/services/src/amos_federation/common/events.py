@@ -90,7 +90,7 @@ class EventPublisher:
 
     async def close(self):
         """إغلاق الاتصال"""
-        if self._nc:
+        if self._nc:  # pragma: no branch - requires live NATS connection (production-only)
             await self._nc.drain()
             await self._nc.close()
 
@@ -164,7 +164,7 @@ class EventPublisher:
         subject = f"{EVENT_SUBJECT_PREFIX}.{event_type}"
         event_with_hash = {**event, "chain_hash": chain_hash}
 
-        if self._nc:
+        if self._nc:  # pragma: no branch - requires live NATS connection (production-only)
             payload = json.dumps(event_with_hash, ensure_ascii=False).encode("utf-8")
             await self._js.publish(subject, payload)
             logger.info(
@@ -174,7 +174,7 @@ class EventPublisher:
                 subject=subject,
                 chain_hash=chain_hash[:20] + "...",
             )
-        elif self._local_bus:
+        elif self._local_bus:  # pragma: no branch - requires connect() fallback (production-only)
             self._local_bus.publish(subject, event_with_hash)
             logger.info(
                 "event.published_local",

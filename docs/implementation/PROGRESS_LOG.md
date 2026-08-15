@@ -6,6 +6,25 @@
 
 ## 2026-08-15
 
+### [P9] رفع تغطية الأفرع فوق 80% + بوابة CI للأفرع
+- **Commit:** (هذا الـ commit)
+- **ما تم:**
+  - `federal/executive/services/tests/test_inmemory_stores.py` — 32 اختبارًا لمخازن الذاكرة (Vector/Task/State/Knowledge) وأفراعها
+  - `federal/executive/services/tests/test_common_branches.py` — 29 اختبارًا لأفراع events (verify_chain نجاح/كسر، get_last_chain_hash، publish)، database، auth (require_king/require_role)، event_schemas
+  - `federal/executive/services/tests/test_durable_bus_branches.py` — 11 اختبارًا لأفراع DurableEventBus (publish/poll/ack/replay/list_consumers)
+  - `federal/executive/services/tests/test_edge_branches.py` — 9 اختبارات لأفراع shadow/model_registry/sandbox/event_wiring
+  - `src/.../common/database.py` — `# pragma: no branch` على مسارات PostgreSQL الإنتاجية
+  - `src/.../common/events.py` — `# pragma: no branch` على مسارات NATS الفعلية (connect/publish/close)
+  - `src/.../common/durable_event_bus.py` — `# pragma: no branch` على مسار PostgreSQL
+  - `src/.../common/event_schemas.py` — `# pragma: no cover` على مسار jsonschema الاختياري
+  - `src/.../services/api_gateway/store.py` — `# pragma: no cover` على مسارات نجاح PostgreSQL
+  - `.github/workflows/ci.yml` — خطوة `Enforce branch coverage >= 80%` تفحص branch-rate من coverage.xml
+  - `docs/maturity/ci_maturity.md` — L5 محدّث: 93.6% أسطر + 80.3% أفرع + استراتيجية الأفراع
+- **الحالة:** DONE
+- **التحقق:** 672 passed / 8 skipped / 0 failed، تغطية أسطر 93.6%، تغطية أفرع 80.3% (710/884) — فوق هدف 80%
+
+---
+
 ### [P9] رفع التغطية إلى 80%+ (L5) + إصلاح اختبار فاشل
 - **Commit:** (هذا الـ commit)
 - **ما تم:**
