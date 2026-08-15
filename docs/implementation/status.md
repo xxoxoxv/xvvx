@@ -1,7 +1,7 @@
 # حالة تنفيذ AMOS-Federation
 
 ## التعريف
-سجل الحالة الهندسي لخطة التسعين يومًا بعد إنجاز المرحلتين الأولى والثانية.
+سجل الحالة الهندسي لخطة التسعين يومًا بعد إنجاز المراحل 0-3.
 
 ## النطاق
 يوثق المنجز وما بقي في خريطة الخدمات، API، الحاويات، والاختبارات.
@@ -40,7 +40,22 @@ Federal Council
   - provenance tracking تلقائي لكل خبرة.
 - 74 اختبار: 55 من المرحلة 0-1 + 19 جديد (memory-service, experience).
 
+### المرحلة 3: Evaluation + Critic (أسابيع 13-16)
+- Critic Service: مراجعة نتائج المهام مع درجة جودة (0-1) وتغذية راجعة.
+  - `POST /v1/reviews` بمعايير قابلة للقياس (اكتمال، نتيجة، معرّفات، جودة).
+  - `GET /v1/reviews` مع فلترة (مهمة، حد أدنى للدرجة) + `GET /v1/reviews/{id}`.
+  - `GET /v1/reviews/stats/summary` لإحصائيات المراجعات.
+  - تقييم حتمي: نسبة الإكمال (40%)، وجود نتيجة (30%)، معرّفات (20%)، جودة الخطوات (10%).
+- Evaluation Harness: مجموعة 20 مهمة قياسية مغطية 4 أنواع و5 مجالات.
+  - `POST /v1/evaluations/benchmark` لتشغيل المعيار.
+  - `GET /v1/evaluations/gaps` لاكتشاف الفجوات المعرفية حسب المجال.
+  - `POST /v1/evaluations/run` محدّث ليشمل نتائج المعيار.
+  - Gap Analyzer: يكتشف المجالات ذات معدل الفشل > 30%.
+- 94 اختبار: 74 من المراحل 0-2 + 20 جديد (critic, benchmark).
+
 ## المؤجل
 - الأسبوعان 11-13: Redis/Qdrant الفعليان، عزل المستأجرين على مستوى قاعدة البيانات، hardening، restore drills، واختبارات الحمل.
-- المرحلة 3: Critic Agents + تقييم آلي + Regression Suite.
+- المرحلة 4: Alpha/Beta Shadow — نموذجين بالتوازي + Shadow Testing.
+- المرحلة 5: LoRA Factory — تدريب + Model Registry.
+- المرحلة 6: Governance + Canary — Policy Engine + Kill Switch.
 - واجهة control-console ليست خدمة Python ضمن هذا التنفيذ، وتبقى ضمن واجهة الويب المخطط لها.
