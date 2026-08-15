@@ -18,7 +18,7 @@ Federal Council
 |---------|--------|-------|
 | **API Gateway** | MVP/Persistent | هيكل FastAPI يعمل، JWT HS256 حقيقي، تخزين مهام In-Memory (تبديل لـ DB في المرحلة التالية) |
 | **Orchestrator** | MVP | تخطيط حتمي يعمل، لا Temporal ولا NATS — استدعاءات مباشرة |
-| **Agent Runtime** | MVP | Base/Worker Agent يعمل، Tool Sandbox محاكاة (12 أداة Mock) — لا Docker ولا عزل حقيقي |
+| **Agent Runtime** | Persistent/Real | Population Registry دائم، 20 وكيل بعهود تشغيلية، مدرسة بست خطوات (85% تخرج)، دورة حياة كاملة، أدوات حقيقية |
 | **Tool Registry** | Persistent/Real | تسجيل دائم بـ SQLAlchemy، 6 أدوات حقيقية تعمل فعليًا (python_execute, sql_query, http_request, document_analysis, chart_generate, text_summary)، Sandbox معزول مع قيود موارد، Policy Check قبل كل تنفيذ |
 | **Model Gateway** | Persistent/Real | مسار Claude حقيقي (مع مفتاح)، Model Layer مع caching دائم، cost tracking دائم بـ SQLAlchemy، benchmark حقيقي — لا vLLM، لا نموذج محلي GPU |
 | **Memory Service** | Persistent | تخزين SQLAlchemy/SQLite دائم، بحث Jaccard بكلمات مفتاحية — لا Redis، لا Qdrant |
@@ -108,11 +108,29 @@ Federal Council
 - endpoints: /v1/models/cost-summary، /v1/models/invoke-cached، /v1/models/benchmark
 - 14 اختبار نموذج (caching + cost + benchmark + persistence)
 - 227 اختبار إجمالي (213 + 14 جديد)
-- ملاحظة: Claude API جاهز لكن بلا مفتاح — fallback محلي يعمل فعليًا. vLLM غير متوفر (لا GPU)
+
+### Phase 6: السكان الأوائل
+- Population Registry دائم (agent_runtime/population.py):
+  - 20 وكيل بذر أوائل: منسق (1)، منفذون معرفيون (10)، تشغيليون (4)، مراقب أمني (1)، مدقق (1)، مفتش (1)، مدرب (1)، متعلم (1)
+  - كل وكيل له عقد تشغيلي (manifest): صلاحيات، أدوات مسموحة، ميزانية توكنز
+  - السكان يبقون بعد إعادة التشغيل
+- مدرسة الوكلاء (AgentSchool) — منهج ست خطوات:
+  1. فهم التعليمات (80%)
+  2. استخدام الأدوات (80%)
+  3. كتابة المخرجات (80%)
+  4. الالتزام بالدستور (85%)
+  5. التعامل مع الأخطاء (80%)
+  6. اختبار نهائي (85%)
+  - التخرج يتطلب اجتياز كل الخطوات الست
+  - run_full_curriculum: تشغيل المنهج الكامل
+- دورة حياة الوكيل تشغيليًا: registered → training → testing → employed → active → retired
+- اليوم التشغيلي الفدرالي (مبسّط — أربع نقاط): 02:00 فحص، 04:00 نسخ، 08:00 عمل، 23:00 تقرير
+- 18 اختبار سكان (registry + school + lifecycle + daily routine + integration)
+- 245 اختبار إجمالي (227 + 18 جديد)
 
 ## الحالة الحقيقية
-البيانات دائمة. الأحداث منشورة. الحوكمة تعمل. الأدوات تنفذ فعليًا. النماذج تعمل مع caching وتكلفة دائمة. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker/GPU) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
+البيانات دائمة. الأحداث منشورة. الحوكمة تعمل. الأدوات تنفذ فعليًا. النماذج تعمل مع caching وتكلفة. 20 وكيل حقيقي بعهود تشغيلية ومدرسة ودورة حياة. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker/GPU) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
 
 ## المؤجل (حسب الخارطة الجديدة v1.0)
-- Phase 6: السكان الأوائل (20 وكيل + المدرسة الأولى)
-- Phase 7-17: واجهة التحكم، النظام الصحي، المؤسسات، الخزانة، التوسع، الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق
+- Phase 7: واجهة التحكم البشري (Control Console)
+- Phase 8-17: النظام الصحي، المؤسسات، الخزانة، التوسع، الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق
