@@ -83,7 +83,7 @@ Constitutional Federal Monarchy
 | المرحلة | الاسم | الحالة | التاريخ | الدليل |
 |---|---|---|---|---|
 | **E0** | Truth Audit — تدقيق الحقيقة | `PROVEN` | 2026-08-16 | `tools/governance/truth_audit.py` + [`TRUTH_MATRIX.md`](TRUTH_MATRIX.md) | `52761ca` 
-| **E1** | Constitutional Kernel — النواة الدستورية | `PROVEN` | 2026-08-16 | `core/constitutional_engine/` + [`ARTICLE_SEALS.json`](../../core/constitution/ARTICLE_SEALS.json) | `(هذا الـcommit)` 
+| **E1** | Constitutional Kernel — النواة الدستورية | `PROVEN` | 2026-08-16 | `core/constitutional_engine/` + [`ARTICLE_SEALS.json`](../../core/constitution/ARTICLE_SEALS.json) | `50f236a` 
 | E2 | Sovereignty Kernel | `DESIGNED` | — | — |
 | E3 | Identity Kernel | `DESIGNED` | — | — |
 | E4 | Real Database Layer | `DESIGNED` | — | — |
@@ -520,4 +520,4 @@ FOUNDATION → TRUTH → CONSTITUTION → SOVEREIGNTY → IDENTITY → SECURITY
 | التاريخ | المرحلة | ما تم | Commit |
 |---|---|---|---|
 | 2026-08-16 | E0 | تثبيت خطة Phase E ومبدأ العمل وتعريف الإنجاز + بناء محرك تدقيق الحقيقة وتوليد أول TRUTH_MATRIX | `52761ca` |
-| 2026-08-16 | E1 | بناء النواة الدستورية: 19 قاعدة تنفيذية على 9 مواد + ختم SHA-256 للمواد + سجل بسلسلة تجزئة + 5 بوابات CI + 97 اختبارًا (تغطية 92.5%) · وتصحيح دقة كاشف السقوط الصامت (129→111) | `(هذا الـcommit)` |
+| 2026-08-16 | E1 | بناء النواة الدستورية: 19 قاعدة تنفيذية على 9 مواد + ختم SHA-256 للمواد + سجل بسلسلة تجزئة + 5 بوابات CI + 97 اختبارًا (تغطية 92.5%) · وتصحيح دقة كاشف السقوط الصامت (129→111) | `50f236a` |
