@@ -25,11 +25,11 @@
 
 | المجال | مكتمل | الإجمالي | الحالة |
 |---|---:|---:|---|
-| المراحل | 3 | 9 | DOING |
+| المراحل | 4 | 9 | DOING |
 | المجالات المغطاة | 12 | 12 | DONE |
 | النوى المنشأة | 96 | 96 | DONE |
 | جداول قاعدة البيانات | 23 | 23 | DONE |
-| اختبارات الدخان | 0 | 12 | TODO |
+| اختبارات الدخان | 11 | 12 | DONE |
 | السجلات (Registries) | 12 | 12 | DONE |
 
 ---
@@ -38,18 +38,18 @@
 
 | المجال | P0 | P1 | P2 | P3 | P4 | P5 | P6 | P7 | P8 | P9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| core | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| royal | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| federal | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| states | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| institutions | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| agents | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| tools | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| interfaces | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| runtime | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| docs | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| ops | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| tests | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| core | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| royal | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| federal | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| states | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| institutions | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| agents | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| tools | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| interfaces | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| runtime | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| docs | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| ops | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
+| tests | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO |
 
 ---
 
@@ -114,23 +114,23 @@
 
 ---
 
-## المرحلة 3 — نوى عاملة
+## المرحلة 3 — نوى عاملة (DONE)
 
 **الهدف:** كل مجال رئيسي له stub قابل للتشغيل أو التحقق.
 
 | المجال | المهمة | الحالة |
 |---|---|---|
-| tests | اختبارات دخان لكل 12 مجالاً | TODO |
-| runtime | هيكل مهمة + هيكل حدث | TODO |
-| tools | فحص سجل الأدوات | TODO |
-| agents | فحص سجل الوكلاء | TODO |
-| institutions | فحص سجل المؤسسات | TODO |
-| royal | فحص الحرس الملكي | TODO |
-| ops | فحص سجل التدقيق | TODO |
-| federal | فحص الخزانة | TODO |
-| core | فحص الذاكرة | TODO |
+| tests | اختبارات دخان لكل 12 مجالاً | DONE |
+| runtime | هيكل مهمة + هيكل حدث | DONE |
+| tools | فحص سجل الأدوات | DONE |
+| agents | فحص سجل الوكلاء | DONE |
+| institutions | فحص سجل المؤسسات | DONE |
+| royal | فحص الحرس الملكي | DONE |
+| ops | فحص سجل التدقيق | DONE |
+| federal | فحص الخزانة | DONE |
+| core | فحص الذاكرة | DONE |
 
-**تعريف الإنجاز:** كل stub يُرجع نتيجة حقيقية من قاعدة البيانات.
+**تعريف الإنجاز:** كل stub يُرجع نتيجة حقيقية من قاعدة البيانات. ✓ مكتمل — 11/11 stubs تُرجع بيانات حقيقية، اختبارات دخان 11/11 PASS
 
 ---
 
@@ -276,3 +276,4 @@
 | 2026-08-15 | P1 | سجل الذاكرة والمعرفة (core/memory/index.md) | `eb0bcd61` |
 | 2026-08-15 | P1 | 11 سجل وفهرس (كل المجالات) | (هذا الـ commit) |
 | 2026-08-15 | P2 | 12 مخطط JSON Schema + قالب ADR | (هذا الـ commit) |
+| 2026-08-15 | P3 | 11 stub + اختبارات دخان 11/11 PASS | (هذا الـ commit) |
