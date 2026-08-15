@@ -409,6 +409,81 @@ async def list_executive_roles(
     return get_executive_branch().list_roles()
 
 
+# === 10.x: Treasury endpoints ===
+
+@router.get("/treasury/balance", response_model=dict)
+async def get_treasury_balance(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    agent_id: str | None = Query(default=None),
+) -> dict[str, Any]:
+    """10.1: رصيد amos-credit."""
+    from amos_federation.services.governance.treasury import get_treasury
+    return get_treasury().get_balance(agent_id=agent_id)
+
+
+@router.get("/treasury/transactions", response_model=list[dict])
+async def list_treasury_transactions(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    limit: int = Query(default=50, ge=1, le=500),
+) -> list[dict[str, Any]]:
+    """10.1: عرض المعاملات."""
+    from amos_federation.services.governance.treasury import get_treasury
+    return get_treasury().list_transactions(limit=limit)
+
+
+@router.get("/treasury/verify", response_model=dict)
+async def verify_treasury_chain(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """10.1: التحقق من سلسلة المعاملات."""
+    from amos_federation.services.governance.treasury import get_treasury
+    return get_treasury().verify_chain()
+
+
+@router.post("/treasury/reward", response_model=dict)
+async def reward_agent(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    agent_id: str = Query(...),
+    experience_id: str = Query(...),
+    quality_score: float = Query(default=0.5, ge=0.0, le=1.0),
+) -> dict[str, Any]:
+    """10.2: مكافأة وكيل."""
+    from amos_federation.services.governance.treasury import get_treasury
+    return get_treasury().reward_task_completion(agent_id, experience_id, quality_score)
+
+
+@router.post("/treasury/charge", response_model=dict)
+async def charge_agent(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    agent_id: str = Query(...),
+    cost_usd: float = Query(...),
+    model_name: str = Query(default="unknown"),
+) -> dict[str, Any]:
+    """10.3: خصم رسوم."""
+    from amos_federation.services.governance.treasury import get_treasury
+    return get_treasury().charge_model_invoke(agent_id, cost_usd, model_name)
+
+
+@router.get("/treasury/reports", response_model=list[dict])
+async def list_treasury_reports(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> list[dict[str, Any]]:
+    """10.4: عرض التقارير المالية."""
+    from amos_federation.services.governance.treasury import get_treasury
+    return get_treasury().list_reports()
+
+
+@router.post("/treasury/report", response_model=dict)
+async def generate_treasury_report(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    period: str | None = Query(default=None),
+    report_type: str = Query(default="monthly"),
+) -> dict[str, Any]:
+    """10.4: توليد تقرير مالي."""
+    from amos_federation.services.governance.treasury import get_treasury
+    return get_treasury().generate_financial_report(period=period, report_type=report_type)
+
+
 # === HTML Interface ===
 
 @router.get("/ui", response_class=HTMLResponse)
