@@ -71,3 +71,14 @@ jobs:
         with:
           python-version: "3.12"
       - run: python tools/governance/check_repository_identity.py .
+
+  smoke:
+    name: Smoke Tests (12 domains)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run repo-wide smoke tests
+        run: python tests/smoke/run_smoke_tests.py
