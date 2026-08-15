@@ -19,32 +19,10 @@ router = APIRouter(prefix="/v1", tags=["training"])
 
 
 def _make_service(port: int, description: str) -> Any:
-    """إنشاء تطبيق خدمة training بدون registry."""
-    from fastapi import FastAPI
-    from fastapi.middleware.cors import CORSMiddleware
+    """إنشاء تطبيق خدمة training عبر المصنع الموحد."""
+    from amos_federation.common.service import create_service_app
 
-    app = FastAPI(
-        title="AMOS-Federation Training Service",
-        description=description,
-        version="1.0.0",
-    )
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    app.include_router(router)
-
-    @app.get("/health")
-    async def health() -> dict[str, str]:
-        return {"status": "healthy"}
-
-    @app.get("/ready")
-    async def ready() -> dict[str, str]:
-        return {"status": "ready"}
-
-    return app
+    return create_service_app("training", port, description, [router])
 
 
 # تهيئة المخازن

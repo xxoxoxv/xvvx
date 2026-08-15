@@ -55,6 +55,10 @@ def create_service_app(
     async def ready() -> ReadyResponse:
         return ReadyResponse(service=service_name)
 
+    @app.get("/live", response_model=HealthResponse, tags=["operational"])
+    async def live() -> HealthResponse:
+        return HealthResponse(service=service_name)
+
     @app.get("/", tags=["operational"])
     async def service_information() -> JSONResponse:
         return JSONResponse({"service": service_name, "port": port, "status": "healthy"})

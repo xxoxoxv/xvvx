@@ -39,10 +39,19 @@ Federal Council
 
 ### Phase 0: سلامة الأساس
 - pip install -e . ينجح (قيود مرنة لـ Python 3.14)
-- 146 اختبار ينجح
-- status.md مصنّف بدقة Mock/MVP/Persistent
-- Docker غير متوفر في البيئة — بديل محلي: كل الخدمات تستجيب /health
-- requirements.lock مُولّد
+- 591 اختبار ينجح (بعد إصلاح 201 خطأ lint وتنسيق 70 ملف)
+- ruff check: 0 أخطاء
+- ruff format --check: 110 ملف منسق
+- status.md مصنّف بدقة Mock/MVP/Persistent/Real/Complete
+- Docker غير متوفر في البيئة — بديل محلي: كل الخدمات تستجيب /health و /ready و /live
+- requirements.lock مُولّد (183 حزمة مثبتة)
+- conftest.py يضمن بيئة اختبار نظيفة (منع Flaky Tests)
+- .env.example يوثق كل متغيرات البيئة المطلوبة
+- CI workflow في جذر المستودع (.github/workflows/ci.yml)
+- فحص هوية المستودع ينجح (check_repository_identity.py)
+- تقرير فجوة tb.pdf منشور (docs/implementation/phase0_gap_report.md)
+- فحص أمني: لا أسرار، لا SQL injection، لا bare excepts
+- فحص هيكلي: لا اعتماديات دائرية، لا مسؤوليات مختلطة، لا God Services
 
 ### Phase 1: الذاكرة الدائمة
 - طبقة تخزين SQLAlchemy/SQLite دائمة (common/database.py + common/persistent.py)
@@ -272,8 +281,31 @@ Federal Council
 - 37 اختبار توسع (دفعات + تخصص + جامعة + تقاعد + UI)
 - 415 اختبار إجمالي (378 + 37 جديد)
 
-## الحالة الحقيقية
-البيانات دائمة. الأحداث منشورة. الحوكمة كاملة. الأدوات تنفذ فعليًا. النماذج تعمل مع caching وتكلفة. 20 وكيل حقيقي (قابل للتوسع لـ ~681). واجهة تحكم بشري حقيقية. نظام صحي مؤسسي. PostgreSQL متصل. السلطات الأربع فدرالية. Ed25519 حقيقي. بوابات ترقية خمس. اقتصاد داخلي بـ amos-credit. جامعات ومسارات تخصص وتقاعد. لا يزال Redis/Qdrant/NATS/MinIO/Docker/GPU غير مفعّلة.
+## الحالة الحقيقية (تصنيف صارم)
+
+**ما يعمل فعليًا في بيئة sandbox:**
+- البيانات دائمة عبر SQLAlchemy/SQLite (تبقى بعد إعادة التشغيل)
+- الأحداث منشورة عبر EventBus محلي (NATS غير متوفر — fallback يعمل)
+- الحوكمة تعمل: Audit Chain SHA-256، Policy Engine، Kill Switch، Ed25519
+- الأدوات تنفذ فعليًا في sandbox معزول (6 أدوات حقيقية)
+- النماذج تعمل مع Claude API + caching + cost tracking
+- 20 وكيل بعهود تشغيلية (قابل للتوسع)
+- واجهة تحكم بشري (HTML/JS) تعرض بيانات حقيقية
+- نظام صحي مؤسسي للوكلاء
+- PostgreSQL (Supabase) متصل عبر pooler
+- السلطات الأربع فدرالية + اقتصاد داخلي بـ amos-credit
+
+**ما لا يعمل (قيود بيئة sandbox):**
+- Docker غير متوفر — لا `docker compose up` قابل للإثبات
+- Redis غير متصل — SQLAlchemy/SQLite كبديل
+- NATS غير متصل — EventBus محلي كبديل
+- Qdrant غير متصل — بحث Jaccard كبديل
+- MinIO غير متصل — نظام ملفات محلي كبديل
+- GPU/vLLM غير متوفر — Claude API فقط
+- التدريب LoRA محاكاة (لا PEFT/transformers)
+- Shadow Testing محاكاة (لا نماذج حقيقية للمقارنة)
+
+**تصنيف المراحل 1-11:** منفذة جزئيًا (Prototype/Sandbox-verifiable) — ليست مكتملة 100% حسب بوابة الخروج
 
 ## المؤجل (حسب الخارطة الجديدة v1.0)
 - Phase 12-17: الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق

@@ -676,8 +676,7 @@ _service = SERVICES = None
 
 def get_royal_app():
     """الحصول على تطبيق FastAPI للخدمة الملكية."""
-    app = create_service_app("royal", "Royal Service")
-    app.include_router(router)
+    app = create_service_app("royal", 8011, "الخدمة الملكية — واجهة المالك", [router])
     return app
 
 
