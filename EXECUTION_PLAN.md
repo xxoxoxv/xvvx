@@ -25,7 +25,7 @@
 
 | المجال | مكتمل | الإجمالي | الحالة |
 |---|---:|---:|---|
-| المراحل | 8 | 9 | DOING |
+| المراحل | 9 | 9 | DONE |
 | المجالات المغطاة | 12 | 12 | DONE |
 | النوى المنشأة | 96 | 96 | DONE |
 | جداول قاعدة البيانات | 23 | 23 | DONE |
@@ -39,7 +39,7 @@
 | المجال | P0 | P1 | P2 | P3 | P4 | P5 | P6 | P7 | P8 | P9 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | core | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
-| royal | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
+| royal | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | DONE | TODO |
 | federal | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
 | states | DONE | DONE | DONE | DONE | DONE | TODO | DONE | TODO | TODO | TODO |
 | institutions | DONE | DONE | DONE | DONE | DONE | TODO | DONE | TODO | TODO | TODO |
@@ -48,7 +48,7 @@
 | interfaces | DONE | DONE | DONE | DONE | DONE | TODO | DONE | TODO | TODO | TODO |
 | runtime | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | docs | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
-| ops | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| ops | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | DONE | TODO |
 | tests | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 
 ---
@@ -208,19 +208,19 @@
 
 ---
 
-## المرحلة 8 — الحوكمة والأمن والمراقبة
+## المرحلة 8 — الحوكمة والأمن والمراقبة (DONE)
 
 **الهدف:** تقوية المملكة.
 
 | المجال | المهمة | الحالة |
 |---|---|---|
-| royal/governance | عتبات الموافقة | TODO |
-| royal/security | فهرس الحواجز الواقية | TODO |
-| royal/security | بروتوكول العزل | TODO |
-| royal/security | بروتوكول المفتاح الكهربائي | TODO |
-| royal/governance | تقارير التدقيق | TODO |
-| ops/observability | خطة اللوحات | TODO |
-| ops/continuity | كتيب التعافي من الكوارث | TODO |
+| royal/governance | عتبات الموافقة | DONE |
+| royal/security | فهرس الحواجز الواقية | DONE |
+| royal/security | بروتوكول العزل | DONE |
+| royal/security | بروتوكول المفتاح الكهربائي | DONE |
+| royal/governance | تقارير التدقيق | DONE |
+| ops/observability | خطة اللوحات | DONE |
+| ops/continuity | كتيب التعافي من الكوارث | DONE |
 
 **تعريف الإنجاز:** كل بروتوكول موثق وقابل للتفعيل.
 
@@ -281,3 +281,4 @@
 | 2026-08-15 | P5 | حلقة التشغيل الأساسية: 5 مواصفات + مخطط + سيناريو | (هذا الـ commit) |
 | 2026-08-15 | P6 | تفعيل المؤسسات والولايات: 10 تدفقات موثقة | (هذا الـ commit) |
 | 2026-08-15 | P7 | الواجهات: 4 مواصفات واجهة | (هذا الـ commit) |
+| 2026-08-15 | P8 | الحوكمة والأمن والمراقبة: 7 بروتوكولات | (هذا الـ commit) |
