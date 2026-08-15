@@ -1,5 +1,8 @@
 # عقود الأحداث (Event Contracts)
 
+## الهدف
+تثبيت عقود الأحداث المنشورة على NATS JetStream: اسم كل حدث وحقوله ومنتجه ومستهلكه، فلا تتواصل خدمتان بعقد ضمني.
+
 كل حدث يُنشر على NATS JetStream بالـ subject: `amos_federation.{domain}.{event_type}`
 
 ## الأحداث الأساسية

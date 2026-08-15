@@ -1,15 +1,27 @@
 # -*- coding: utf-8 -*-
-"""اختبارات طبقة تنسيق أسطول الوكلاء (2800+)."""
-import os, importlib.util
+"""
+الهدف: إثبات أن طبقة تنسيق أسطول الوكلاء تسجّل الوكلاء وتوزّع المهام وتحترم سعتها
+       المستهدفة فعلًا — لا وصفًا في وثيقة.
+النطاق: `agent_fleet.py` وحدها: التسجيل، التوزيع، حدود السعة.
+المالك: federal/executive/coordinators
+تاريخ الإنشاء: 2026-08-15
+تاريخ آخر تعديل: 2026-08-16
+
+اختبارات طبقة تنسيق أسطول الوكلاء (2800+).
+"""
+import os
+import importlib.util
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _spec = importlib.util.spec_from_file_location("agent_fleet", os.path.join(_HERE, "agent_fleet.py"))
 agent_fleet = importlib.util.module_from_spec(_spec)
-import sys as _sys
+import sys as _sys  # noqa: E402  — يلزم تحميل الوحدة أعلاه أولًا
+
 _sys.modules["agent_fleet"] = agent_fleet
 _spec.loader.exec_module(agent_fleet)
 
-from agent_fleet import (
+# استيراد بعد التحميل الديناميكي: `agent_fleet` ملف مجاور لا حزمة مثبَّتة.
+from agent_fleet import (  # noqa: E402
     FleetRegistry, FleetCoordinator, FleetAgent, FleetTask, CAPACITY_TARGET,
 )
 

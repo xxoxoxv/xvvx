@@ -27,6 +27,12 @@ jobs:
       - run: pip install ruff==0.6.9
       - run: ruff check src/ tests/
       - run: ruff format --check src/ tests/
+      # E3: فُحص المستودع كله بـ ruff فمرّ، فوُسِّعت البوابة إليه.
+      # تنسيق `ruff format` يبقى على نطاق الخدمات وحده — لم يُنسَّق باقي
+      # المستودع بعد، ولا يُزعم امتثال لم يُثبَت.
+      - name: ruff على المستودع كله (E3)
+        working-directory: .
+        run: ruff check .
 
   test:
     name: Tests
@@ -63,14 +69,51 @@ jobs:
           done
 
   identity-check:
-    name: Repository Identity (Article 009)
+    name: Identity Law (E3 — بوابات المادة التاسعة)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # الخاتم يقرأ تاريخ آخر تعديل من سجل git
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python tools/governance/check_repository_identity.py .
+      - name: تثبيت التبعيات
+        run: pip install pytest
+
+      - name: بوابة 1 — كل مجلد يحمل بطاقة هوية كاملة وكل ملف يُعلن هدفه
+        run: python tools/governance/check_repository_identity.py .
+
+      - name: بوابة 2 — بطاقات المواطنين المستوردين مولَّدة ومطابقة لبياناتهم
+        run: python tools/governance/generate_identity_cards.py --check
+
+      - name: بوابة 3 — كل إقليم مسجَّل له بطاقة
+        run: python tools/governance/write_domain_readmes.py --check
+
+      - name: بوابة 4 — الحقول المشتقّة مختومة (تاريخ git + جرد فعلي)
+        run: python tools/governance/stamp_readme_identity.py --check
+
+      - name: بوابة 5 — الحارس مُراقَب (اختبارات قانون الهوية)
+        run: python -m pytest tests/governance/ -q
+
+      - name: بوابة 6 — لا إعفاء يُوسَّع بلا تفسير دستوري مكتوب
+        run: |
+          # الإعفاء الوحيد من شرط الترويسة هو النص الدستوري المختوم، وسنده
+          # INT-001. فإن ظهر في المدقّق إعفاءٌ لا يستند إلى تفسير، فشلت البوابة.
+          test -f core/constitution/interpretations/INT-001-article-009-scope.md
+          test -f core/constitution/interpretations/INT-002-preamble-sealing.md
+          grep -q "INT-001" tools/governance/check_repository_identity.py
+
+      - name: بوابة 7 — الخاتم لا يختلق حقول الحكم
+        run: |
+          # التعريف والنطاق والمالك أحكام بشرية. لو ولّدها الخاتم يومًا، صار
+          # الامتثال زائفًا والعدّاد كاذبًا.
+          for field in "## التعريف" "## النطاق" "## المالك"; do
+            if grep -q "$field" tools/governance/stamp_readme_identity.py; then
+              echo "✗ الخاتم يكتب حقل حكم: $field"; exit 1
+            fi
+          done
+          echo "✓ الخاتم يشتقّ ولا يختلق."
 
   constitutional-kernel:
     name: Constitutional Kernel (E1 — بوابات الدستور)

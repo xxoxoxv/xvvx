@@ -1,3 +1,9 @@
+# الهدف: تسجيل مصدر المواطن المستورد «ToolTalk» وحالة سحبه وترخيصه وفحصه الأمني.
+# النطاق: هذا الوكيل وحده. لا يحمل كودًا ولا صلاحيات — بيانات تسجيل فقط.
+# المالك: agents/registry — تحت إشراف الحوكمة الفدرالية.
+# المجال المخصص: governance-audits
+# ملاحظة: هذا الملف مصدر الحقيقة لبطاقة README.md المولَّدة في هذا المجلد.
+#         بعد أي تعديل هنا، أعد تشغيل tools/governance/generate_identity_cards.py
 id: imported-governance-audits-tooltalk
 name: ToolTalk
 source_url: https://github.com/ToolTalk/ToolTalk

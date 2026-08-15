@@ -4,26 +4,26 @@
   "domains": {
     "core": {
       "domain": "core",
-      "md_files": 57,
+      "md_files": 62,
       "py_files": 15,
       "yaml_files": 0,
-      "code_lines": 1905,
+      "code_lines": 1964,
       "nucleus_count": 13,
       "nucleus_status": {
         "unspecified": 13
       },
-      "has_readme": false,
+      "has_readme": true,
       "real_source_hits": 4,
       "fake_hits": 2,
       "in_memory_hits": 0,
       "secret_hits": 0,
       "observed_hits": 2,
       "api_routes": 0,
-      "test_refs": 35,
-      "identity_violations": 3,
+      "test_refs": 42,
+      "identity_violations": 2,
       "deployed": true,
       "columns": {
-        "DOCUMENTED": false,
+        "DOCUMENTED": true,
         "IMPLEMENTED": true,
         "REAL_SOURCE": true,
         "FAKE_OR_CACHED": true,
@@ -39,15 +39,15 @@
     },
     "royal": {
       "domain": "royal",
-      "md_files": 48,
+      "md_files": 51,
       "py_files": 2,
       "yaml_files": 1,
-      "code_lines": 83,
+      "code_lines": 92,
       "nucleus_count": 14,
       "nucleus_status": {
         "unspecified": 14
       },
-      "has_readme": false,
+      "has_readme": true,
       "real_source_hits": 1,
       "fake_hits": 0,
       "in_memory_hits": 0,
@@ -55,10 +55,10 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 13,
-      "identity_violations": 4,
+      "identity_violations": 3,
       "deployed": true,
       "columns": {
-        "DOCUMENTED": false,
+        "DOCUMENTED": true,
         "IMPLEMENTED": true,
         "REAL_SOURCE": true,
         "FAKE_OR_CACHED": false,
@@ -74,10 +74,10 @@
     },
     "federal": {
       "domain": "federal",
-      "md_files": 48,
+      "md_files": 51,
       "py_files": 121,
       "yaml_files": 3,
-      "code_lines": 19338,
+      "code_lines": 19370,
       "nucleus_count": 7,
       "nucleus_status": {
         "unspecified": 7
@@ -89,8 +89,8 @@
       "secret_hits": 4,
       "observed_hits": 61,
       "api_routes": 132,
-      "test_refs": 46,
-      "identity_violations": 6,
+      "test_refs": 47,
+      "identity_violations": 2,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -109,10 +109,10 @@
     },
     "states": {
       "domain": "states",
-      "md_files": 46,
+      "md_files": 47,
       "py_files": 2,
       "yaml_files": 0,
-      "code_lines": 23,
+      "code_lines": 32,
       "nucleus_count": 7,
       "nucleus_status": {
         "unspecified": 7
@@ -125,7 +125,7 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 13,
-      "identity_violations": 3,
+      "identity_violations": 2,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -144,15 +144,15 @@
     },
     "institutions": {
       "domain": "institutions",
-      "md_files": 12,
+      "md_files": 19,
       "py_files": 2,
       "yaml_files": 0,
-      "code_lines": 80,
+      "code_lines": 89,
       "nucleus_count": 6,
       "nucleus_status": {
         "unspecified": 6
       },
-      "has_readme": false,
+      "has_readme": true,
       "real_source_hits": 1,
       "fake_hits": 1,
       "in_memory_hits": 0,
@@ -160,10 +160,10 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 2,
-      "identity_violations": 3,
+      "identity_violations": 2,
       "deployed": false,
       "columns": {
-        "DOCUMENTED": false,
+        "DOCUMENTED": true,
         "IMPLEMENTED": true,
         "REAL_SOURCE": true,
         "FAKE_OR_CACHED": true,
@@ -179,10 +179,10 @@
     },
     "agents": {
       "domain": "agents",
-      "md_files": 320,
+      "md_files": 601,
       "py_files": 4,
       "yaml_files": 283,
-      "code_lines": 525,
+      "code_lines": 549,
       "nucleus_count": 11,
       "nucleus_status": {
         "unspecified": 11
@@ -195,7 +195,7 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 122,
-      "identity_violations": 286,
+      "identity_violations": 3,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -214,23 +214,23 @@
     },
     "tools": {
       "domain": "tools",
-      "md_files": 35,
-      "py_files": 4,
+      "md_files": 36,
+      "py_files": 7,
       "yaml_files": 2,
-      "code_lines": 754,
+      "code_lines": 1525,
       "nucleus_count": 12,
       "nucleus_status": {
         "unspecified": 12
       },
       "has_readme": true,
-      "real_source_hits": 9,
+      "real_source_hits": 10,
       "fake_hits": 1,
       "in_memory_hits": 0,
       "secret_hits": 0,
       "observed_hits": 7,
       "api_routes": 0,
-      "test_refs": 26,
-      "identity_violations": 4,
+      "test_refs": 28,
+      "identity_violations": 3,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -245,19 +245,19 @@
         "PROVEN": false
       },
       "maturity": "DEPLOYED",
-      "findings_count": 6
+      "findings_count": 5
     },
     "interfaces": {
       "domain": "interfaces",
-      "md_files": 9,
+      "md_files": 14,
       "py_files": 2,
       "yaml_files": 0,
-      "code_lines": 21,
+      "code_lines": 30,
       "nucleus_count": 4,
       "nucleus_status": {
         "unspecified": 4
       },
-      "has_readme": false,
+      "has_readme": true,
       "real_source_hits": 1,
       "fake_hits": 0,
       "in_memory_hits": 0,
@@ -265,10 +265,10 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 2,
-      "identity_violations": 3,
+      "identity_violations": 2,
       "deployed": false,
       "columns": {
-        "DOCUMENTED": false,
+        "DOCUMENTED": true,
         "IMPLEMENTED": false,
         "REAL_SOURCE": false,
         "FAKE_OR_CACHED": false,
@@ -279,20 +279,20 @@
         "DEPLOYED": false,
         "PROVEN": false
       },
-      "maturity": "DESIGNED",
+      "maturity": "SPECIFIED",
       "findings_count": 0
     },
     "runtime": {
       "domain": "runtime",
-      "md_files": 12,
+      "md_files": 20,
       "py_files": 2,
       "yaml_files": 0,
-      "code_lines": 62,
+      "code_lines": 71,
       "nucleus_count": 7,
       "nucleus_status": {
         "unspecified": 7
       },
-      "has_readme": false,
+      "has_readme": true,
       "real_source_hits": 1,
       "fake_hits": 2,
       "in_memory_hits": 0,
@@ -300,10 +300,10 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 37,
-      "identity_violations": 3,
+      "identity_violations": 2,
       "deployed": true,
       "columns": {
-        "DOCUMENTED": false,
+        "DOCUMENTED": true,
         "IMPLEMENTED": true,
         "REAL_SOURCE": true,
         "FAKE_OR_CACHED": true,
@@ -319,10 +319,10 @@
     },
     "docs": {
       "domain": "docs",
-      "md_files": 36,
+      "md_files": 39,
       "py_files": 2,
       "yaml_files": 0,
-      "code_lines": 38,
+      "code_lines": 47,
       "nucleus_count": 7,
       "nucleus_status": {
         "unspecified": 7
@@ -335,7 +335,7 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 2,
-      "identity_violations": 3,
+      "identity_violations": 2,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -354,15 +354,15 @@
     },
     "ops": {
       "domain": "ops",
-      "md_files": 36,
+      "md_files": 38,
       "py_files": 2,
       "yaml_files": 0,
-      "code_lines": 84,
+      "code_lines": 93,
       "nucleus_count": 12,
       "nucleus_status": {
         "unspecified": 12
       },
-      "has_readme": false,
+      "has_readme": true,
       "real_source_hits": 1,
       "fake_hits": 0,
       "in_memory_hits": 0,
@@ -370,10 +370,10 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 2,
-      "identity_violations": 2,
+      "identity_violations": 1,
       "deployed": false,
       "columns": {
-        "DOCUMENTED": false,
+        "DOCUMENTED": true,
         "IMPLEMENTED": true,
         "REAL_SOURCE": true,
         "FAKE_OR_CACHED": false,
@@ -389,26 +389,26 @@
     },
     "tests": {
       "domain": "tests",
-      "md_files": 7,
-      "py_files": 7,
+      "md_files": 13,
+      "py_files": 8,
       "yaml_files": 0,
-      "code_lines": 1522,
+      "code_lines": 1764,
       "nucleus_count": 5,
       "nucleus_status": {
         "unspecified": 5
       },
-      "has_readme": false,
+      "has_readme": true,
       "real_source_hits": 0,
       "fake_hits": 0,
       "in_memory_hits": 0,
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 42,
-      "identity_violations": 2,
+      "test_refs": 49,
+      "identity_violations": 1,
       "deployed": true,
       "columns": {
-        "DOCUMENTED": false,
+        "DOCUMENTED": true,
         "IMPLEMENTED": true,
         "REAL_SOURCE": false,
         "FAKE_OR_CACHED": false,
@@ -427,70 +427,70 @@
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_edge_branches.py",
-      "line": 11,
+      "line": 13,
       "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_edge_branches.py",
-      "line": 15,
+      "line": 17,
       "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_edge_branches.py",
-      "line": 20,
+      "line": 22,
       "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_edge_branches.py",
-      "line": 41,
+      "line": 43,
       "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_edge_branches.py",
-      "line": 45,
+      "line": 47,
       "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_edge_branches.py",
-      "line": 53,
+      "line": 55,
       "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_common_branches.py",
-      "line": 24,
+      "line": 32,
       "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_common_branches.py",
-      "line": 210,
+      "line": 207,
       "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_common_branches.py",
-      "line": 219,
+      "line": 216,
       "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_common_branches.py",
-      "line": 226,
+      "line": 223,
       "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
@@ -1106,7 +1106,7 @@
     {
       "kind": "HARDCODED_TRUTH",
       "path": "agents/registry/imported_agents_data.py",
-      "line": 6,
+      "line": 15,
       "detail": "`AGENTS` بيانات ثابتة بديلة عن قاعدة البيانات",
       "severity": "CRITICAL"
     },
@@ -1168,13 +1168,6 @@
     },
     {
       "kind": "SILENT_FALLBACK",
-      "path": "tools/governance/check_repository_identity.py",
-      "line": 86,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
       "path": "tools/governance/truth_audit.py",
       "line": 243,
       "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
@@ -1205,17 +1198,17 @@
   "summary": {
     "domains_total": 12,
     "domains_proven": 0,
-    "findings_total": 111,
-    "identity_violations": 322,
+    "findings_total": 110,
+    "identity_violations": 25,
     "by_severity": {
       "HIGH": 68,
       "CRITICAL": 15,
-      "MEDIUM": 28
+      "MEDIUM": 27
     },
     "by_kind": {
       "IN_MEMORY_STORE": 64,
       "HARDCODED_SECRET": 4,
-      "SILENT_FALLBACK": 32,
+      "SILENT_FALLBACK": 31,
       "HARDCODED_TRUTH": 10,
       "SANDBOX_DISABLED": 1
     }

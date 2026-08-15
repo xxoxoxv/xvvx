@@ -1,3 +1,9 @@
+# الهدف: تسجيل مصدر المواطن المستورد «Falco» وحالة سحبه وترخيصه وفحصه الأمني.
+# النطاق: هذا الوكيل وحده. لا يحمل كودًا ولا صلاحيات — بيانات تسجيل فقط.
+# المالك: agents/registry — تحت إشراف الحوكمة الفدرالية.
+# المجال المخصص: security
+# ملاحظة: هذا الملف مصدر الحقيقة لبطاقة README.md المولَّدة في هذا المجلد.
+#         بعد أي تعديل هنا، أعد تشغيل tools/governance/generate_identity_cards.py
 id: imported-security-falco
 name: Falco
 source_url: https://github.com/falcosecurity/falco

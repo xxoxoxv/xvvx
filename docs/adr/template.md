@@ -4,6 +4,9 @@
 > انسخ هذا الملف إلى `NNNN-short-title.md` واملأ الأقسام. كل قرار معماري مهم يُوثّق هنا.
 > Copy this file to `NNNN-short-title.md` and fill in the sections. Every significant architecture decision is recorded here.
 
+## الهدف
+قالب قرار العمارة (ADR): يُنسخ لكل قرار معماري مهم فيُحفظ سببه وبدائله وأثره، فلا يُنسى لماذا بُني شيء على هذه الصورة.
+
 ---
 
 ## Title

@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
-"""مولّد هويات الوكلاء المستوردين — المرحلة 1 (السحب).
+"""
+الهدف: توليد هوية كل وكيل مستورد — مجلده و`identity.md` و`upstream.yaml` — وسجلًا
+       مركزيًا في `agents/registry/imported_citizens.yaml`، من بيانات المصادر في
+       `imported_agents_data.py`، دون نسخ أي كود مصدر.
+النطاق: `agents/identities/imported/` و`agents/registry/imported_citizens.yaml`.
+المالك: agents/registry
+تاريخ الإنشاء: 2026-08-15
+تاريخ آخر تعديل: 2026-08-16
+
+مولّد هويات الوكلاء المستوردين — المرحلة 1 (السحب).
 ينشئ لكل وكيل: مجلد خاص به + identity.md + upstream.yaml
 وينشئ سجلاً مركزياً: agents/registry/imported_citizens.yaml
 ولا ينسخ أي كود مصدر (منع تضخم المستودع)."""
 import os
 import re
-import hashlib
 import yaml
 from datetime import date
 
@@ -16,9 +24,12 @@ REGISTRY_FILE = os.path.join(REPO, "agents", "registry", "imported_citizens.yaml
 IMPORT_DATE = date.today().isoformat()
 
 # بيانات الوكلاء
-import sys
+import sys  # noqa: E402  — يلزم قبله ضبط المسار أدناه
+
 sys.path.insert(0, os.path.dirname(__file__))
-from imported_agents_data import AGENTS, DOMAIN_PATH
+
+# استيراد بعد ضبط المسار: البيانات ملف مجاور لا حزمة مثبَّتة.
+from imported_agents_data import AGENTS, DOMAIN_PATH  # noqa: E402
 
 
 def slugify(name: str) -> str:

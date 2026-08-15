@@ -19,18 +19,18 @@
 |---|---:|
 | الأقاليم المفحوصة | 12 |
 | الأقاليم بحالة PROVEN | 0 |
-| إجمالي المخالفات | 111 |
-| ملفات بلا ترويسة هوية (المادة 009) | 322 |
+| إجمالي المخالفات | 110 |
+| ملفات بلا ترويسة هوية (المادة 009) | 25 |
 | منها CRITICAL | 15 |
 | منها HIGH | 68 |
-| منها MEDIUM | 28 |
+| منها MEDIUM | 27 |
 
 ### توزيع المخالفات حسب النوع
 
 | النوع | العدد | المعنى |
 |---|---:|---|
 | IN_MEMORY_STORE | 64 | مخزن ذاكرة يُستخدم بديلًا عن تخزين دائم |
-| SILENT_FALLBACK | 32 | استثناء يُبتلع بلا تسجيل ولا رفع |
+| SILENT_FALLBACK | 31 | استثناء يُبتلع بلا تسجيل ولا رفع |
 | HARDCODED_TRUTH | 10 | قيمة ثابتة تُقدَّم كحقيقة تشغيلية بدل قاعدة البيانات |
 | HARDCODED_SECRET | 4 | سر/كلمة مرور مكتوبة داخل الكود أو الإعداد |
 | SANDBOX_DISABLED | 1 | أداة خطرة مسجّلة بلا عزل |
@@ -41,18 +41,18 @@
 
 | الإقليم | موثّق | منفّذ | مصدر حقيقي | زائف/مخبأ | مدمج | مختبَر | مؤمَّن | مُراقَب | منشور | **مُثبَت** | الحالة |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|---|
-| `core/` | ❌ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | **❌** | `DEPLOYED` |
-| `royal/` | ❌ | ✅ | ✅ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
+| `core/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | **❌** | `DEPLOYED` |
+| `royal/` | ✅ | ✅ | ✅ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
 | `federal/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ❌ | ✅ | ✅ | **❌** | `UNIT_TESTED` |
 | `states/` | ✅ | ❌ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
-| `institutions/` | ❌ | ✅ | ✅ | ⚠️ | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `UNIT_TESTED` |
+| `institutions/` | ✅ | ✅ | ✅ | ⚠️ | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `UNIT_TESTED` |
 | `agents/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
 | `tools/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | **❌** | `DEPLOYED` |
-| `interfaces/` | ❌ | ❌ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `DESIGNED` |
-| `runtime/` | ❌ | ✅ | ✅ | ⚠️ | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
+| `interfaces/` | ✅ | ❌ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `SPECIFIED` |
+| `runtime/` | ✅ | ✅ | ✅ | ⚠️ | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
 | `docs/` | ✅ | ❌ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
-| `ops/` | ❌ | ✅ | ✅ | — | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `INTEGRATED` |
-| `tests/` | ❌ | ✅ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
+| `ops/` | ✅ | ✅ | ✅ | — | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `INTEGRATED` |
+| `tests/` | ✅ | ✅ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
 
 > `⚠️` في عمود «زائف/مخبأ» يعني وجود قيم ثابتة أو مخازن ذاكرة تُستخدم بديلًا عن مصدر الحقيقة. أي إقليم يحمل `⚠️` **لا يمكن** أن يصل PROVEN.
 
@@ -62,18 +62,18 @@
 
 | الإقليم | md | py | yaml | أسطر كود | نوى | بلا ترويسة هوية | حالات النوى |
 |---|---:|---:|---:|---:|---:|---:|---|
-| `core/` | 57 | 15 | 0 | 1905 | 13 | 3 | unspecified=13 |
-| `royal/` | 48 | 2 | 1 | 83 | 14 | 4 | unspecified=14 |
-| `federal/` | 48 | 121 | 3 | 19338 | 7 | 6 | unspecified=7 |
-| `states/` | 46 | 2 | 0 | 23 | 7 | 3 | unspecified=7 |
-| `institutions/` | 12 | 2 | 0 | 80 | 6 | 3 | unspecified=6 |
-| `agents/` | 320 | 4 | 283 | 525 | 11 | 286 | unspecified=11 |
-| `tools/` | 35 | 4 | 2 | 754 | 12 | 4 | unspecified=12 |
-| `interfaces/` | 9 | 2 | 0 | 21 | 4 | 3 | unspecified=4 |
-| `runtime/` | 12 | 2 | 0 | 62 | 7 | 3 | unspecified=7 |
-| `docs/` | 36 | 2 | 0 | 38 | 7 | 3 | unspecified=7 |
-| `ops/` | 36 | 2 | 0 | 84 | 12 | 2 | unspecified=12 |
-| `tests/` | 7 | 7 | 0 | 1522 | 5 | 2 | unspecified=5 |
+| `core/` | 62 | 15 | 0 | 1964 | 13 | 2 | unspecified=13 |
+| `royal/` | 51 | 2 | 1 | 92 | 14 | 3 | unspecified=14 |
+| `federal/` | 51 | 121 | 3 | 19370 | 7 | 2 | unspecified=7 |
+| `states/` | 47 | 2 | 0 | 32 | 7 | 2 | unspecified=7 |
+| `institutions/` | 19 | 2 | 0 | 89 | 6 | 2 | unspecified=6 |
+| `agents/` | 601 | 4 | 283 | 549 | 11 | 3 | unspecified=11 |
+| `tools/` | 36 | 7 | 2 | 1525 | 12 | 3 | unspecified=12 |
+| `interfaces/` | 14 | 2 | 0 | 30 | 4 | 2 | unspecified=4 |
+| `runtime/` | 20 | 2 | 0 | 71 | 7 | 2 | unspecified=7 |
+| `docs/` | 39 | 2 | 0 | 47 | 7 | 2 | unspecified=7 |
+| `ops/` | 38 | 2 | 0 | 93 | 12 | 1 | unspecified=12 |
+| `tests/` | 13 | 8 | 0 | 1764 | 5 | 1 | unspecified=5 |
 
 ---
 
@@ -83,7 +83,7 @@
 
 | الموقع | النوع | الخطورة | التفصيل |
 |---|---|---|---|
-| `agents/registry/imported_agents_data.py:6` | HARDCODED_TRUTH | CRITICAL | `AGENTS` بيانات ثابتة بديلة عن قاعدة البيانات |
+| `agents/registry/imported_agents_data.py:15` | HARDCODED_TRUTH | CRITICAL | `AGENTS` بيانات ثابتة بديلة عن قاعدة البيانات |
 | `agents/stubs/registry_check.py:18` | HARDCODED_TRUTH | CRITICAL | `AGENT_COUNT = 342` عدّاد ثابت يُقدَّم كحقيقة تشغيلية |
 | `agents/stubs/registry_check.py:21` | HARDCODED_TRUTH | CRITICAL | `AGENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات |
 | `core/stubs/memory_check.py:19` | HARDCODED_TRUTH | CRITICAL | `MEMORIES` بيانات ثابتة بديلة عن قاعدة البيانات |
@@ -125,16 +125,16 @@
 | `federal/executive/services/src/amos_federation/services/training/main.py:29` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/src/amos_federation/services/training/main.py:30` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/src/amos_federation/services/training/model_registry.py:30` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_common_branches.py:24` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_common_branches.py:210` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_common_branches.py:219` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_common_branches.py:226` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_edge_branches.py:11` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_edge_branches.py:15` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_edge_branches.py:20` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_edge_branches.py:41` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_edge_branches.py:45` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
-| `federal/executive/services/tests/test_edge_branches.py:53` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
+| `federal/executive/services/tests/test_common_branches.py:32` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة |
+| `federal/executive/services/tests/test_common_branches.py:207` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة |
+| `federal/executive/services/tests/test_common_branches.py:216` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة |
+| `federal/executive/services/tests/test_common_branches.py:223` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة |
+| `federal/executive/services/tests/test_edge_branches.py:13` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة |
+| `federal/executive/services/tests/test_edge_branches.py:17` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
+| `federal/executive/services/tests/test_edge_branches.py:22` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة |
+| `federal/executive/services/tests/test_edge_branches.py:43` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
+| `federal/executive/services/tests/test_edge_branches.py:47` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
+| `federal/executive/services/tests/test_edge_branches.py:55` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_inmemory_stores.py:12` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryCriticStore` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_inmemory_stores.py:13` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryExperienceStore` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_inmemory_stores.py:15` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryVectorStore` يُستخدم كمصدر حقيقة |
@@ -172,7 +172,7 @@
 | `federal/executive/services/tests/test_training.py:98` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_training.py:110` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة |
 
-### MEDIUM (28)
+### MEDIUM (27)
 
 | الموقع | النوع | الخطورة | التفصيل |
 |---|---|---|---|
@@ -200,7 +200,6 @@
 | `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:117` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:246` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/tool_registry/store.py:58` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
-| `tools/governance/check_repository_identity.py:86` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `tools/governance/truth_audit.py:243` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `tools/governance/truth_audit.py:271` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `tools/governance/truth_audit.py:348` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
