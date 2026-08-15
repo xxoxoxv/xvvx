@@ -1,47 +1,12 @@
-# AMOS-Federation .gitignore
-# الهدف: تجاهل الملفات المؤقتة والبيئات الافتراضية
-# النطاق: المستودع كامل
-# المالك: meta
-# تاريخ الإنشاء: 2026-08-15
+# Runtime-only secrets and local state (NOT committed to repo)
+.runtime/
+*.local
+.env
 
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-env/
-.venv/
-*.egg-info/
-dist/
-build/
+*.pyc
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# Environment
-.env
-.env.*
-!.env.example
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Docker
-*.pid
-
-# Data (local dev)
-*.db
-*.sqlite
-*.sqlite3
 *.egg-info/
-federal/executive/services/src/amos_federation.egg-info/
-federal/executive/services/*.egg-info/
+build/
+dist/
