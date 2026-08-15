@@ -7,7 +7,6 @@ AMOS-Federation Real Model Layer
 """
 
 import hashlib
-import json
 import time
 import uuid
 from datetime import UTC, datetime
@@ -25,6 +24,7 @@ class ModelBase(DeclarativeBase):
 
 class ModelCacheModel(ModelBase):
     """ذاكرة تخزين مؤقت للاستدعاءات النماذج."""
+
     __tablename__ = "model_cache"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -38,6 +38,7 @@ class ModelCacheModel(ModelBase):
 
 class CostLogModel(ModelBase):
     """سجل التكلفة الدائم."""
+
     __tablename__ = "model_cost_log"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -65,7 +66,9 @@ class ModelLayer:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         ModelBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
@@ -80,7 +83,11 @@ class ModelLayer:
         cache_key = self._hash_prompt(prompt, model)
         session = self._Session()
         try:
-            row = session.query(ModelCacheModel).filter(ModelCacheModel.cache_key == cache_key).first()
+            row = (
+                session.query(ModelCacheModel)
+                .filter(ModelCacheModel.cache_key == cache_key)
+                .first()
+            )
             if row:
                 return {
                     "text": row.response,
@@ -97,7 +104,11 @@ class ModelLayer:
         cache_key = self._hash_prompt(prompt, model)
         session = self._Session()
         try:
-            existing = session.query(ModelCacheModel).filter(ModelCacheModel.cache_key == cache_key).first()
+            existing = (
+                session.query(ModelCacheModel)
+                .filter(ModelCacheModel.cache_key == cache_key)
+                .first()
+            )
             if existing:
                 return  # لا نعيد الكتابة
             row = ModelCacheModel(
@@ -118,8 +129,15 @@ class ModelLayer:
         cost = (input_tokens / 1000) * pricing["input"] + (output_tokens / 1000) * pricing["output"]
         return round(cost, 6)
 
-    def log_cost(self, invocation_id: str, model: str, tokens: int,
-                 cost_usd: float, latency_ms: int, source: str) -> None:
+    def log_cost(
+        self,
+        invocation_id: str,
+        model: str,
+        tokens: int,
+        cost_usd: float,
+        latency_ms: int,
+        source: str,
+    ) -> None:
         """تسجيل التكلفة دائمًا في DB."""
         session = self._Session()
         try:
@@ -160,8 +178,9 @@ class ModelLayer:
         finally:
             session.close()
 
-    def invoke_with_cache(self, prompt: str, model: str, max_tokens: int,
-                          invoke_fn=None) -> dict[str, Any]:
+    def invoke_with_cache(
+        self, prompt: str, model: str, max_tokens: int, invoke_fn=None
+    ) -> dict[str, Any]:
         """استدعاء نموذج مع caching."""
         # 1. فحص الذاكرة المؤقتة
         cached = self.get_cached(prompt, model)
@@ -206,8 +225,9 @@ class ModelLayer:
             "cached": False,
         }
 
-    def benchmark_models(self, prompts: list[str], models: list[str],
-                         invoke_fn=None) -> dict[str, Any]:
+    def benchmark_models(
+        self, prompts: list[str], models: list[str], invoke_fn=None
+    ) -> dict[str, Any]:
         """مقارنة أداء النماذج."""
         results: dict[str, list] = {}
         for model in models:
@@ -215,13 +235,15 @@ class ModelLayer:
             for prompt in prompts:
                 start = time.monotonic()
                 resp = self.invoke_with_cache(prompt, model, 256, invoke_fn)
-                latency = time.monotonic() - start
-                results[model].append({
-                    "latency_ms": resp["latency_ms"],
-                    "tokens": resp["tokens"],
-                    "cost_usd": resp["cost_usd"],
-                    "cached": resp["cached"],
-                })
+                time.monotonic() - start
+                results[model].append(
+                    {
+                        "latency_ms": resp["latency_ms"],
+                        "tokens": resp["tokens"],
+                        "cost_usd": resp["cost_usd"],
+                        "cached": resp["cached"],
+                    }
+                )
 
         # حساب المتوسطات
         summary: dict[str, dict] = {}

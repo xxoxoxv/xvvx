@@ -11,19 +11,27 @@ from fastapi.testclient import TestClient
 
 from amos_federation.common.auth import create_access_token
 from amos_federation.services.agent_runtime.population import get_population_registry
-from amos_federation.services.governance.federation import (
-    Ed25519Signer, ApprovalSystem, PromotionSystem,
-    ExecutiveBranch, LegislativeBranch, JudicialBranch, SupremeOversight,
-    GATE_ORDER, EXECUTIVE_ROLES,
-    get_approval_system, get_promotion_system, get_executive_branch,
-    get_legislative_branch, get_judicial_branch, get_supreme_oversight,
-)
 from amos_federation.services.control_console.main import app
+from amos_federation.services.governance.federation import (
+    GATE_ORDER,
+    ApprovalSystem,
+    Ed25519Signer,
+    ExecutiveBranch,
+    JudicialBranch,
+    LegislativeBranch,
+    PromotionSystem,
+    SupremeOversight,
+)
 
 AUTH_HEADERS = {
-    "Authorization": "Bearer " + create_access_token("tester", [
-        "governance:read", "governance:write",
-    ])
+    "Authorization": "Bearer "
+    + create_access_token(
+        "tester",
+        [
+            "governance:read",
+            "governance:write",
+        ],
+    )
 }
 client = TestClient(app)
 
@@ -31,10 +39,11 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def seed_and_clean():
     """بذر الوكلاء وتنظيف الجداول."""
+    from sqlalchemy import create_engine, delete
+
+    from amos_federation.common.database import get_database_url, get_session_factory
     from amos_federation.services.governance.canary import reset_kill_switch
-    from amos_federation.common.database import get_session_factory, get_database_url
     from amos_federation.services.governance.federation import _GovBase
-    from sqlalchemy import delete, create_engine
 
     reset_kill_switch()
     # Ensure all federation tables exist
@@ -48,16 +57,27 @@ def seed_and_clean():
     yield
     # Clean up federation tables
     from amos_federation.services.governance.federation import (
-        ApprovalModel, PromotionGateModel, ExecutiveRoleModel,
-        LegislationModel, CourtCaseModel, ComplianceReportModel,
+        ApprovalModel,
+        ComplianceReportModel,
+        CourtCaseModel,
+        ExecutiveRoleModel,
+        LegislationModel,
+        PromotionGateModel,
     )
+
     session = get_session_factory()()
     try:
-        for model in [ApprovalModel, PromotionGateModel, LegislationModel,
-                      CourtCaseModel, ComplianceReportModel]:
+        for model in [
+            ApprovalModel,
+            PromotionGateModel,
+            LegislationModel,
+            CourtCaseModel,
+            ComplianceReportModel,
+        ]:
             session.execute(delete(model))
         # Reset executive roles to vacant
         from sqlalchemy import select as sa_select
+
         roles = session.execute(sa_select(ExecutiveRoleModel)).scalars().all()
         for role in roles:
             role.agent_id = None
@@ -68,12 +88,13 @@ def seed_and_clean():
     reset_kill_switch()
 
 
-
 # === 9.1: Expanded Policy Engine ===
+
 
 def test_policy_rules_cover_all_services() -> None:
     """9.1: Policy Engine يغطي كل الخدمات."""
     from amos_federation.services.governance.federation import POLICY_RULES_EXPANDED
+
     services = set(r["service"] for r in POLICY_RULES_EXPANDED)
     assert "tool-registry" in services
     assert "model-gateway" in services
@@ -86,10 +107,12 @@ def test_policy_rules_cover_all_services() -> None:
 def test_policy_rules_count() -> None:
     """عدد القواعد الموسّعة ≥ 10."""
     from amos_federation.services.governance.federation import POLICY_RULES_EXPANDED
+
     assert len(POLICY_RULES_EXPANDED) >= 10
 
 
 # === 9.3: Ed25519 Signing ===
+
 
 def test_ed25519_generate_keypair() -> None:
     """توليد زوج مفاتيح."""
@@ -118,6 +141,7 @@ def test_ed25519_verify_fails_wrong_sig() -> None:
 
 
 # === 9.2 + 9.3: Approval System ===
+
 
 def test_request_approval() -> None:
     """طلب موافقة مع توقيع."""
@@ -176,6 +200,7 @@ def test_decide_already_decided_raises() -> None:
 def test_approval_publishes_event() -> None:
     """طلب موافقة ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.governance.approval_requested")
     signer = Ed25519Signer()
@@ -185,6 +210,7 @@ def test_approval_publishes_event() -> None:
 
 
 # === 9.4: Promotion Gates ===
+
 
 def test_start_promotion_creates_five_gates() -> None:
     """بدء ترقية ينشئ 5 بوابات."""
@@ -240,6 +266,7 @@ def test_promotion_status_not_all_passed() -> None:
 def test_gate_passed_publishes_event() -> None:
     """اجتياز بوابة ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.governance.gate_passed")
     system = PromotionSystem()
@@ -249,6 +276,7 @@ def test_gate_passed_publishes_event() -> None:
 
 
 # === 9.5: Executive Branch ===
+
 
 def test_executive_roles_initialized() -> None:
     """الأدوار التنفيذية الخمسة مهيأة."""
@@ -297,6 +325,7 @@ def test_appoint_invalid_role_raises() -> None:
 
 # === 9.6: Legislative Branch ===
 
+
 def test_propose_legislation() -> None:
     """اقتراح قانون."""
     result = LegislativeBranch().propose("قانون 1", "نص القانون", "agent-001")
@@ -307,8 +336,11 @@ def test_full_legislative_cycle() -> None:
     """دورة تشريعية كاملة: اقتراح → مناقشة → تصويت → إقرار."""
     branch = LegislativeBranch()
     voters = [
-        ("agent-001", "for"), ("agent-002", "for"), ("agent-003", "for"),
-        ("agent-004", "against"), ("agent-005", "abstain"),
+        ("agent-001", "for"),
+        ("agent-002", "for"),
+        ("agent-003", "for"),
+        ("agent-004", "against"),
+        ("agent-005", "abstain"),
     ]
     result = branch.run_full_legislative_cycle(
         "قانون الأمن", "يحظر الأدوات الخطيرة بدون موافقة", "agent-001", voters
@@ -350,6 +382,7 @@ def test_legislation_enacted_adds_to_policy_engine() -> None:
 def test_legislation_publishes_events() -> None:
     """الدورة التشريعية تنشر أحداثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.legislative.proposed")
     LegislativeBranch().propose("قانون 3", "نص", "agent-001")
@@ -357,6 +390,7 @@ def test_legislation_publishes_events() -> None:
 
 
 # === 9.7: Judicial Branch ===
+
 
 def test_file_case() -> None:
     """رفع دعوى."""
@@ -385,6 +419,7 @@ def test_rule_on_case() -> None:
 def test_judicial_publishes_events() -> None:
     """رفع دعوى ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.judicial.case_filed")
     JudicialBranch().file_case("a", "b", "نزاع")
@@ -402,6 +437,7 @@ def test_list_cases() -> None:
 
 # === 9.8: Supreme Oversight ===
 
+
 def test_generate_compliance_report() -> None:
     """تقرير امتثال شهري حقيقي."""
     result = SupremeOversight().generate_compliance_report("2026-08")
@@ -415,6 +451,7 @@ def test_generate_compliance_report() -> None:
 def test_compliance_report_uses_real_audit() -> None:
     """التقرير مبني على Audit Chain الحقيقي."""
     from amos_federation.common.persistent import PersistentAuditStore
+
     audit = PersistentAuditStore()
     audit.append("test_action", "tester", {"test": True})
     result = SupremeOversight().generate_compliance_report("2026-08")
@@ -432,6 +469,7 @@ def test_list_reports() -> None:
 def test_oversight_publishes_event() -> None:
     """توليد تقرير ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.oversight.report_generated")
     SupremeOversight().generate_compliance_report("2026-08")
@@ -439,6 +477,7 @@ def test_oversight_publishes_event() -> None:
 
 
 # === Control Console integration ===
+
 
 def test_ui_approvals_endpoint() -> None:
     """واجهة التحكم تعرض الموافقات."""

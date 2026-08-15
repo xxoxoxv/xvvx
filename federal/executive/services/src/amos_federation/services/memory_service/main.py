@@ -9,12 +9,12 @@ AMOS-Federation Memory Service
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
 
 from amos_federation.common.auth import require_auth
 from amos_federation.common.persistent import PersistentMemoryStore
 from amos_federation.common.registry import SERVICES
-from amos_federation.common.schemas import MemoryQuery, MemoryStore as MemoryStoreModel
+from amos_federation.common.schemas import MemoryQuery
+from amos_federation.common.schemas import MemoryStore as MemoryStoreModel
 from amos_federation.common.service import create_service_app
 
 router = APIRouter(prefix="/v1", tags=["memory-service"])
@@ -80,4 +80,6 @@ async def memory_stats(
 
 
 _service = SERVICES["memory-service"]
-app = create_service_app(_service["name"], _service["port"], "ذاكرة تشغيلية ومعرفية دائمة", [router])
+app = create_service_app(
+    _service["name"], _service["port"], "ذاكرة تشغيلية ومعرفية دائمة", [router]
+)

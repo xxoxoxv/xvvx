@@ -18,17 +18,18 @@ from amos_federation.common.config import settings
 _security = HTTPBearer(auto_error=False)
 
 # الأدوار في النظام الملكي الفدرالي
-ROLE_KING = "king"               # المالك المطلق — صلاحيات غير محدودة
+ROLE_KING = "king"  # المالك المطلق — صلاحيات غير محدودة
 ROLE_ROYAL_GUARD = "royal_guard"  # حرس ملكي — مراقبة وتدقيق
-ROLE_ADMIN = "admin"             # مدير — صلاحيات تنفيذية واسعة
-ROLE_AGENT = "agent"             # وكيل — صلاحيات محدودة
-ROLE_CITIZEN = "citizen"         # مواطن — وصول للقراءة فقط
+ROLE_ADMIN = "admin"  # مدير — صلاحيات تنفيذية واسعة
+ROLE_AGENT = "agent"  # وكيل — صلاحيات محدودة
+ROLE_CITIZEN = "citizen"  # مواطن — وصول للقراءة فقط
 
 ALL_ROLES = [ROLE_KING, ROLE_ROYAL_GUARD, ROLE_ADMIN, ROLE_AGENT, ROLE_CITIZEN]
 
 
-def create_access_token(subject: str, scopes: list[str], tenant_id: str | None = None,
-                        role: str = ROLE_CITIZEN) -> str:
+def create_access_token(
+    subject: str, scopes: list[str], tenant_id: str | None = None, role: str = ROLE_CITIZEN
+) -> str:
     """إنشاء رمز وصول موقع بخوارزمية HS256."""
     expires_at = datetime.now(UTC) + timedelta(minutes=settings.jwt_expire_minutes)
     payload: dict[str, Any] = {
@@ -79,6 +80,7 @@ def require_auth(
 
 def require_role(*roles: str):
     """اعتماد يتطلب دوراً محدداً أو أكثر. الملك له صلاحيات مطلقة."""
+
     def checker(
         credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_security)] = None,
     ) -> dict[str, Any]:
@@ -92,6 +94,7 @@ def require_role(*roles: str):
                 detail=f"الدور المطلوب: {roles} — دورك الحالي: {user_role}",
             )
         return token_data
+
     return checker
 
 

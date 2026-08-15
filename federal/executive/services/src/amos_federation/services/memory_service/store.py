@@ -7,21 +7,22 @@ AMOS-Federation Memory Store
 """
 
 import hashlib
-import math
 import re
 from collections import defaultdict
 from typing import Any, Protocol
-
-from amos_federation.common.schemas import MemoryQuery, MemoryStore as MemoryStoreModel
 
 
 class MemoryBackend(Protocol):
     """عقد خلفية تخزين الذاكرة."""
 
-    def store(self, key: str, value: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
+    def store(
+        self, key: str, value: dict[str, Any], tenant_id: str | None = None
+    ) -> dict[str, Any]:
         """حفظ عنصر ذاكرة وإرجاعه."""
 
-    def query(self, query: str, tenant_id: str | None = None, limit: int = 10) -> list[dict[str, Any]]:
+    def query(
+        self, query: str, tenant_id: str | None = None, limit: int = 10
+    ) -> list[dict[str, Any]]:
         """البحث في الذاكرة بنص استعلام."""
 
     def get(self, key: str, tenant_id: str | None = None) -> dict[str, Any] | None:
@@ -53,7 +54,9 @@ class InMemoryVectorStore:
         self._items: list[dict[str, Any]] = []
         self._index: dict[str, dict[str, Any]] = defaultdict(dict)
 
-    def store(self, key: str, value: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
+    def store(
+        self, key: str, value: dict[str, Any], tenant_id: str | None = None
+    ) -> dict[str, Any]:
         """حفظ عنصر ذاكرة مع فهرسة كلمات مفتاحية."""
         text = f"{key} {value.get('content', '')} {value.get('summary', '')}"
         item = {
@@ -64,7 +67,14 @@ class InMemoryVectorStore:
             "item_hash": hashlib.sha256(text.encode()).hexdigest()[:16],
         }
         # تحديث إن وُجد سابق بنفس المفتاح
-        existing = next((i for i, x in enumerate(self._items) if x["key"] == key and x.get("tenant_id") == tenant_id), None)
+        existing = next(
+            (
+                i
+                for i, x in enumerate(self._items)
+                if x["key"] == key and x.get("tenant_id") == tenant_id
+            ),
+            None,
+        )
         if existing is not None:
             self._items[existing] = item
         else:
@@ -73,7 +83,9 @@ class InMemoryVectorStore:
         self._index[tenant_key][key] = item
         return {"key": key, "value": value, "tenant_id": tenant_id}
 
-    def query(self, query: str, tenant_id: str | None = None, limit: int = 10) -> list[dict[str, Any]]:
+    def query(
+        self, query: str, tenant_id: str | None = None, limit: int = 10
+    ) -> list[dict[str, Any]]:
         """البحث في الذاكرة بتشابه الكلمات المفتاحية."""
         query_words = _tokenize(query)
         scored: list[tuple[float, dict[str, Any]]] = []
@@ -82,7 +94,9 @@ class InMemoryVectorStore:
                 continue
             score = _keyword_similarity(query_words, item["tokens"])
             if score > 0:
-                scored.append((score, {"key": item["key"], "value": item["value"], "score": round(score, 4)}))
+                scored.append(
+                    (score, {"key": item["key"], "value": item["value"], "score": round(score, 4)})
+                )
         scored.sort(key=lambda pair: (-pair[0], pair[1]["key"]))
         return [item for _, item in scored[:limit]]
 
@@ -95,7 +109,11 @@ class InMemoryVectorStore:
         # بحث عام
         for item in self._items:
             if item["key"] == key:
-                return {"key": item["key"], "value": item["value"], "tenant_id": item.get("tenant_id")}
+                return {
+                    "key": item["key"],
+                    "value": item["value"],
+                    "tenant_id": item.get("tenant_id"),
+                }
         return None
 
     def count(self, tenant_id: str | None = None) -> int:

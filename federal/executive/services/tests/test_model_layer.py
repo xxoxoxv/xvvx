@@ -22,6 +22,7 @@ def layer():
 
 # === 5.4: Cost Tracking حقيقي ===
 
+
 def test_cost_tracking_persistent() -> None:
     """التكلفة تُسجل دائمًا في DB."""
     layer = ModelLayer()
@@ -70,6 +71,7 @@ def test_cost_summary_by_model() -> None:
 
 # === 5.5: Model Caching ===
 
+
 def test_model_cache_hit() -> None:
     """نفس السؤال يُعاد من الذاكرة المؤقتة."""
     layer = ModelLayer()
@@ -114,6 +116,7 @@ def test_model_cache_persists() -> None:
 
 # === 5.6: Benchmark ===
 
+
 def test_benchmark_models() -> None:
     """مقارنة أداء النماذج."""
     layer = ModelLayer()
@@ -138,6 +141,7 @@ def test_benchmark_shows_cache_effect() -> None:
 
 # === invoke_with_cache integration ===
 
+
 def test_invoke_returns_real_response() -> None:
     """invoke_with_cache يعيد استجابة حقيقية."""
     layer = ModelLayer()
@@ -151,8 +155,10 @@ def test_invoke_returns_real_response() -> None:
 def test_invoke_custom_function() -> None:
     """دالة استدعاء مخصصة تعمل."""
     layer = ModelLayer()
+
     def my_fn(prompt, model, max_tokens):
         return f"رد مخصص على: {prompt}", 10
+
     result = layer.invoke_with_cache("اختبار مخصص", "custom-model", 100, invoke_fn=my_fn)
     assert "رد مخصص" in result["text"]
     assert result["tokens"] == 10

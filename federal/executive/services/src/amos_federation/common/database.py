@@ -28,13 +28,16 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 class Base(DeclarativeBase):
     """القاعدة لكل النماذج."""
+
     pass
 
 
 # === النماذج ===
 
+
 class AgentModel(Base):
     """جدول الوكلاء."""
+
     __tablename__ = "agents"
 
     id = Column(String, primary_key=True)
@@ -46,11 +49,14 @@ class AgentModel(Base):
     token_budget = Column(Integer, default=10000)
     tenant_id = Column(String, default="default")
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
 
 class ToolModel(Base):
     """جدول الأدوات."""
+
     __tablename__ = "tools"
 
     id = Column(String, primary_key=True)
@@ -67,6 +73,7 @@ class ToolModel(Base):
 
 class TaskModel(Base):
     """جدول المهام."""
+
     __tablename__ = "tasks"
 
     id = Column(String, primary_key=True)
@@ -78,11 +85,14 @@ class TaskModel(Base):
     result = Column(JSON, default=dict)
     tenant_id = Column(String, default="default")
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
 
 class MemoryModel(Base):
     """جدول الذاكرة التشغيلية."""
+
     __tablename__ = "memories"
 
     key = Column(String, primary_key=True)
@@ -94,6 +104,7 @@ class MemoryModel(Base):
 
 class ExperienceModel(Base):
     """جدول الخبرات."""
+
     __tablename__ = "experiences"
 
     id = Column(String, primary_key=True)
@@ -110,6 +121,7 @@ class ExperienceModel(Base):
 
 class ReviewModel(Base):
     """جدول مراجعات الناقد."""
+
     __tablename__ = "reviews"
 
     id = Column(String, primary_key=True)
@@ -124,6 +136,7 @@ class ReviewModel(Base):
 
 class AuditEntryModel(Base):
     """جدول سجل التدقيق."""
+
     __tablename__ = "audit_entries"
 
     id = Column(String, primary_key=True)
@@ -136,6 +149,7 @@ class AuditEntryModel(Base):
 
 
 # === إدارة الاتصال ===
+
 
 def get_database_url() -> str:
     """الحصول على رابط قاعدة البيانات."""
@@ -171,7 +185,14 @@ def get_engine():
         connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
         if url.startswith("postgresql"):
             connect_args = {"sslmode": "require", "connect_timeout": 15}
-        _engine = create_engine(url, connect_args=connect_args, echo=False, pool_pre_ping=True, pool_size=5, max_overflow=10)
+        _engine = create_engine(
+            url,
+            connect_args=connect_args,
+            echo=False,
+            pool_pre_ping=True,
+            pool_size=5,
+            max_overflow=10,
+        )
     return _engine
 
 
@@ -208,6 +229,7 @@ def get_db() -> Generator[Session, None, None]:
 
 def with_db(func):
     """Decorator لتوفير جلسة DB تلقائيًا."""
+
     def wrapper(*args, **kwargs):
         session = get_session_factory()()
         try:
@@ -219,23 +241,23 @@ def with_db(func):
             raise
         finally:
             session.close()
+
     return wrapper
 
 
 # === توافق عكسي مع الوحدات القديمة ===
+
 
 def generate_uuid() -> uuid.UUID:
     """توليد معرّف فريد (توافق عكسي)."""
     return uuid.uuid4()
 
 
-import contextlib
-
-
 @contextlib.contextmanager
 def db_cursor():
     """محرّك قاعدة البيانات للتوافق العكسي مع events.py."""
     import sqlite3
+
     db_url = get_database_url()
     if db_url.startswith("sqlite:///"):
         db_path = db_url.replace("sqlite:///", "")
@@ -250,6 +272,7 @@ def db_cursor():
         # PostgreSQL path for production (Supabase)
         import psycopg2
         from psycopg2.extras import RealDictCursor
+
         conn = psycopg2.connect(db_url, sslmode="require", connect_timeout=15)
         try:
             yield conn.cursor(cursor_factory=RealDictCursor)

@@ -8,7 +8,6 @@ AMOS-Federation Policy Engine
 
 from typing import Any
 
-
 # تعريفات السياسات
 POLICIES: dict[str, dict[str, Any]] = {
     "promotion_policy": {
@@ -30,9 +29,7 @@ POLICIES: dict[str, dict[str, Any]] = {
 }
 
 
-def check_policy(
-    policy_name: str, context: dict[str, Any]
-) -> dict[str, Any]:
+def check_policy(policy_name: str, context: dict[str, Any]) -> dict[str, Any]:
     """فحص سياسة معينة ضد سياق قرار."""
     policy = POLICIES.get(policy_name)
     if policy is None:

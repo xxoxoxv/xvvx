@@ -6,8 +6,6 @@
 تاريخ الإنشاء: 2026-08-15
 """
 
-import hashlib
-
 from fastapi.testclient import TestClient
 
 from amos_federation.common.auth import create_access_token
@@ -15,7 +13,6 @@ from amos_federation.common.persistent import PersistentAuditStore
 from amos_federation.services.governance.canary import (
     activate_kill_switch,
     enforce_kill_switch,
-    get_system_status,
     is_execution_blocked,
     is_system_halted,
     reset_kill_switch,
@@ -28,14 +25,20 @@ from amos_federation.services.governance.policy_engine import (
 )
 
 AUTH_HEADERS = {
-    "Authorization": "Bearer " + create_access_token("tester", [
-        "governance:read", "governance:write",
-    ])
+    "Authorization": "Bearer "
+    + create_access_token(
+        "tester",
+        [
+            "governance:read",
+            "governance:write",
+        ],
+    )
 }
 client = TestClient(app)
 
 
 # === 3.1: Audit Hash Chain ===
+
 
 def test_audit_hash_chain_persistent() -> None:
     """سلسلة hash دائمة وغير قابلة للتعديل."""
@@ -88,6 +91,7 @@ def test_audit_hash_is_sha256() -> None:
 
 # === 3.3: Policy Engine (Rego-like) ===
 
+
 def test_policy_engine_dangerous_tool_denied_for_user() -> None:
     """الأدوات الخطيرة مرفوضة للمستخدم العادي."""
     engine = get_policy_engine()
@@ -113,7 +117,9 @@ def test_policy_engine_safe_tool_allowed_for_user() -> None:
 def test_policy_engine_promotion_low_quality_denied() -> None:
     """ترقية بجودة منخفضة مرفوضة."""
     engine = get_policy_engine()
-    result = engine.evaluate_promotion(0.3, ["evaluation", "shadow", "canary", "human_approval", "activation"])
+    result = engine.evaluate_promotion(
+        0.3, ["evaluation", "shadow", "canary", "human_approval", "activation"]
+    )
     assert result["allowed"] is False
     assert "promotion_deny_low_quality" in result["denied_by"]
 
@@ -121,7 +127,9 @@ def test_policy_engine_promotion_low_quality_denied() -> None:
 def test_policy_engine_promotion_high_quality_allowed() -> None:
     """ترقية بجودة عالية مسموحة."""
     engine = get_policy_engine()
-    result = engine.evaluate_promotion(0.9, ["evaluation", "shadow", "canary", "human_approval", "activation"])
+    result = engine.evaluate_promotion(
+        0.9, ["evaluation", "shadow", "canary", "human_approval", "activation"]
+    )
     assert result["allowed"] is True
 
 
@@ -136,12 +144,14 @@ def test_policy_engine_budget_limit() -> None:
 def test_policy_engine_custom_rule() -> None:
     """إضافة قاعدة مخصصة."""
     engine = PolicyEngine()
-    engine.add_rule(RegoRule(
-        name="custom_test_rule",
-        description="قاعدة اختبار",
-        conditions=[{"field": "x", "op": "gt", "value": 10}],
-        decision="deny",
-    ))
+    engine.add_rule(
+        RegoRule(
+            name="custom_test_rule",
+            description="قاعدة اختبار",
+            conditions=[{"field": "x", "op": "gt", "value": 10}],
+            decision="deny",
+        )
+    )
     result = engine.evaluate({"x": 20})
     assert result["allowed"] is False
     assert "custom_test_rule" in result["denied_by"]
@@ -159,8 +169,11 @@ def test_policy_engine_list_rules() -> None:
 
 def test_policy_engine_via_api() -> None:
     """تقييم السياسة عبر API."""
-    resp = client.post("/v1/policy/evaluate", headers=AUTH_HEADERS,
-                       json={"tool": "python_execute", "role": "user", "system_state": "normal"})
+    resp = client.post(
+        "/v1/policy/evaluate",
+        headers=AUTH_HEADERS,
+        json={"tool": "python_execute", "role": "user", "system_state": "normal"},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["allowed"] is False
@@ -174,6 +187,7 @@ def test_policy_engine_check_tool_via_api() -> None:
 
 
 # === 3.4: Kill Switch حقيقي ===
+
 
 def test_kill_switch_halt_blocks_all() -> None:
     """في وضع halt، كل التنفيذ محجوب."""
@@ -205,11 +219,12 @@ def test_kill_switch_normal_allows_all() -> None:
 def test_kill_switch_enforce_raises_on_halt() -> None:
     """enforce_kill_switch يرمي استثناء في halt."""
     from fastapi import HTTPException
+
     reset_kill_switch()
     activate_kill_switch("halt", "اختبار", "tester")
     try:
         enforce_kill_switch("python_execute")
-        assert False, "يجب أن يرمي HTTPException"
+        raise AssertionError("يجب أن يرمي HTTPException")
     except HTTPException as e:
         assert e.status_code == 503
         assert "system_halted" in e.detail["error"]
@@ -220,11 +235,12 @@ def test_kill_switch_enforce_raises_on_halt() -> None:
 def test_kill_switch_enforce_raises_on_degraded_dangerous() -> None:
     """enforce_kill_switch يرمي استثناء في degraded للأدوات الخطيرة."""
     from fastapi import HTTPException
+
     reset_kill_switch()
     activate_kill_switch("degraded", "اختبار", "tester")
     try:
         enforce_kill_switch("sql_query")
-        assert False, "يجب أن يرمي HTTPException"
+        raise AssertionError("يجب أن يرمي HTTPException")
     except HTTPException as e:
         assert e.status_code == 503
         assert "system_degraded" in e.detail["error"]
@@ -242,6 +258,7 @@ def test_kill_switch_enforce_allows_normal() -> None:
 def test_kill_switch_publishes_event() -> None:
     """تفعيل Kill Switch ينشر حدث."""
     from amos_federation.common.event_bus import get_event_bus
+
     reset_kill_switch()
     bus = get_event_bus()
     initial_count = bus.count("amos_federation.policy.checked")
@@ -253,8 +270,11 @@ def test_kill_switch_publishes_event() -> None:
 def test_kill_switch_via_api() -> None:
     """تفعيل Kill Switch عبر API."""
     reset_kill_switch()
-    resp = client.post("/v1/system/kill-switch", headers=AUTH_HEADERS,
-                      json={"level": "alert", "reason": "اختبار API", "activated_by": "tester"})
+    resp = client.post(
+        "/v1/system/kill-switch",
+        headers=AUTH_HEADERS,
+        json={"level": "alert", "reason": "اختبار API", "activated_by": "tester"},
+    )
     assert resp.status_code == 200
     assert resp.json()["level"] == "alert"
     reset_kill_switch()
@@ -274,4 +294,5 @@ def test_kill_switch_policy_engine_integration() -> None:
 def test_kill_switch_levels_order() -> None:
     """المستويات الأربعة بالترتيب الصحيح."""
     from amos_federation.services.governance.canary import KILL_SWITCH_LEVELS
+
     assert KILL_SWITCH_LEVELS == ["normal", "alert", "degraded", "halt"]

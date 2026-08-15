@@ -31,6 +31,7 @@ class LearningBase(DeclarativeBase):
 
 class ExperienceDatasetModel(LearningBase):
     """14.1-14.4: مجموعة بيانات من الخبرات."""
+
     __tablename__ = "learning_datasets"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -47,6 +48,7 @@ class ExperienceDatasetModel(LearningBase):
 
 class TrainingRunModel(LearningBase):
     """14.5-14.9: دورة تدريب LoRA."""
+
     __tablename__ = "training_runs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -67,6 +69,7 @@ class TrainingRunModel(LearningBase):
 
 class EvaluationResultModel(LearningBase):
     """15.6: نتائج التقييم في DB."""
+
     __tablename__ = "evaluation_results"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -84,6 +87,7 @@ class EvaluationResultModel(LearningBase):
 
 class ModelVersionModel(LearningBase):
     """15.7-15.12: Alpha/Beta/Gamma model versions."""
+
     __tablename__ = "model_versions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -104,7 +108,9 @@ class LearningCycle:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         LearningBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
@@ -120,7 +126,9 @@ class LearningCycle:
         seen_hashes = set()
         deduped = []
         for exp in experiences:
-            exp_hash = hashlib.sha256(json.dumps(exp, sort_keys=True, default=str).encode()).hexdigest()
+            exp_hash = hashlib.sha256(
+                json.dumps(exp, sort_keys=True, default=str).encode()
+            ).hexdigest()
             if exp_hash not in seen_hashes:
                 seen_hashes.add(exp_hash)
                 deduped.append(exp)
@@ -153,7 +161,11 @@ class LearningCycle:
             session.commit()
 
             audit = PersistentAuditStore()
-            audit.append("learning.dataset_created", "system", {"dataset_id": dataset_id, "samples": len(deduped)})
+            audit.append(
+                "learning.dataset_created",
+                "system",
+                {"dataset_id": dataset_id, "samples": len(deduped)},
+            )
 
             return {
                 "dataset_id": dataset_id,
@@ -183,7 +195,9 @@ class LearningCycle:
             session.commit()
 
             audit = PersistentAuditStore()
-            audit.append("learning.training_started", "system", {"run_id": run_id, "dataset_id": dataset_id})
+            audit.append(
+                "learning.training_started", "system", {"run_id": run_id, "dataset_id": dataset_id}
+            )
 
             return {
                 "run_id": run_id,
@@ -216,15 +230,17 @@ class LearningCycle:
             run.final_loss = str(final_loss)
             run.epochs_completed = epochs
             run.artifact_path = f"/models/lora/{run_id}.bin"  # 14.6
-            run.model_card = json.dumps({  # 14.7
-                "model_name": run.model_name,
-                "dataset_id": run.dataset_id,
-                "initial_loss": initial,
-                "final_loss": final_loss,
-                "epochs": epochs,
-                "improvement": improvement,
-                "trained_at": datetime.now(UTC).isoformat(),
-            })
+            run.model_card = json.dumps(
+                {  # 14.7
+                    "model_name": run.model_name,
+                    "dataset_id": run.dataset_id,
+                    "initial_loss": initial,
+                    "final_loss": final_loss,
+                    "epochs": epochs,
+                    "improvement": improvement,
+                    "trained_at": datetime.now(UTC).isoformat(),
+                }
+            )
             run.knowledge_injection = "true"  # 14.8
             run.stopped_reason = stopped_reason
             run.completed_at = datetime.now(UTC)
@@ -250,13 +266,21 @@ class EvaluationSystem:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         LearningBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
 
-    def evaluate_model(self, model_name: str, benchmark_id: str, score: int,
-                       safety: int = 100, critic_notes: str = "") -> dict[str, Any]:
+    def evaluate_model(
+        self,
+        model_name: str,
+        benchmark_id: str,
+        score: int,
+        safety: int = 100,
+        critic_notes: str = "",
+    ) -> dict[str, Any]:
         """15.1-15.6: تقييم نموذج."""
         eval_id = f"eval-{uuid.uuid4().hex[:10]}"
         session = self._Session()
@@ -284,13 +308,18 @@ class EvaluationSystem:
         finally:
             session.close()
 
-    def check_regression(self, model_name: str, current_score: int, threshold: int = 80) -> dict[str, Any]:
+    def check_regression(
+        self, model_name: str, current_score: int, threshold: int = 80
+    ) -> dict[str, Any]:
         """15.3: فحص النسيان الكارثي."""
         session = self._Session()
         try:
-            previous = session.query(EvaluationResultModel).filter(
-                EvaluationResultModel.model_name == model_name
-            ).order_by(EvaluationResultModel.created_at.desc()).first()
+            previous = (
+                session.query(EvaluationResultModel)
+                .filter(EvaluationResultModel.model_name == model_name)
+                .order_by(EvaluationResultModel.created_at.desc())
+                .first()
+            )
 
             if not previous:
                 return {"model_name": model_name, "regression": False, "reason": "no_previous"}
@@ -313,7 +342,9 @@ class ModelPromotionCycle:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         LearningBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
@@ -324,9 +355,11 @@ class ModelPromotionCycle:
         session = self._Session()
         try:
             for track in ["alpha", "beta", "gamma"]:
-                existing = session.query(ModelVersionModel).filter(
-                    ModelVersionModel.track == track, ModelVersionModel.status == "active"
-                ).first()
+                existing = (
+                    session.query(ModelVersionModel)
+                    .filter(ModelVersionModel.track == track, ModelVersionModel.status == "active")
+                    .first()
+                )
                 if not existing:
                     version = ModelVersionModel(
                         version_id=f"model-{track}-{uuid.uuid4().hex[:8]}",
@@ -343,14 +376,24 @@ class ModelPromotionCycle:
         """15.9: Shadow Testing بين Alpha و Beta."""
         session = self._Session()
         try:
-            alpha = session.query(ModelVersionModel).filter(ModelVersionModel.version_id == alpha_id).first()
-            beta = session.query(ModelVersionModel).filter(ModelVersionModel.version_id == beta_id).first()
+            alpha = (
+                session.query(ModelVersionModel)
+                .filter(ModelVersionModel.version_id == alpha_id)
+                .first()
+            )
+            beta = (
+                session.query(ModelVersionModel)
+                .filter(ModelVersionModel.version_id == beta_id)
+                .first()
+            )
             if not alpha or not beta:
                 return {"error": "model_not_found"}
 
             beta.status = "shadow"
             pairs = json.loads(beta.shadow_pairs or "[]")
-            pairs.append({"alpha": alpha_id, "beta": beta_id, "started": datetime.now(UTC).isoformat()})
+            pairs.append(
+                {"alpha": alpha_id, "beta": beta_id, "started": datetime.now(UTC).isoformat()}
+            )
             beta.shadow_pairs = json.dumps(pairs)
             session.commit()
 
@@ -365,7 +408,11 @@ class ModelPromotionCycle:
         """15.11: Canary Deployment."""
         session = self._Session()
         try:
-            beta = session.query(ModelVersionModel).filter(ModelVersionModel.version_id == beta_id).first()
+            beta = (
+                session.query(ModelVersionModel)
+                .filter(ModelVersionModel.version_id == beta_id)
+                .first()
+            )
             if not beta:
                 return {"error": "model_not_found"}
             beta.status = "canary"
@@ -380,14 +427,20 @@ class ModelPromotionCycle:
         """15.12: ترقية Beta إلى Alpha."""
         session = self._Session()
         try:
-            beta = session.query(ModelVersionModel).filter(ModelVersionModel.version_id == beta_id).first()
+            beta = (
+                session.query(ModelVersionModel)
+                .filter(ModelVersionModel.version_id == beta_id)
+                .first()
+            )
             if not beta:
                 return {"error": "model_not_found"}
 
             # إحالة Alpha القديم للتقاعد
-            old_alpha = session.query(ModelVersionModel).filter(
-                ModelVersionModel.track == "alpha", ModelVersionModel.status == "active"
-            ).first()
+            old_alpha = (
+                session.query(ModelVersionModel)
+                .filter(ModelVersionModel.track == "alpha", ModelVersionModel.status == "active")
+                .first()
+            )
             if old_alpha:
                 old_alpha.status = "retired"
 
@@ -398,9 +451,14 @@ class ModelPromotionCycle:
             session.commit()
 
             audit = PersistentAuditStore()
-            audit.append("model.promoted", approved_by or "system", {
-                "beta_id": beta_id, "promoted_to": "alpha",
-            })
+            audit.append(
+                "model.promoted",
+                approved_by or "system",
+                {
+                    "beta_id": beta_id,
+                    "promoted_to": "alpha",
+                },
+            )
 
             return {
                 "beta_id": beta_id,

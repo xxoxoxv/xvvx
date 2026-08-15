@@ -11,16 +11,23 @@ from fastapi.testclient import TestClient
 
 from amos_federation.common.auth import create_access_token
 from amos_federation.services.agent_runtime.population import get_population_registry
-from amos_federation.services.governance.treasury import (
-    Treasury, get_treasury, run_economic_cycle,
-    REWARD_TASK_COMPLETION, REWARD_QUALITY_REPORT, REWARD_SUCCESSFUL_TRAINING,
-)
 from amos_federation.services.control_console.main import app
+from amos_federation.services.governance.treasury import (
+    REWARD_SUCCESSFUL_TRAINING,
+    REWARD_TASK_COMPLETION,
+    Treasury,
+    run_economic_cycle,
+)
 
 AUTH_HEADERS = {
-    "Authorization": "Bearer " + create_access_token("tester", [
-        "governance:read", "governance:write",
-    ])
+    "Authorization": "Bearer "
+    + create_access_token(
+        "tester",
+        [
+            "governance:read",
+            "governance:write",
+        ],
+    )
 }
 client = TestClient(app)
 
@@ -28,10 +35,11 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def seed_and_clean():
     """بذر وتنظيف."""
+    from sqlalchemy import create_engine, delete
+
+    from amos_federation.common.database import get_database_url, get_session_factory
     from amos_federation.services.governance.canary import reset_kill_switch
-    from amos_federation.common.database import get_session_factory, get_database_url
     from amos_federation.services.governance.treasury import _TreasuryBase
-    from sqlalchemy import delete, create_engine
 
     reset_kill_switch()
     # Ensure tables exist
@@ -45,8 +53,11 @@ def seed_and_clean():
     yield
     # Clean treasury tables
     from amos_federation.services.governance.treasury import (
-        TransactionModel, BudgetModel, FinancialReportModel,
+        BudgetModel,
+        FinancialReportModel,
+        TransactionModel,
     )
+
     session = get_session_factory()()
     try:
         for model in [TransactionModel, BudgetModel, FinancialReportModel]:
@@ -59,10 +70,11 @@ def seed_and_clean():
 
 # === 10.1: amos-credit ===
 
+
 def test_transaction_is_insert_only() -> None:
     """المعاملة غير قابلة للتعديل — INSERT-only."""
     t = Treasury()
-    tx = t.reward_task_completion("agent-001", "exp-001", 0.8)
+    t.reward_task_completion("agent-001", "exp-001", 0.8)
     # محاولة تعديل يجب أن تفشل (لا يوجد update method)
     assert not hasattr(t, "update_transaction")
     assert not hasattr(t, "edit_transaction")
@@ -124,6 +136,7 @@ def test_get_balance_after_expense() -> None:
 def test_transaction_publishes_event() -> None:
     """المعاملة تنشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.treasury.transaction")
     Treasury().reward_task_completion("agent-001", "exp-001", 0.5)
@@ -131,6 +144,7 @@ def test_transaction_publishes_event() -> None:
 
 
 # === 10.2: Income sources ===
+
 
 def test_reward_task_completion() -> None:
     """مكافأة إكمال مهمة — مرتبطة بـ experience.recorded."""
@@ -170,17 +184,25 @@ def test_higher_quality_higher_reward() -> None:
 def test_process_experience_income_uses_real_data() -> None:
     """معالجة الدخل تستخدم خبرات حقيقية."""
     from amos_federation.common.persistent import PersistentExperienceStore
+
     exp_store = PersistentExperienceStore()
-    exp_store.record({
-        "type": "task", "task_id": "task-001", "agent_id": "agent-001",
-        "model_used": "claude", "outcome": {"success": True}, "quality_score": 0.8,
-    })
+    exp_store.record(
+        {
+            "type": "task",
+            "task_id": "task-001",
+            "agent_id": "agent-001",
+            "model_used": "claude",
+            "outcome": {"success": True},
+            "quality_score": 0.8,
+        }
+    )
     results = Treasury().process_experience_income("agent-001")
     assert len(results) >= 1
     assert results[0]["linked_event"] == "amos_federation.experience.recorded"
 
 
 # === 10.3: Expense sources ===
+
 
 def test_charge_model_invoke() -> None:
     """رسوم استدعاء نموذج — مرتبطة بـ Cost Tracking."""
@@ -213,6 +235,7 @@ def test_process_real_costs_uses_cost_tracking() -> None:
 
 
 # === 10.4: Treasury functions ===
+
 
 def test_allocate_budget() -> None:
     """توزيع موازنة."""
@@ -273,6 +296,7 @@ def test_list_reports() -> None:
 def test_report_publishes_event() -> None:
     """التقرير المالي ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.treasury.report_generated")
     Treasury().generate_financial_report("2026-08")
@@ -280,6 +304,7 @@ def test_report_publishes_event() -> None:
 
 
 # === Full economic cycle ===
+
 
 def test_run_economic_cycle() -> None:
     """دورة اقتصادية كاملة."""
@@ -292,6 +317,7 @@ def test_run_economic_cycle() -> None:
 
 
 # === Control Console integration ===
+
 
 def test_ui_treasury_balance() -> None:
     """واجهة: رصيد الخزانة."""
@@ -317,14 +343,20 @@ def test_ui_treasury_verify() -> None:
 
 def test_ui_treasury_reward() -> None:
     """واجهة: مكافأة وكيل."""
-    resp = client.post("/v1/treasury/reward?agent_id=agent-001&experience_id=exp-001&quality_score=0.8", headers=AUTH_HEADERS)
+    resp = client.post(
+        "/v1/treasury/reward?agent_id=agent-001&experience_id=exp-001&quality_score=0.8",
+        headers=AUTH_HEADERS,
+    )
     assert resp.status_code == 200
     assert resp.json()["tx_type"] == "credit"
 
 
 def test_ui_treasury_charge() -> None:
     """واجهة: خصم رسوم."""
-    resp = client.post("/v1/treasury/charge?agent_id=agent-001&cost_usd=0.003&model_name=claude", headers=AUTH_HEADERS)
+    resp = client.post(
+        "/v1/treasury/charge?agent_id=agent-001&cost_usd=0.003&model_name=claude",
+        headers=AUTH_HEADERS,
+    )
     assert resp.status_code == 200
     assert resp.json()["tx_type"] == "debit"
 
@@ -339,6 +371,8 @@ def test_ui_treasury_reports() -> None:
 
 def test_ui_treasury_generate_report() -> None:
     """واجهة: توليد تقرير مالي."""
-    resp = client.post("/v1/treasury/report?period=2026-08&report_type=monthly", headers=AUTH_HEADERS)
+    resp = client.post(
+        "/v1/treasury/report?period=2026-08&report_type=monthly", headers=AUTH_HEADERS
+    )
     assert resp.status_code == 200
     assert resp.json()["period"] == "2026-08"

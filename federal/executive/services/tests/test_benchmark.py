@@ -9,7 +9,11 @@
 from fastapi.testclient import TestClient
 
 from amos_federation.common.auth import create_access_token
-from amos_federation.services.evaluation.benchmark import BENCHMARK_TASKS, analyze_gaps, run_benchmark
+from amos_federation.services.evaluation.benchmark import (
+    BENCHMARK_TASKS,
+    analyze_gaps,
+    run_benchmark,
+)
 
 client = TestClient(__import__("amos_federation.services.evaluation.main", fromlist=["app"]).app)
 AUTH_HEADERS = {

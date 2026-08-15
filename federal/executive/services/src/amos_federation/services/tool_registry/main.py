@@ -11,10 +11,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from amos_federation.common.auth import require_auth
+from amos_federation.common.persistent import PersistentToolStore
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.schemas import ToolManifestModel
 from amos_federation.common.service import create_service_app
-from amos_federation.common.persistent import PersistentToolStore
 from amos_federation.services.tool_registry.store import ToolStore
 
 router = APIRouter(prefix="/v1", tags=["tool-registry"])

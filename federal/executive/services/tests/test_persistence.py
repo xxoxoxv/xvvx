@@ -20,13 +20,22 @@ from amos_federation.common.persistent import (
 from amos_federation.services.critic.main import app as critic_app
 from amos_federation.services.evaluation.main import app as eval_app
 from amos_federation.services.memory_service.main import app as memory_app
-from amos_federation.services.tool_registry.main import app as tool_app
 
 AUTH_HEADERS = {
-    "Authorization": "Bearer " + create_access_token("tester", [
-        "memory:read", "memory:write", "eval:read", "eval:write",
-        "critic:read", "critic:write", "tool:read", "tool:write",
-    ])
+    "Authorization": "Bearer "
+    + create_access_token(
+        "tester",
+        [
+            "memory:read",
+            "memory:write",
+            "eval:read",
+            "eval:write",
+            "critic:read",
+            "critic:write",
+            "tool:read",
+            "tool:write",
+        ],
+    )
 }
 
 
@@ -45,7 +54,9 @@ def test_persistent_memory_survives_new_instance() -> None:
 def test_persistent_experience_survives_new_instance() -> None:
     """الخبرات تبقى بعد إنشاء نسخة جديدة."""
     store1 = PersistentExperienceStore()
-    result = store1.record({"type": "success", "agent_id": "test-agent", "outcome": {"domain": "finance"}})
+    result = store1.record(
+        {"type": "success", "agent_id": "test-agent", "outcome": {"domain": "finance"}}
+    )
     exp_id = result["experience_id"]
 
     store2 = PersistentExperienceStore()
@@ -80,8 +91,11 @@ def test_persistent_tool_registry_survives_new_instance() -> None:
 def test_persistence_via_api_memory() -> None:
     """اختبار استمرارية الذاكرة عبر API."""
     client1 = TestClient(memory_app)
-    client1.post("/v1/memory/store", headers=AUTH_HEADERS,
-                 json={"key": "api_persist_test", "value": {"content": "اختبار الاستمرارية"}})
+    client1.post(
+        "/v1/memory/store",
+        headers=AUTH_HEADERS,
+        json={"key": "api_persist_test", "value": {"content": "اختبار الاستمرارية"}},
+    )
 
     # نسخة جديدة من التطبيق
     client2 = TestClient(memory_app)
@@ -93,8 +107,11 @@ def test_persistence_via_api_memory() -> None:
 def test_persistence_via_api_experience() -> None:
     """اختبار استمرارية الخبرات عبر API."""
     client1 = TestClient(eval_app)
-    create_resp = client1.post("/v1/experiences", headers=AUTH_HEADERS,
-                               json={"type": "success", "agent_id": "persist-agent"})
+    create_resp = client1.post(
+        "/v1/experiences",
+        headers=AUTH_HEADERS,
+        json={"type": "success", "agent_id": "persist-agent"},
+    )
     exp_id = create_resp.json()["experience_id"]
 
     # نسخة جديدة
@@ -107,10 +124,16 @@ def test_persistence_via_api_experience() -> None:
 def test_persistence_via_api_critic() -> None:
     """اختبار استمرارية مراجعات الناقد عبر API."""
     client1 = TestClient(critic_app)
-    create_resp = client1.post("/v1/reviews", headers=AUTH_HEADERS,
-                               json={"task_id": "persist-task", "agent_id": "persist-agent",
-                                     "steps": [{"status": "completed", "result": {"ok": True}}],
-                                     "result_summary": "اكتمل"})
+    create_resp = client1.post(
+        "/v1/reviews",
+        headers=AUTH_HEADERS,
+        json={
+            "task_id": "persist-task",
+            "agent_id": "persist-agent",
+            "steps": [{"status": "completed", "result": {"ok": True}}],
+            "result_summary": "اكتمل",
+        },
+    )
     rev_id = create_resp.json()["review_id"]
 
     client2 = TestClient(critic_app)

@@ -6,14 +6,11 @@ AMOS-Federation Real Tool Sandbox
 تاريخ الإنشاء: 2026-08-15
 """
 
-import hashlib
 import json
 import os
-import resource
 import shutil
 import subprocess
 import tempfile
-import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -125,8 +122,11 @@ with open({repr(result_path)}, "w") as f:
     def execute_sql(self, query: str, db_path: str | None = None) -> dict[str, Any]:
         """تنفيذ استعلام SQL حقيقي (read-only)."""
         import sqlite3
+
         if db_path is None:
-            db_path = os.environ.get("AMOS_DATABASE_URL", "sqlite:///amos_federation.db").replace("sqlite:///", "")
+            db_path = os.environ.get("AMOS_DATABASE_URL", "sqlite:///amos_federation.db").replace(
+                "sqlite:///", ""
+            )
             if not os.path.isabs(db_path):
                 db_path = os.path.join(os.getcwd(), db_path)
 
@@ -137,7 +137,10 @@ with open({repr(result_path)}, "w") as f:
 
             # منع استعلامات الكتابة
             query_upper = query.strip().upper()
-            if any(query_upper.startswith(kw) for kw in ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE"]):
+            if any(
+                query_upper.startswith(kw)
+                for kw in ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE"]
+            ):
                 return {"error": "write_blocked", "message": "SQL sandbox: read-only queries only"}
 
             cur.execute(query)
@@ -154,13 +157,19 @@ with open({repr(result_path)}, "w") as f:
         except Exception as e:
             return {"error": str(e), "tool": self.tool_id}
 
-    def execute_http(self, url: str, method: str = "GET", headers: dict | None = None) -> dict[str, Any]:
+    def execute_http(
+        self, url: str, method: str = "GET", headers: dict | None = None
+    ) -> dict[str, Any]:
         """تنفيذ طلب HTTP حقيقي."""
         if not self._network_allowed:
-            return {"error": "network_blocked", "message": "Sandbox: network not allowed for this tool"}
+            return {
+                "error": "network_blocked",
+                "message": "Sandbox: network not allowed for this tool",
+            }
 
         try:
             import urllib.request
+
             req = urllib.request.Request(url, method=method)
             if headers:
                 for k, v in headers.items():
@@ -203,6 +212,7 @@ with open({repr(result_path)}, "w") as f:
         """إنشاء رسم بياني حقيقي."""
         try:
             import matplotlib
+
             matplotlib.use("Agg")  # لا واجهة رسومية
             import matplotlib.pyplot as plt
 
@@ -241,6 +251,7 @@ with open({repr(result_path)}, "w") as f:
     def summarize_text(self, text: str, max_sentences: int = 3) -> dict[str, Any]:
         """تلخيص نص حقيقي باستخدام تردد الكلمات."""
         import re
+
         # تنظيف النص
         sentences = re.split(r"[.!?]+", text)
         sentences = [s.strip() for s in sentences if s.strip()]
@@ -277,15 +288,16 @@ with open({repr(result_path)}, "w") as f:
 
 # === تنفيذ الأدوات مع Policy Check ===
 
+
 def execute_tool_with_governance(
     tool_id: str,
     params: dict[str, Any],
     role: str = "user",
 ) -> dict[str, Any]:
     """تنفيذ أداة مع فحص Policy Engine و Kill Switch و Audit."""
+    from amos_federation.common.event_bus import get_event_bus
     from amos_federation.services.governance.canary import enforce_kill_switch, get_system_status
     from amos_federation.services.governance.policy_engine import get_policy_engine
-    from amos_federation.common.event_bus import get_event_bus
 
     # 1. Kill Switch check
     enforce_kill_switch(tool_id, role)
@@ -325,11 +337,14 @@ def execute_tool_with_governance(
 
     # 4. نشر حدث
     status = "error" if "error" in result else "success"
-    get_event_bus().publish("amos_federation.tool.executed", {
-        "tool_id": tool_id,
-        "agent_id": params.get("agent_id", "unknown"),
-        "result": status,
-        "task_id": params.get("task_id"),
-    })
+    get_event_bus().publish(
+        "amos_federation.tool.executed",
+        {
+            "tool_id": tool_id,
+            "agent_id": params.get("agent_id", "unknown"),
+            "result": status,
+            "task_id": params.get("task_id"),
+        },
+    )
 
     return result

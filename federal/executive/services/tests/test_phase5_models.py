@@ -4,8 +4,9 @@ AMOS-Federation Phase 5 — Real Models Tests
 النطاق: tests/test_phase5_models.py
 """
 
-import pytest
 import uuid
+
+import pytest
 
 
 def _unique_prompt(prefix="test"):
@@ -19,6 +20,7 @@ class TestModelCaching:
     def test_cache_hit(self):
         """5.5: نفس السؤال لا يُعاد استدعاؤه بنفس التكلفة."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         prompt = _unique_prompt("caching-hit")
         # استدعاء أول
@@ -32,6 +34,7 @@ class TestModelCaching:
     def test_cache_miss_different_prompt(self):
         """5.5: prompts مختلفة لا تتشارك cache."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         prompt1 = _unique_prompt("miss-alpha")
         prompt2 = _unique_prompt("miss-beta")
@@ -42,6 +45,7 @@ class TestModelCaching:
     def test_cache_miss_different_models(self):
         """5.5: نفس prompt مع models مختلفة لا تتشارك cache."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         prompt = _unique_prompt("models")
         layer.invoke_with_cache(prompt, "local-model", 100)
@@ -55,6 +59,7 @@ class TestCostTracking:
     def test_compute_cost(self):
         """5.4: حساب التكلفة بدقة."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         cost = layer.compute_cost("claude-sonnet-4", 1000, 500)
         # input: 1000/1000 * 0.003 = 0.003, output: 500/1000 * 0.015 = 0.0075
@@ -63,6 +68,7 @@ class TestCostTracking:
     def test_local_model_zero_cost(self):
         """5.4: النموذج المحلي بتكلفة صفر."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         cost = layer.compute_cost("local-model", 10000, 5000)
         assert cost == 0.0
@@ -70,6 +76,7 @@ class TestCostTracking:
     def test_cost_logged(self):
         """5.4: التكلفة مسجّلة في DB."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         prompt = _unique_prompt("cost-logging")
         result = layer.invoke_with_cache(prompt, "local-model", 50)
@@ -78,6 +85,7 @@ class TestCostTracking:
     def test_cost_summary(self):
         """5.4: ملخص التكلفة التراكمي."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         summary = layer.get_cost_summary()
         assert "total_cost_usd" in summary
@@ -93,6 +101,7 @@ class TestFallbackChain:
     def test_local_fallback_works(self):
         """5.3: النموذج المحلي يعمل عند عدم توفر الخارجي."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         prompt = _unique_prompt("fallback-local")
         result = layer.invoke_with_cache(prompt, "local-fallback", 100)
@@ -102,6 +111,7 @@ class TestFallbackChain:
     def test_custom_invoke_function(self):
         """5.3: يمكن تمرير دالة استدعاء مخصصة."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         prompt = _unique_prompt("custom-invoke")
 
@@ -119,6 +129,7 @@ class TestBenchmark:
     def test_benchmark_runs(self):
         """5.6: Benchmark يُنتج نتائج حقيقية."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         prompts = [_unique_prompt(f"bench-{i}") for i in range(3)]
         models = ["local-model", "local-fallback"]
@@ -131,6 +142,7 @@ class TestBenchmark:
     def test_benchmark_shows_difference(self):
         """5.6: Benchmark يُظهر الفرق فعليًا."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         layer = get_model_layer()
         prompts = [_unique_prompt("benchmark-diff")]
         models = ["local-model", "local-fallback"]

@@ -23,9 +23,7 @@ class ExecuteRequest(BaseModel):
     """طلب تنفيذ مهمة عبر وكيل."""
 
     task: dict[str, Any] = Field(..., description="بيانات المهمة")
-    plan: list[dict[str, Any]] = Field(
-        ..., min_length=1, description="خطوات الخطة من Orchestrator"
-    )
+    plan: list[dict[str, Any]] = Field(..., min_length=1, description="خطوات الخطة من Orchestrator")
     agent_id: str | None = None
 
 

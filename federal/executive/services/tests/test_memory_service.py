@@ -13,7 +13,7 @@ from amos_federation.services.memory_service.main import app
 
 client = TestClient(app)
 AUTH_HEADERS = {
-    "Authorization": "Bearer " + create_access_token('tester', ['memory:read', 'memory:write'])
+    "Authorization": "Bearer " + create_access_token("tester", ["memory:read", "memory:write"])
 }
 
 
@@ -106,7 +106,11 @@ def test_tenant_isolation() -> None:
     client.post(
         "/v1/memory/store",
         headers=AUTH_HEADERS,
-        json={"key": "tenant_a_item", "value": {"content": "بيانات سرية للمستأجر A"}, "tenant_id": "tenant_a"},
+        json={
+            "key": "tenant_a_item",
+            "value": {"content": "بيانات سرية للمستأجر A"},
+            "tenant_id": "tenant_a",
+        },
     )
     # البحث كمستأجر B
     resp = client.post(

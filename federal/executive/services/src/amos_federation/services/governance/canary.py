@@ -10,7 +10,6 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-
 # === Kill Switch ===
 
 KILL_SWITCH_LEVELS = ["normal", "alert", "degraded", "halt"]
@@ -32,13 +31,17 @@ def activate_kill_switch(level: str, reason: str, activated_by: str) -> dict[str
     _system_state["activated_by"] = activated_by
     # نشر حدث
     from amos_federation.common.event_bus import get_event_bus
-    get_event_bus().publish("amos_federation.policy.checked", {
-        "policy_name": "kill_switch",
-        "allowed": level == "normal",
-        "violations": [reason] if level != "normal" else [],
-        "level": level,
-        "activated_by": activated_by,
-    })
+
+    get_event_bus().publish(
+        "amos_federation.policy.checked",
+        {
+            "policy_name": "kill_switch",
+            "allowed": level == "normal",
+            "violations": [reason] if level != "normal" else [],
+            "level": level,
+            "activated_by": activated_by,
+        },
+    )
     return _system_state.copy()
 
 
@@ -61,14 +64,13 @@ def is_execution_blocked(tool: str | None = None) -> bool:
     level = _system_state["level"]
     if level == "halt":
         return True
-    if level == "degraded" and tool in ["python_execute", "sql_query", "http_request"]:
-        return True
-    return False
+    return bool(level == "degraded" and tool in ["python_execute", "sql_query", "http_request"])
 
 
 def enforce_kill_switch(tool: str, role: str = "user") -> dict[str, Any]:
     """تطبيق Kill Switch على تنفيذ أداة. يرمي HTTPException إذا محجوب."""
     from fastapi import HTTPException
+
     level = _system_state["level"]
     if level == "halt":
         raise HTTPException(
@@ -200,9 +202,7 @@ def update_canary_metrics(
             d["updated_at"] = datetime.now(UTC).isoformat()
             # فحص شروط التراجع
             error_rate = errors / requests if requests > 0 else 0
-            if error_rate > 0.1:
-                d["status"] = "rolled_back"
-            elif quality < 0.5:
+            if error_rate > 0.1 or quality < 0.5:
                 d["status"] = "rolled_back"
             return d.copy()
     raise ValueError(f"Canary غير موجود: {canary_id}")

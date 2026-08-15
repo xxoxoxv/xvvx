@@ -19,7 +19,9 @@ AUTH_HEADERS = {
 
 def test_shadow_test_creates_comparison() -> None:
     """اختبار shadow ينشئ مقارنة بين ألفا وبيتا."""
-    resp = client.post("/v1/shadow/test", headers=AUTH_HEADERS, json={"prompt": "حلل بيانات المبيعات"})
+    resp = client.post(
+        "/v1/shadow/test", headers=AUTH_HEADERS, json={"prompt": "حلل بيانات المبيعات"}
+    )
     assert resp.status_code == 201
     data = resp.json()
     assert "shadow_id" in data
@@ -31,7 +33,9 @@ def test_shadow_test_creates_comparison() -> None:
 
 def test_shadow_comparison_has_similarity() -> None:
     """مقارنة shadow تحتوي على درجة تشابه نصي."""
-    resp = client.post("/v1/shadow/test", headers=AUTH_HEADERS, json={"prompt": "تقرير الأداء المالي"})
+    resp = client.post(
+        "/v1/shadow/test", headers=AUTH_HEADERS, json={"prompt": "تقرير الأداء المالي"}
+    )
     comparison = resp.json()["comparison"]
     assert "text_similarity" in comparison
     assert 0.0 <= comparison["text_similarity"] <= 1.0

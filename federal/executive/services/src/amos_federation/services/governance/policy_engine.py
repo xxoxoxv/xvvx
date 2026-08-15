@@ -13,7 +13,9 @@ from typing import Any
 class RegoRule:
     """قاعدة Rego-like: اسم + جسم (شروط) + قرار."""
 
-    def __init__(self, name: str, description: str, conditions: list[dict], decision: str = "allow"):
+    def __init__(
+        self, name: str, description: str, conditions: list[dict], decision: str = "allow"
+    ):
         self.name = name
         self.description = description
         self.conditions = conditions
@@ -21,10 +23,7 @@ class RegoRule:
 
     def evaluate(self, context: dict[str, Any]) -> bool:
         """تقييم القاعدة ضد سياق. كل الشرط يجب أن تمر."""
-        for cond in self.conditions:
-            if not self._eval_condition(cond, context):
-                return False
-        return True
+        return all(self._eval_condition(cond, context) for cond in self.conditions)
 
     def _eval_condition(self, cond: dict, context: dict[str, Any]) -> bool:
         """تقييم شرط واحد."""
@@ -85,75 +84,101 @@ class PolicyEngine:
     def _load_default_rules(self) -> None:
         """تحميل القواعد الافتراضية (مكافئة لملفات Rego)."""
         # سياسة الوصول للأدوات
-        self.add_rule(RegoRule(
-            name="tool_access",
-            description="الأدوات الخطيرة تتطلب دور admin",
-            conditions=[
-                {"field": "tool", "op": "in", "value": ["python_execute", "sql_query", "http_request"]},
-                {"field": "role", "op": "ne", "value": "admin"},
-            ],
-            decision="deny",
-        ))
+        self.add_rule(
+            RegoRule(
+                name="tool_access",
+                description="الأدوات الخطيرة تتطلب دور admin",
+                conditions=[
+                    {
+                        "field": "tool",
+                        "op": "in",
+                        "value": ["python_execute", "sql_query", "http_request"],
+                    },
+                    {"field": "role", "op": "ne", "value": "admin"},
+                ],
+                decision="deny",
+            )
+        )
 
         # سياسة الوصول للأدوات الآمنة
-        self.add_rule(RegoRule(
-            name="tool_access_safe",
-            description="الأدوات الآمنة مسموحة لكل الأدوار",
-            conditions=[
-                {"field": "tool", "op": "not_in", "value": ["python_execute", "sql_query", "http_request"]},
-            ],
-            decision="allow",
-        ))
+        self.add_rule(
+            RegoRule(
+                name="tool_access_safe",
+                description="الأدوات الآمنة مسموحة لكل الأدوار",
+                conditions=[
+                    {
+                        "field": "tool",
+                        "op": "not_in",
+                        "value": ["python_execute", "sql_query", "http_request"],
+                    },
+                ],
+                decision="allow",
+            )
+        )
 
         # سياسة ترقية النماذج
-        self.add_rule(RegoRule(
-            name="promotion_gate",
-            description="ترقية النماذج تتطلب اجتياز كل البوابات",
-            conditions=[
-                {"field": "gates_passed", "op": "exists"},
-                {"field": "quality_score", "op": "gte", "value": 0.7},
-            ],
-            decision="allow",
-        ))
+        self.add_rule(
+            RegoRule(
+                name="promotion_gate",
+                description="ترقية النماذج تتطلب اجتياز كل البوابات",
+                conditions=[
+                    {"field": "gates_passed", "op": "exists"},
+                    {"field": "quality_score", "op": "gte", "value": 0.7},
+                ],
+                decision="allow",
+            )
+        )
 
-        self.add_rule(RegoRule(
-            name="promotion_deny_low_quality",
-            description="رفض الترقية عند جودة منخفضة",
-            conditions=[
-                {"field": "quality_score", "op": "lt", "value": 0.7},
-            ],
-            decision="deny",
-        ))
+        self.add_rule(
+            RegoRule(
+                name="promotion_deny_low_quality",
+                description="رفض الترقية عند جودة منخفضة",
+                conditions=[
+                    {"field": "quality_score", "op": "lt", "value": 0.7},
+                ],
+                decision="deny",
+            )
+        )
 
         # سياسة الميزانية
-        self.add_rule(RegoRule(
-            name="budget_limit",
-            description="حد يومي للإنفاق",
-            conditions=[
-                {"field": "daily_spend_usd", "op": "gt", "value": 100.0},
-            ],
-            decision="deny",
-        ))
+        self.add_rule(
+            RegoRule(
+                name="budget_limit",
+                description="حد يومي للإنفاق",
+                conditions=[
+                    {"field": "daily_spend_usd", "op": "gt", "value": 100.0},
+                ],
+                decision="deny",
+            )
+        )
 
         # سياسة Kill Switch
-        self.add_rule(RegoRule(
-            name="kill_switch_halt",
-            description="في وضع الإيقاف، كل التنفيذ مرفوض",
-            conditions=[
-                {"field": "system_state", "op": "eq", "value": "halt"},
-            ],
-            decision="deny",
-        ))
+        self.add_rule(
+            RegoRule(
+                name="kill_switch_halt",
+                description="في وضع الإيقاف، كل التنفيذ مرفوض",
+                conditions=[
+                    {"field": "system_state", "op": "eq", "value": "halt"},
+                ],
+                decision="deny",
+            )
+        )
 
-        self.add_rule(RegoRule(
-            name="kill_switch_degraded",
-            description="في وضع التدهور، الأدوات الخطيرة مرفوضة",
-            conditions=[
-                {"field": "system_state", "op": "eq", "value": "degraded"},
-                {"field": "tool", "op": "in", "value": ["python_execute", "sql_query", "http_request"]},
-            ],
-            decision="deny",
-        ))
+        self.add_rule(
+            RegoRule(
+                name="kill_switch_degraded",
+                description="في وضع التدهور، الأدوات الخطيرة مرفوضة",
+                conditions=[
+                    {"field": "system_state", "op": "eq", "value": "degraded"},
+                    {
+                        "field": "tool",
+                        "op": "in",
+                        "value": ["python_execute", "sql_query", "http_request"],
+                    },
+                ],
+                decision="deny",
+            )
+        )
 
     def add_rule(self, rule: RegoRule) -> None:
         self._rules[rule.name] = rule
@@ -191,20 +216,26 @@ class PolicyEngine:
             "engine_version": "1.0",
         }
 
-    def evaluate_tool_access(self, tool: str, role: str, system_state: str = "normal") -> dict[str, Any]:
+    def evaluate_tool_access(
+        self, tool: str, role: str, system_state: str = "normal"
+    ) -> dict[str, Any]:
         """اختصار: تقييم وصول أداة."""
-        return self.evaluate({
-            "tool": tool,
-            "role": role,
-            "system_state": system_state,
-        })
+        return self.evaluate(
+            {
+                "tool": tool,
+                "role": role,
+                "system_state": system_state,
+            }
+        )
 
     def evaluate_promotion(self, quality_score: float, gates_passed: list[str]) -> dict[str, Any]:
         """اختصار: تقييم ترقية نموذج."""
-        return self.evaluate({
-            "quality_score": quality_score,
-            "gates_passed": gates_passed,
-        })
+        return self.evaluate(
+            {
+                "quality_score": quality_score,
+                "gates_passed": gates_passed,
+            }
+        )
 
 
 # Singleton

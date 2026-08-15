@@ -16,7 +16,6 @@ AMOS-Federation Phase 12 — State Runtime
   12.8: إضافة ولاية جديدة بلا تعديل الدستور
 """
 
-import json
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -34,12 +33,15 @@ class StateBase(DeclarativeBase):
 
 class StateModel(StateBase):
     """جدول الولايات الفدرالية."""
+
     __tablename__ = "federal_states"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     state_id = Column(String, nullable=False, unique=True, index=True)
     name = Column(String, nullable=False)
-    type = Column(String, nullable=False)  # finance, law, science, health, culture, infrastructure, industry, trade, education
+    type = Column(
+        String, nullable=False
+    )  # finance, law, science, health, culture, infrastructure, industry, trade, education
     status = Column(String, default="active")  # active, suspended, closed
     head_agent_id = Column(String, nullable=True)
     budget = Column(String, default="0")  # amos-credit
@@ -50,17 +52,21 @@ class StateModel(StateBase):
 
 class StateAgentAssignment(StateBase):
     """تعيين الوكلاء في الولايات."""
+
     __tablename__ = "state_agent_assignments"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     state_id = Column(String, nullable=False, index=True)
     agent_id = Column(String, nullable=False, index=True)
-    role = Column(String, nullable=False)  # coordinator, council, judge, monitor, factory_manager, worker, trainer, learner, accountant
+    role = Column(
+        String, nullable=False
+    )  # coordinator, council, judge, monitor, factory_manager, worker, trainer, learner, accountant
     assigned_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class StateMessage(StateBase):
     """رسائل بين الولايات عبر Federal Message Bus."""
+
     __tablename__ = "state_messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -81,7 +87,11 @@ FEDERAL_STATES = {
     "science": {"name": "ولاية العلم", "type": "science", "target_population": 45},
     "health": {"name": "ولاية الصحة", "type": "health", "target_population": 35},
     "culture": {"name": "ولاية الثقافة", "type": "culture", "target_population": 40},
-    "infrastructure": {"name": "ولاية البنية التحتية", "type": "infrastructure", "target_population": 45},
+    "infrastructure": {
+        "name": "ولاية البنية التحتية",
+        "type": "infrastructure",
+        "target_population": 45,
+    },
     "industry": {"name": "ولاية الصناعة", "type": "industry", "target_population": 50},
     "trade": {"name": "ولاية التجارة", "type": "trade", "target_population": 30},
     "education": {"name": "ولاية التعليم", "type": "education", "target_population": 40},
@@ -107,7 +117,9 @@ class StateRuntime:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         StateBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
@@ -131,7 +143,9 @@ class StateRuntime:
         finally:
             session.close()
 
-    def register_state(self, state_id: str, name: str, state_type: str, budget: str = "0") -> dict[str, Any]:
+    def register_state(
+        self, state_id: str, name: str, state_type: str, budget: str = "0"
+    ) -> dict[str, Any]:
         """12.8: تسجيل ولاية جديدة — لا يتطلب تعديل الدستور."""
         session = self._Session()
         try:
@@ -174,7 +188,9 @@ class StateRuntime:
                 "status": state.status,
                 "head_agent_id": state.head_agent_id,
                 "budget": state.budget,
-                "established_at": state.established_at.isoformat() if state.established_at else None,
+                "established_at": state.established_at.isoformat()
+                if state.established_at
+                else None,
             }
         finally:
             session.close()
@@ -249,9 +265,11 @@ class StateRuntime:
         """وكلاء ولاية معينة."""
         session = self._Session()
         try:
-            assignments = session.query(StateAgentAssignment).filter(
-                StateAgentAssignment.state_id == state_id
-            ).all()
+            assignments = (
+                session.query(StateAgentAssignment)
+                .filter(StateAgentAssignment.state_id == state_id)
+                .all()
+            )
             return [
                 {
                     "agent_id": a.agent_id,
@@ -268,12 +286,16 @@ class StateRuntime:
         session = self._Session()
         try:
             # كل ولاية لها وكلاؤها فقط
-            state_agents = session.query(StateAgentAssignment).filter(
-                StateAgentAssignment.state_id == state_id
-            ).all()
-            other_states = session.query(StateAgentAssignment).filter(
-                StateAgentAssignment.state_id != state_id
-            ).all()
+            state_agents = (
+                session.query(StateAgentAssignment)
+                .filter(StateAgentAssignment.state_id == state_id)
+                .all()
+            )
+            other_states = (
+                session.query(StateAgentAssignment)
+                .filter(StateAgentAssignment.state_id != state_id)
+                .all()
+            )
 
             # فحص: هل هناك وكيل مشترك بين ولايتين؟
             state_agent_ids = {a.agent_id for a in state_agents}
@@ -302,9 +324,11 @@ class StateRuntime:
             state.budget = str(new_budget)
             session.commit()
             audit = PersistentAuditStore()
-            audit.append("state.budget_allocated", "treasury", {
-                "state_id": state_id, "amount": amount, "reason": reason
-            })
+            audit.append(
+                "state.budget_allocated",
+                "treasury",
+                {"state_id": state_id, "amount": amount, "reason": reason},
+            )
             return {
                 "state_id": state_id,
                 "previous_budget": current,
@@ -321,23 +345,31 @@ class FederalMessageBus:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         StateBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
 
-    def send_message(self, from_state: str, to_state: str, subject: str, body: str = "") -> dict[str, Any]:
+    def send_message(
+        self, from_state: str, to_state: str, subject: str, body: str = ""
+    ) -> dict[str, Any]:
         """إرسال رسالة بين ولايتين — تخضع لفحص السياسة."""
         session = self._Session()
         try:
             message_id = f"msg-{uuid.uuid4().hex[:12]}"
             # فحص السياسة: هل الولايتان موجودتان ونشطتان؟
-            from_ok = session.query(StateModel).filter(
-                StateModel.state_id == from_state, StateModel.status == "active"
-            ).first()
-            to_ok = session.query(StateModel).filter(
-                StateModel.state_id == to_state, StateModel.status == "active"
-            ).first()
+            from_ok = (
+                session.query(StateModel)
+                .filter(StateModel.state_id == from_state, StateModel.status == "active")
+                .first()
+            )
+            to_ok = (
+                session.query(StateModel)
+                .filter(StateModel.state_id == to_state, StateModel.status == "active")
+                .first()
+            )
 
             policy_check = "approved" if (from_ok and to_ok) else "denied"
 
@@ -354,10 +386,16 @@ class FederalMessageBus:
             session.commit()
 
             audit = PersistentAuditStore()
-            audit.append("state.message_sent", from_state, {
-                "message_id": message_id, "to": to_state, "subject": subject,
-                "policy_check": policy_check,
-            })
+            audit.append(
+                "state.message_sent",
+                from_state,
+                {
+                    "message_id": message_id,
+                    "to": to_state,
+                    "subject": subject,
+                    "policy_check": policy_check,
+                },
+            )
 
             return {
                 "message_id": message_id,
@@ -370,18 +408,28 @@ class FederalMessageBus:
         finally:
             session.close()
 
-    def get_messages(self, state_id: str, direction: str = "received", limit: int = 50) -> list[dict[str, Any]]:
+    def get_messages(
+        self, state_id: str, direction: str = "received", limit: int = 50
+    ) -> list[dict[str, Any]]:
         """استقبال رسائل ولاية."""
         session = self._Session()
         try:
             if direction == "received":
-                msgs = session.query(StateMessage).filter(
-                    StateMessage.to_state == state_id
-                ).order_by(StateMessage.created_at.desc()).limit(limit).all()
+                msgs = (
+                    session.query(StateMessage)
+                    .filter(StateMessage.to_state == state_id)
+                    .order_by(StateMessage.created_at.desc())
+                    .limit(limit)
+                    .all()
+                )
             else:
-                msgs = session.query(StateMessage).filter(
-                    StateMessage.from_state == state_id
-                ).order_by(StateMessage.created_at.desc()).limit(limit).all()
+                msgs = (
+                    session.query(StateMessage)
+                    .filter(StateMessage.from_state == state_id)
+                    .order_by(StateMessage.created_at.desc())
+                    .limit(limit)
+                    .all()
+                )
             return [
                 {
                     "message_id": m.message_id,

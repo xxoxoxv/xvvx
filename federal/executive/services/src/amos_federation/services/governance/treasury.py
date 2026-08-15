@@ -22,9 +22,9 @@ from sqlalchemy import (
     String,
     Text,
     create_engine,
-    select,
     desc,
     func,
+    select,
 )
 from sqlalchemy.orm import DeclarativeBase
 
@@ -33,23 +33,28 @@ from amos_federation.common.database import get_database_url, get_session_factor
 
 class _TreasuryBase(DeclarativeBase):
     """قاعدة نماذج الخزانة."""
+
     pass
 
 
 # === Models ===
 
+
 class TransactionModel(_TreasuryBase):
     """جدول المعاملات المالية — غير قابل للتعديل (INSERT-only)."""
+
     __tablename__ = "treasury_transactions"
 
     id = Column(String, primary_key=True)
     tx_type = Column(String, nullable=False)  # credit / debit
-    source = Column(String, nullable=False)   # task_completion / quality_report / training / model_invoke / storage / retraining
+    source = Column(
+        String, nullable=False
+    )  # task_completion / quality_report / training / model_invoke / storage / retraining
     agent_id = Column(String, nullable=True)
-    amount = Column(Float, nullable=False)    # in amos-credit
+    amount = Column(Float, nullable=False)  # in amos-credit
     description = Column(Text, default="")
     linked_event = Column(String, nullable=True)  # event subject (experience.recorded, etc.)
-    linked_ref = Column(String, nullable=True)     # reference ID (experience ID, cost record ID)
+    linked_ref = Column(String, nullable=True)  # reference ID (experience ID, cost record ID)
     prev_hash = Column(String, nullable=False, default="0" * 64)
     hash = Column(String, nullable=False, default="")
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
@@ -57,6 +62,7 @@ class TransactionModel(_TreasuryBase):
 
 class BudgetModel(_TreasuryBase):
     """جدول الموازنات."""
+
     __tablename__ = "treasury_budgets"
 
     id = Column(String, primary_key=True)
@@ -70,6 +76,7 @@ class BudgetModel(_TreasuryBase):
 
 class FinancialReportModel(_TreasuryBase):
     """جدول التقارير المالية."""
+
     __tablename__ = "treasury_reports"
 
     id = Column(String, primary_key=True)
@@ -99,6 +106,7 @@ COST_RETRAINING = 20.0
 
 # === Treasury ===
 
+
 class Treasury:
     """الخزانة الفدرالية — إصدار amos-credit وتسجيل المعاملات."""
 
@@ -111,15 +119,21 @@ class Treasury:
         engine = create_engine(url, connect_args=connect_args)
         _TreasuryBase.metadata.create_all(engine)
 
-    def _compute_hash(self, tx_type: str, source: str, amount: float, prev_hash: str, tx_id: str) -> str:
+    def _compute_hash(
+        self, tx_type: str, source: str, amount: float, prev_hash: str, tx_id: str
+    ) -> str:
         """حساب SHA-256 hash للمعاملة (فوق Audit Chain)."""
-        payload = json.dumps({
-            "tx_id": tx_id,
-            "tx_type": tx_type,
-            "source": source,
-            "amount": amount,
-            "prev_hash": prev_hash,
-        }, sort_keys=True, default=str)
+        payload = json.dumps(
+            {
+                "tx_id": tx_id,
+                "tx_type": tx_type,
+                "source": source,
+                "amount": amount,
+                "prev_hash": prev_hash,
+            },
+            sort_keys=True,
+            default=str,
+        )
         return hashlib.sha256(payload.encode()).hexdigest()
 
     def _last_hash(self) -> str:
@@ -169,13 +183,17 @@ class Treasury:
 
         # نشر حدث
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.treasury.transaction", {
-            "tx_id": tx_id,
-            "tx_type": tx_type,
-            "source": source,
-            "amount": amount,
-            "agent_id": agent_id,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.treasury.transaction",
+            {
+                "tx_id": tx_id,
+                "tx_type": tx_type,
+                "source": source,
+                "amount": amount,
+                "agent_id": agent_id,
+            },
+        )
 
         return {
             "tx_id": tx_id,
@@ -194,9 +212,11 @@ class Treasury:
         """التحقق من سلامة سلسلة المعاملات."""
         session = get_session_factory()()
         try:
-            txs = session.execute(
-                select(TransactionModel).order_by(TransactionModel.created_at)
-            ).scalars().all()
+            txs = (
+                session.execute(select(TransactionModel).order_by(TransactionModel.created_at))
+                .scalars()
+                .all()
+            )
             prev_hash = "0" * 64
             valid = True
             for tx in txs:
@@ -214,18 +234,24 @@ class Treasury:
         session = get_session_factory()()
         try:
             if agent_id:
-                credits = session.execute(
-                    select(func.sum(TransactionModel.amount)).where(
-                        TransactionModel.tx_type == "credit",
-                        TransactionModel.agent_id == agent_id,
-                    )
-                ).scalar() or 0.0
-                debits = session.execute(
-                    select(func.sum(TransactionModel.amount)).where(
-                        TransactionModel.tx_type == "debit",
-                        TransactionModel.agent_id == agent_id,
-                    )
-                ).scalar() or 0.0
+                credits = (
+                    session.execute(
+                        select(func.sum(TransactionModel.amount)).where(
+                            TransactionModel.tx_type == "credit",
+                            TransactionModel.agent_id == agent_id,
+                        )
+                    ).scalar()
+                    or 0.0
+                )
+                debits = (
+                    session.execute(
+                        select(func.sum(TransactionModel.amount)).where(
+                            TransactionModel.tx_type == "debit",
+                            TransactionModel.agent_id == agent_id,
+                        )
+                    ).scalar()
+                    or 0.0
+                )
                 return {
                     "agent_id": agent_id,
                     "total_earned": credits,
@@ -233,12 +259,22 @@ class Treasury:
                     "balance": credits - debits,
                 }
             else:
-                credits = session.execute(
-                    select(func.sum(TransactionModel.amount)).where(TransactionModel.tx_type == "credit")
-                ).scalar() or 0.0
-                debits = session.execute(
-                    select(func.sum(TransactionModel.amount)).where(TransactionModel.tx_type == "debit")
-                ).scalar() or 0.0
+                credits = (
+                    session.execute(
+                        select(func.sum(TransactionModel.amount)).where(
+                            TransactionModel.tx_type == "credit"
+                        )
+                    ).scalar()
+                    or 0.0
+                )
+                debits = (
+                    session.execute(
+                        select(func.sum(TransactionModel.amount)).where(
+                            TransactionModel.tx_type == "debit"
+                        )
+                    ).scalar()
+                    or 0.0
+                )
                 return {
                     "total_earned": credits,
                     "total_spent": debits,
@@ -249,7 +285,9 @@ class Treasury:
 
     # === 10.2: Income sources ===
 
-    def reward_task_completion(self, agent_id: str, experience_id: str, quality_score: float = 0.5) -> dict[str, Any]:
+    def reward_task_completion(
+        self, agent_id: str, experience_id: str, quality_score: float = 0.5
+    ) -> dict[str, Any]:
         """مكافأة إكمال مهمة — مرتبطة بـ experience.recorded الحقيقي."""
         amount = REWARD_TASK_COMPLETION * (0.5 + quality_score)  # جودة أعلى = مكافأة أعلى
         return self._record_transaction(
@@ -262,7 +300,9 @@ class Treasury:
             linked_ref=experience_id,
         )
 
-    def reward_quality_report(self, agent_id: str, review_id: str, quality_score: float = 0.5) -> dict[str, Any]:
+    def reward_quality_report(
+        self, agent_id: str, review_id: str, quality_score: float = 0.5
+    ) -> dict[str, Any]:
         """مكافأة تقرير عالي الجودة — مرتبطة بـ evaluation حقيقي."""
         amount = REWARD_QUALITY_REPORT * (0.5 + quality_score)
         return self._record_transaction(
@@ -290,6 +330,7 @@ class Treasury:
     def process_experience_income(self, agent_id: str) -> list[dict[str, Any]]:
         """معالجة كل خبرات الوكيل غير المكافأة وتوزيع الدخل."""
         from amos_federation.common.persistent import PersistentExperienceStore
+
         exp_store = PersistentExperienceStore()
         experiences = exp_store.list_all(agent_id=agent_id, limit=100)
 
@@ -303,7 +344,9 @@ class Treasury:
 
     # === 10.3: Expense sources ===
 
-    def charge_model_invoke(self, agent_id: str, cost_usd: float, model_name: str) -> dict[str, Any]:
+    def charge_model_invoke(
+        self, agent_id: str, cost_usd: float, model_name: str
+    ) -> dict[str, Any]:
         """رسوم استدعاء نموذج — مرتبطة بـ Cost Tracking الحقيقي."""
         # تحويل الدولار لـ amos-credit (1 USD = 100 amos-credit)
         amount = cost_usd * 100 + COST_MODEL_INVOKE_BASE
@@ -343,6 +386,7 @@ class Treasury:
     def process_real_costs(self) -> list[dict[str, Any]]:
         """معالجة التكاليف الحقيقية من Model Gateway (المرحلة 5)."""
         from amos_federation.services.model_gateway.model_layer import get_model_layer
+
         cost_summary = get_model_layer().get_cost_summary()
 
         results = []
@@ -363,7 +407,9 @@ class Treasury:
 
     # === 10.4: Treasury functions ===
 
-    def allocate_budget(self, holder_type: str, holder_id: str, amount: float, period: str | None = None) -> dict[str, Any]:
+    def allocate_budget(
+        self, holder_type: str, holder_id: str, amount: float, period: str | None = None
+    ) -> dict[str, Any]:
         """توزيع موازنة."""
         if not period:
             period = datetime.now(UTC).strftime("%Y-%m")
@@ -393,10 +439,12 @@ class Treasury:
         session = get_session_factory()()
         try:
             budget = session.execute(
-                select(BudgetModel).where(
+                select(BudgetModel)
+                .where(
                     BudgetModel.holder_id == holder_id,
                     BudgetModel.period == period,
-                ).limit(1)
+                )
+                .limit(1)
             ).scalar_one_or_none()
             if not budget:
                 return {"holder_id": holder_id, "allocated": 0.0, "spent": 0.0, "remaining": 0.0}
@@ -410,7 +458,9 @@ class Treasury:
         finally:
             session.close()
 
-    def generate_financial_report(self, period: str | None = None, report_type: str = "monthly") -> dict[str, Any]:
+    def generate_financial_report(
+        self, period: str | None = None, report_type: str = "monthly"
+    ) -> dict[str, Any]:
         """تقرير مالي فدرالي حقيقي مبني على معاملات فعلية."""
         if not period:
             period = datetime.now(UTC).strftime("%Y-%m")
@@ -418,9 +468,11 @@ class Treasury:
         session = get_session_factory()()
         try:
             # كل المعاملات في الفترة
-            all_txs = session.execute(
-                select(TransactionModel).order_by(TransactionModel.created_at)
-            ).scalars().all()
+            all_txs = (
+                session.execute(select(TransactionModel).order_by(TransactionModel.created_at))
+                .scalars()
+                .all()
+            )
 
             # فلترة بالفترة (بسيط: كل المعاملات لهذا التقرير)
             credits = [t for t in all_txs if t.tx_type == "credit"]
@@ -466,10 +518,15 @@ class Treasury:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.treasury.report_generated", {
-            "report_id": report_id, "period": period,
-            "net_balance": total_income - total_expense,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.treasury.report_generated",
+            {
+                "report_id": report_id,
+                "period": period,
+                "net_balance": total_income - total_expense,
+            },
+        )
 
         return {
             "report_id": report_id,
@@ -488,9 +545,15 @@ class Treasury:
         """عرض المعاملات."""
         session = get_session_factory()()
         try:
-            txs = session.execute(
-                select(TransactionModel).order_by(desc(TransactionModel.created_at)).limit(limit)
-            ).scalars().all()
+            txs = (
+                session.execute(
+                    select(TransactionModel)
+                    .order_by(desc(TransactionModel.created_at))
+                    .limit(limit)
+                )
+                .scalars()
+                .all()
+            )
             return [
                 {
                     "id": t.id,
@@ -512,9 +575,15 @@ class Treasury:
         """عرض التقارير المالية."""
         session = get_session_factory()()
         try:
-            reports = session.execute(
-                select(FinancialReportModel).order_by(desc(FinancialReportModel.created_at)).limit(limit)
-            ).scalars().all()
+            reports = (
+                session.execute(
+                    select(FinancialReportModel)
+                    .order_by(desc(FinancialReportModel.created_at))
+                    .limit(limit)
+                )
+                .scalars()
+                .all()
+            )
             return [
                 {
                     "id": r.id,
@@ -533,6 +602,7 @@ class Treasury:
 
 
 # === Full economic cycle ===
+
 
 def run_economic_cycle() -> dict[str, Any]:
     """دورة اقتصادية كاملة: وكيل ينجز مهمة → يكسب amos-credit → الخزانة تسجّل → تقرير مالي."""

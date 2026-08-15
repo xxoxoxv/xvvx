@@ -7,9 +7,8 @@ AMOS-Federation Agent Health System
 """
 
 import json
-import os
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import (
@@ -17,25 +16,26 @@ from sqlalchemy import (
     Column,
     DateTime,
     Float,
-    Integer,
     String,
     Text,
     create_engine,
 )
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 
-from amos_federation.common.database import get_database_url, get_session_factory, init_db
-
+from amos_federation.common.database import get_database_url, get_session_factory
 
 # === Health Check Model ===
 
+
 class _HealthBase(DeclarativeBase):
     """قاعدة نماذج الفحص الصحي."""
+
     pass
 
 
 class AgentHealthCheckModel(_HealthBase):
     """جدول فحوصات الوكلاء الصحية."""
+
     __tablename__ = "agent_health_checks"
 
     id = Column(String, primary_key=True)
@@ -56,6 +56,7 @@ class AgentHealthCheckModel(_HealthBase):
 
 class IsolationRecordModel(_HealthBase):
     """جدول سجلات العزل."""
+
     __tablename__ = "agent_isolations"
 
     id = Column(String, primary_key=True)
@@ -71,11 +72,14 @@ class IsolationRecordModel(_HealthBase):
 
 class TreatmentRecordModel(_HealthBase):
     """جدول سجلات العلاج."""
+
     __tablename__ = "agent_treatments"
 
     id = Column(String, primary_key=True)
     agent_id = Column(String, nullable=False, index=True)
-    treatment_type = Column(String, nullable=False)  # retrain / replace_model / fix_tool / reset_context
+    treatment_type = Column(
+        String, nullable=False
+    )  # retrain / replace_model / fix_tool / reset_context
     started_at = Column(DateTime, default=lambda: datetime.now(UTC))
     completed_at = Column(DateTime, nullable=True)
     status = Column(String, default="in_progress")  # in_progress / completed / failed
@@ -96,6 +100,7 @@ ALL_STATUSES = [HEALTHY, MONITOR, TREATMENT, ISOLATED]
 
 # === Health Checker ===
 
+
 class HealthChecker:
     """الفاحص الصحي للوكلاء — يفحص كل وكيل دوريًا."""
 
@@ -112,12 +117,17 @@ class HealthChecker:
     def _compute_hash(self, action: str, actor: str, details: dict, prev_hash: str) -> str:
         """حساب SHA-256 hash للفحص (تماثل سلسلة التدقيق)."""
         import hashlib
-        payload = json.dumps({
-            "action": action,
-            "actor": actor,
-            "details": details,
-            "prev_hash": prev_hash,
-        }, sort_keys=True, default=str)
+
+        payload = json.dumps(
+            {
+                "action": action,
+                "actor": actor,
+                "details": details,
+                "prev_hash": prev_hash,
+            },
+            sort_keys=True,
+            default=str,
+        )
         return hashlib.sha256(payload.encode()).hexdigest()
 
     def check_agent(self, agent_id: str) -> dict[str, Any]:
@@ -125,8 +135,8 @@ class HealthChecker:
         8.1: فحص وكيل واحد — الأداء، استهلاك الموارد، الالتزام بالسياسات.
         النتيجة واحدة من أربع: سليم / مراقبة / علاج / عزل.
         """
-        from amos_federation.services.agent_runtime.population import get_population_registry
         from amos_federation.common.persistent import PersistentExperienceStore
+        from amos_federation.services.agent_runtime.population import get_population_registry
 
         registry = get_population_registry()
         agent = registry.get_agent(agent_id)
@@ -139,7 +149,11 @@ class HealthChecker:
 
         # حساب الأداء
         if experiences:
-            scores = [e.get("quality_score", 0.5) for e in experiences if e.get("quality_score") is not None]
+            scores = [
+                e.get("quality_score", 0.5)
+                for e in experiences
+                if e.get("quality_score") is not None
+            ]
             performance_score = sum(scores) / len(scores) if scores else 0.5
         else:
             performance_score = 0.5  # لا خبرات بعد
@@ -154,9 +168,12 @@ class HealthChecker:
 
         # الالتزام بالسياسات (من سجل التدقيق)
         from amos_federation.common.persistent import PersistentAuditStore
+
         audit = PersistentAuditStore()
         audit_entries = audit.list_all(limit=100)
-        policy_violations = sum(1 for a in audit_entries if "violation" in a.get("action", "").lower())
+        policy_violations = sum(
+            1 for a in audit_entries if "violation" in a.get("action", "").lower()
+        )
         policy_compliance = 1.0 - (policy_violations / max(len(audit_entries), 1))
 
         # استهلاك الموارد
@@ -193,7 +210,8 @@ class HealthChecker:
         session = get_session_factory()()
         try:
             # آخر hash
-            from sqlalchemy import select, desc
+            from sqlalchemy import desc, select
+
             last_check = session.execute(
                 select(AgentHealthCheckModel)
                 .order_by(desc(AgentHealthCheckModel.created_at))
@@ -232,11 +250,15 @@ class HealthChecker:
 
         # نشر حدث
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.health.check_completed", {
-            "agent_id": agent_id,
-            "status": status,
-            "performance_score": performance_score,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.health.check_completed",
+            {
+                "agent_id": agent_id,
+                "status": status,
+                "performance_score": performance_score,
+            },
+        )
 
         return {
             "check_id": check_id,
@@ -255,6 +277,7 @@ class HealthChecker:
     def check_all_agents(self, limit: int = 50) -> list[dict[str, Any]]:
         """فحص الوكلاء المسجلين (مع حد لتجنب عنق الزجاجة)."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         agents = get_population_registry().list_agents()
         # تقييد العدد لتجنب عنق الزجاجة عند وجود مئات الوكلاء
         results = []
@@ -266,13 +289,18 @@ class HealthChecker:
         """عرض تاريخ الفحوصات الصحية لوكيل."""
         session = get_session_factory()()
         try:
-            from sqlalchemy import select, desc
-            records = session.execute(
-                select(AgentHealthCheckModel)
-                .where(AgentHealthCheckModel.agent_id == agent_id)
-                .order_by(desc(AgentHealthCheckModel.created_at))
-                .limit(limit)
-            ).scalars().all()
+            from sqlalchemy import desc, select
+
+            records = (
+                session.execute(
+                    select(AgentHealthCheckModel)
+                    .where(AgentHealthCheckModel.agent_id == agent_id)
+                    .order_by(desc(AgentHealthCheckModel.created_at))
+                    .limit(limit)
+                )
+                .scalars()
+                .all()
+            )
             return [
                 {
                     "id": r.id,
@@ -299,6 +327,7 @@ class HealthChecker:
 
 
 # === Treatment System ===
+
 
 class TreatmentSystem:
     """نظام العلاج — ينفّذ مسار العلاج للوكلاء."""
@@ -334,6 +363,7 @@ class TreatmentSystem:
 
             # تحديث حالة الوكيل
             from amos_federation.services.agent_runtime.population import get_population_registry
+
             registry = get_population_registry()
             registry.update_state(agent_id, "training")
 
@@ -348,6 +378,7 @@ class TreatmentSystem:
         session = get_session_factory()()
         try:
             from sqlalchemy import select
+
             record = session.execute(
                 select(TreatmentRecordModel).where(TreatmentRecordModel.id == treatment_id)
             ).scalar_one()
@@ -360,15 +391,20 @@ class TreatmentSystem:
 
         # إعادة الوكيل للحالة النشطة
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         get_population_registry().update_state(agent_id, "active")
 
         # نشر حدث
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.health.treatment_completed", {
-            "agent_id": agent_id,
-            "treatment_type": treatment_type,
-            "result": result,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.health.treatment_completed",
+            {
+                "agent_id": agent_id,
+                "treatment_type": treatment_type,
+                "result": result,
+            },
+        )
 
         return {
             "treatment_id": treatment_id,
@@ -383,6 +419,7 @@ class TreatmentSystem:
         if treatment_type == "retrain":
             # 8.2: استدعاء المدرسة (المرحلة 6)
             from amos_federation.services.agent_runtime.population import AgentSchool
+
             school = AgentSchool()
             # محاكاة التدريب — في الإنتاج سيكون تدريبًا حقيقيًا
             result = school.run_full_curriculum(agent_id)
@@ -391,6 +428,7 @@ class TreatmentSystem:
         elif treatment_type == "replace_model":
             # 8.2: استدعاء Model Gateway (المرحلة 5)
             from amos_federation.services.model_gateway.model_layer import get_model_layer
+
             model_layer = get_model_layer()
             # استدعاء نموذج بديل
             result = model_layer.invoke_with_cache(
@@ -403,6 +441,7 @@ class TreatmentSystem:
         elif treatment_type == "fix_tool":
             # فحص الأدوات المسموح بها وإصلاحها
             from amos_federation.services.agent_runtime.population import get_population_registry
+
             agent = get_population_registry().get_agent(agent_id)
             tools = agent.get("allowed_tools", []) if agent else []
             return {"fixed_tools": tools, "method": "tool_audit"}
@@ -410,18 +449,24 @@ class TreatmentSystem:
         elif treatment_type == "reset_context":
             # إعادة تعيين السياق — حذف ذاكرة الوكيل
             from amos_federation.services.agent_runtime.population import get_population_registry
+
             agent = get_population_registry().get_agent(agent_id)
             # مسح الذاكرة المرتبطة بالوكيل عبر query وإعادة التخزين بسياق فارغ
             from amos_federation.common.persistent import PersistentMemoryStore
+
             memory = PersistentMemoryStore()
             # لا يوجد clear_agent مباشر — نسجل سياقًا جديدًا فارغًا
-            memory.store(f"agent_context_reset:{agent_id}", {"reset": True, "timestamp": datetime.now(UTC).isoformat()})
+            memory.store(
+                f"agent_context_reset:{agent_id}",
+                {"reset": True, "timestamp": datetime.now(UTC).isoformat()},
+            )
             return {"reset": True, "method": "MemoryStore.context_reset"}
 
         return {"error": "unknown treatment"}
 
 
 # === Isolation System ===
+
 
 class IsolationSystem:
     """نظام العزل — ينقل الوكيل لـ Sandbox معزول."""
@@ -457,6 +502,7 @@ class IsolationSystem:
 
             # تحديث حالة الوكيل
             from amos_federation.services.agent_runtime.population import get_population_registry
+
             registry = get_population_registry()
             registry.update_state(agent_id, "paused")
 
@@ -466,11 +512,15 @@ class IsolationSystem:
 
         # نشر حدث
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.health.agent_isolated", {
-            "agent_id": agent_id,
-            "sandbox_id": sandbox_id,
-            "reason": reason,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.health.agent_isolated",
+            {
+                "agent_id": agent_id,
+                "sandbox_id": sandbox_id,
+                "reason": reason,
+            },
+        )
 
         return {
             "isolation_id": isolation_id,
@@ -485,15 +535,18 @@ class IsolationSystem:
         session = get_session_factory()()
         try:
             from sqlalchemy import select
+
             record = session.execute(
                 select(IsolationRecordModel).where(IsolationRecordModel.id == isolation_id)
             ).scalar_one()
             actions = record.actions_log or []
-            actions.append({
-                "action": action,
-                "details": details,
-                "timestamp": datetime.now(UTC).isoformat(),
-            })
+            actions.append(
+                {
+                    "action": action,
+                    "details": details,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+            )
             record.actions_log = actions
             session.commit()
             return {"logged": True, "action": action}
@@ -508,6 +561,7 @@ class IsolationSystem:
         session = get_session_factory()()
         try:
             from sqlalchemy import select
+
             record = session.execute(
                 select(IsolationRecordModel).where(IsolationRecordModel.id == isolation_id)
             ).scalar_one()
@@ -521,6 +575,7 @@ class IsolationSystem:
 
         # تنفيذ القرار
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         registry = get_population_registry()
 
         if decision == "retrain":
@@ -533,10 +588,14 @@ class IsolationSystem:
 
         # نشر حدث
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.health.agent_released", {
-            "agent_id": agent_id,
-            "decision": decision,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.health.agent_released",
+            {
+                "agent_id": agent_id,
+                "decision": decision,
+            },
+        )
 
         return {
             "isolation_id": isolation_id,
@@ -550,6 +609,7 @@ class IsolationSystem:
         session = get_session_factory()()
         try:
             from sqlalchemy import select
+
             record = session.execute(
                 select(IsolationRecordModel)
                 .where(IsolationRecordModel.agent_id == agent_id)
@@ -565,9 +625,14 @@ class IsolationSystem:
         session = get_session_factory()()
         try:
             from sqlalchemy import select
-            records = session.execute(
-                select(IsolationRecordModel).where(IsolationRecordModel.status == "active")
-            ).scalars().all()
+
+            records = (
+                session.execute(
+                    select(IsolationRecordModel).where(IsolationRecordModel.status == "active")
+                )
+                .scalars()
+                .all()
+            )
             return [
                 {
                     "id": r.id,
@@ -584,6 +649,7 @@ class IsolationSystem:
 
 
 # === Full Health Cycle ===
+
 
 def run_health_cycle(limit: int = 20) -> dict[str, Any]:
     """تشغيل دورة فحص صحي كاملة على الوكلاء (مع حد لتجنب عنق الزجاجة)."""

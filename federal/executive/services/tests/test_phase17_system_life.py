@@ -4,14 +4,13 @@ AMOS-Federation Phase 17 — System Life + Launch Tests
 النطاق: tests/test_phase17_system_life.py
 """
 
-import pytest
-
 
 class TestBootstrap:
     """17.1: System Bootstrap."""
 
     def test_bootstrap(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.bootstrap()
         assert "steps" in result
@@ -24,6 +23,7 @@ class TestHealthCheck:
 
     def test_health_check(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.health_check()
         assert "overall_status" in result
@@ -36,6 +36,7 @@ class TestSelfHealing:
 
     def test_heal_audit_chain(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.self_heal("audit_chain")
         assert "actions" in result
@@ -43,12 +44,14 @@ class TestSelfHealing:
 
     def test_heal_states(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.self_heal("states")
         assert "actions" in result
 
     def test_heal_unknown_component(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.self_heal("unknown")
         assert result["actions"][0]["action"] == "unknown_component"
@@ -59,6 +62,7 @@ class TestGracefulShutdown:
 
     def test_shutdown(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.graceful_shutdown(reason="maintenance")
         assert result["status"] == "shutdown_complete"
@@ -71,6 +75,7 @@ class TestBackupRestore:
 
     def test_create_backup(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.create_backup("all")
         assert result["status"] == "created"
@@ -79,6 +84,7 @@ class TestBackupRestore:
 
     def test_restore_backup(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         backup = lifecycle.create_backup("states")
         result = lifecycle.restore_backup(backup["backup_id"])
@@ -86,6 +92,7 @@ class TestBackupRestore:
 
     def test_restore_nonexistent(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.restore_backup("nonexistent")
         assert "error" in result
@@ -96,6 +103,7 @@ class TestLaunchChecklist:
 
     def test_launch_checklist(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.launch_checklist()
         assert "checks" in result
@@ -108,6 +116,7 @@ class TestSystemStatus:
 
     def test_system_status(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.system_status()
         assert "overall_status" in result
@@ -119,6 +128,7 @@ class TestSystemStatus:
 
     def test_system_status_has_states_count(self):
         from amos_federation.services.governance.system_life import get_system_lifecycle
+
         lifecycle = get_system_lifecycle()
         result = lifecycle.system_status()
         assert result["states"]["total"] >= 9

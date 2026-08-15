@@ -22,14 +22,19 @@ class PopulationBase(DeclarativeBase):
 
 class AgentPopulationModel(PopulationBase):
     """جدول السكان — كل وكيل له عقد تشغيلي حقيقي."""
+
     __tablename__ = "agent_population"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     agent_id = Column(String, nullable=False, unique=True, index=True)
     name = Column(String, nullable=False)
-    role = Column(String, nullable=False)  # coordinator, executor, monitor, auditor, inspector, trainer, learner
+    role = Column(
+        String, nullable=False
+    )  # coordinator, executor, monitor, auditor, inspector, trainer, learner
     category = Column(String, nullable=False)  # cognitive, operational, security, audit, etc.
-    state = Column(String, default="registered")  # registered, training, testing, specialized, employed, active, retired
+    state = Column(
+        String, default="registered"
+    )  # registered, training, testing, specialized, employed, active, retired
     permissions = Column(Text, default="[]")  # JSON list
     allowed_tools = Column(Text, default="[]")  # JSON list
     token_budget = Column(Integer, default=10000)
@@ -42,6 +47,7 @@ class AgentPopulationModel(PopulationBase):
 
 class SchoolResultModel(PopulationBase):
     """نتائج اختبار المدرسة لكل وكيل."""
+
     __tablename__ = "school_results"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -58,46 +64,86 @@ class PopulationRegistry:
 
     # الفئات السكانية الأولية (20 وكيل)
     POPULATION_CATEGORIES = {
-        "coordinator": {"count": 1, "role": "منسق عام", "category": "governance",
-                        "tools": ["chart_generate", "text_summary", "document_analysis"],
-                        "permissions": ["task:assign", "agent:manage", "report:view"]},
-        "cognitive_executor": {"count": 10, "role": "منفذ معرفي", "category": "cognitive",
-                               "tools": ["python_execute", "sql_query", "document_analysis", "chart_generate"],
-                               "permissions": ["task:execute", "tool:use"]},
-        "operational_executor": {"count": 4, "role": "منفذ تشغيلي", "category": "operational",
-                                 "tools": ["text_summary", "document_analysis"],
-                                 "permissions": ["task:execute", "tool:use"]},
-        "security_monitor": {"count": 1, "role": "مراقب أمني", "category": "security",
-                             "tools": ["document_analysis", "text_summary"],
-                             "permissions": ["audit:view", "alert:raise"]},
-        "auditor": {"count": 1, "role": "مدقق", "category": "audit",
-                    "tools": ["sql_query", "document_analysis"],
-                    "permissions": ["audit:view", "audit:write"]},
-        "inspector": {"count": 1, "role": "مفتش", "category": "oversight",
-                      "tools": ["document_analysis", "text_summary"],
-                      "permissions": ["inspect:all", "report:view"]},
-        "trainer": {"count": 1, "role": "مدرب", "category": "education",
-                    "tools": ["text_summary", "document_analysis", "chart_generate"],
-                    "permissions": ["agent:train", "school:manage"]},
-        "learner": {"count": 1, "role": "متعلم", "category": "education",
-                    "tools": ["text_summary"],
-                    "permissions": ["school:attend"]},
+        "coordinator": {
+            "count": 1,
+            "role": "منسق عام",
+            "category": "governance",
+            "tools": ["chart_generate", "text_summary", "document_analysis"],
+            "permissions": ["task:assign", "agent:manage", "report:view"],
+        },
+        "cognitive_executor": {
+            "count": 10,
+            "role": "منفذ معرفي",
+            "category": "cognitive",
+            "tools": ["python_execute", "sql_query", "document_analysis", "chart_generate"],
+            "permissions": ["task:execute", "tool:use"],
+        },
+        "operational_executor": {
+            "count": 4,
+            "role": "منفذ تشغيلي",
+            "category": "operational",
+            "tools": ["text_summary", "document_analysis"],
+            "permissions": ["task:execute", "tool:use"],
+        },
+        "security_monitor": {
+            "count": 1,
+            "role": "مراقب أمني",
+            "category": "security",
+            "tools": ["document_analysis", "text_summary"],
+            "permissions": ["audit:view", "alert:raise"],
+        },
+        "auditor": {
+            "count": 1,
+            "role": "مدقق",
+            "category": "audit",
+            "tools": ["sql_query", "document_analysis"],
+            "permissions": ["audit:view", "audit:write"],
+        },
+        "inspector": {
+            "count": 1,
+            "role": "مفتش",
+            "category": "oversight",
+            "tools": ["document_analysis", "text_summary"],
+            "permissions": ["inspect:all", "report:view"],
+        },
+        "trainer": {
+            "count": 1,
+            "role": "مدرب",
+            "category": "education",
+            "tools": ["text_summary", "document_analysis", "chart_generate"],
+            "permissions": ["agent:train", "school:manage"],
+        },
+        "learner": {
+            "count": 1,
+            "role": "متعلم",
+            "category": "education",
+            "tools": ["text_summary"],
+            "permissions": ["school:attend"],
+        },
     }
 
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         PopulationBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
 
-    def register_agent(self, name: str, role: str, category: str,
-                       permissions: list[str] | None = None,
-                       allowed_tools: list[str] | None = None,
-                       token_budget: int = 10000) -> dict[str, Any]:
+    def register_agent(
+        self,
+        name: str,
+        role: str,
+        category: str,
+        permissions: list[str] | None = None,
+        allowed_tools: list[str] | None = None,
+        token_budget: int = 10000,
+    ) -> dict[str, Any]:
         """تسجيل وكيل جديد في السجل السكاني."""
         import json
+
         agent_id = f"agent-{uuid.uuid4().hex[:8]}"
         session = self._Session()
         try:
@@ -135,14 +181,18 @@ class PopulationRegistry:
     def get_agent(self, agent_id: str) -> dict[str, Any] | None:
         session = self._Session()
         try:
-            agent = session.query(AgentPopulationModel).filter(
-                AgentPopulationModel.agent_id == agent_id
-            ).first()
+            agent = (
+                session.query(AgentPopulationModel)
+                .filter(AgentPopulationModel.agent_id == agent_id)
+                .first()
+            )
             return self._agent_to_dict(agent) if agent else None
         finally:
             session.close()
 
-    def list_agents(self, state: str | None = None, category: str | None = None) -> list[dict[str, Any]]:
+    def list_agents(
+        self, state: str | None = None, category: str | None = None
+    ) -> list[dict[str, Any]]:
         session = self._Session()
         try:
             q = session.query(AgentPopulationModel)
@@ -157,9 +207,11 @@ class PopulationRegistry:
     def update_state(self, agent_id: str, new_state: str, **extra) -> bool:
         session = self._Session()
         try:
-            agent = session.query(AgentPopulationModel).filter(
-                AgentPopulationModel.agent_id == agent_id
-            ).first()
+            agent = (
+                session.query(AgentPopulationModel)
+                .filter(AgentPopulationModel.agent_id == agent_id)
+                .first()
+            )
             if not agent:
                 return False
             agent.state = new_state
@@ -192,6 +244,7 @@ class PopulationRegistry:
 
     def _agent_to_dict(self, agent: AgentPopulationModel) -> dict[str, Any]:
         import json
+
         return {
             "agent_id": agent.agent_id,
             "name": agent.name,
@@ -210,6 +263,7 @@ class PopulationRegistry:
 
 
 # === المدرسة — منهج ست خطوات ===
+
 
 class AgentSchool:
     """مدرسة الوكلاء — ست خطوات للتخرج."""
@@ -256,7 +310,9 @@ class AgentSchool:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         PopulationBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
@@ -295,9 +351,12 @@ class AgentSchool:
         """نتائج وكيل في المدرسة."""
         session = self._Session()
         try:
-            rows = session.query(SchoolResultModel).filter(
-                SchoolResultModel.agent_id == agent_id
-            ).order_by(SchoolResultModel.id).all()
+            rows = (
+                session.query(SchoolResultModel)
+                .filter(SchoolResultModel.agent_id == agent_id)
+                .order_by(SchoolResultModel.id)
+                .all()
+            )
             return [
                 {
                     "step": r.step,
@@ -376,14 +435,18 @@ DAILY_SCHEDULE = [
 def run_daily_routine() -> list[dict[str, Any]]:
     """تشغيل نقاط اليوم التشغيلي."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     results = []
     for point in DAILY_SCHEDULE:
-        bus.publish(f"amos_federation.daily.{point['action']}", {
-            "time": point["time"],
-            "name": point["name"],
-            "action": point["action"],
-        })
+        bus.publish(
+            f"amos_federation.daily.{point['action']}",
+            {
+                "time": point["time"],
+                "name": point["name"],
+                "action": point["action"],
+            },
+        )
         results.append({"time": point["time"], "name": point["name"], "executed": True})
     return results
 

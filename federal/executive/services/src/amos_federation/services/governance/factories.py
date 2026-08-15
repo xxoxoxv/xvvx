@@ -32,6 +32,7 @@ class FactoryBase(DeclarativeBase):
 
 class FactoryModel(FactoryBase):
     """جدول المصانع."""
+
     __tablename__ = "federal_factories"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -46,6 +47,7 @@ class FactoryModel(FactoryBase):
 
 class FactoryProductModel(FactoryBase):
     """مخرجات المصانع."""
+
     __tablename__ = "factory_products"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -79,7 +81,15 @@ FACTORIES = {
         "name": "مصنع الأبحاث",
         "type": "research",
         "state_id": "science",
-        "pipeline": ["question", "literature", "methodology", "experiment", "write", "review", "publish"],
+        "pipeline": [
+            "question",
+            "literature",
+            "methodology",
+            "experiment",
+            "write",
+            "review",
+            "publish",
+        ],
     },
     "security": {
         "name": "مصنع المراقبة الأمنية",
@@ -96,7 +106,9 @@ class Factory:
     def __init__(self, factory_id: str) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         FactoryBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
@@ -107,7 +119,11 @@ class Factory:
         """تهيئة المصنع إذا لم يكن موجودًا."""
         session = self._Session()
         try:
-            existing = session.query(FactoryModel).filter(FactoryModel.factory_id == self.factory_id).first()
+            existing = (
+                session.query(FactoryModel)
+                .filter(FactoryModel.factory_id == self.factory_id)
+                .first()
+            )
             if not existing and self.factory_id in FACTORIES:
                 info = FACTORIES[self.factory_id]
                 factory = FactoryModel(
@@ -138,9 +154,15 @@ class Factory:
             session.commit()
 
             audit = PersistentAuditStore()
-            audit.append("factory.production_started", producer_agent_id or "system", {
-                "factory_id": self.factory_id, "product_id": product_id, "title": title,
-            })
+            audit.append(
+                "factory.production_started",
+                producer_agent_id or "system",
+                {
+                    "factory_id": self.factory_id,
+                    "product_id": product_id,
+                    "title": title,
+                },
+            )
 
             return {
                 "product_id": product_id,
@@ -153,23 +175,29 @@ class Factory:
         finally:
             session.close()
 
-    def complete_step(self, product_id: str, step: str, output: str = "", quality: int = 0) -> dict[str, Any]:
+    def complete_step(
+        self, product_id: str, step: str, output: str = "", quality: int = 0
+    ) -> dict[str, Any]:
         """إكمال خطوة في خط الأنابيب."""
         session = self._Session()
         try:
-            product = session.query(FactoryProductModel).filter(
-                FactoryProductModel.product_id == product_id
-            ).first()
+            product = (
+                session.query(FactoryProductModel)
+                .filter(FactoryProductModel.product_id == product_id)
+                .first()
+            )
             if not product:
                 return {"error": "product_not_found"}
 
             steps = json.loads(product.pipeline_steps or "[]")
-            steps.append({
-                "step": step,
-                "output": output[:200],
-                "quality": quality,
-                "completed_at": datetime.now(UTC).isoformat(),
-            })
+            steps.append(
+                {
+                    "step": step,
+                    "output": output[:200],
+                    "quality": quality,
+                    "completed_at": datetime.now(UTC).isoformat(),
+                }
+            )
             product.pipeline_steps = json.dumps(steps)
 
             # إذا كانت الخطوة هي النشر، حدّث الحالة
@@ -204,9 +232,11 @@ class Factory:
 
         session = self._Session()
         try:
-            product = session.query(FactoryProductModel).filter(
-                FactoryProductModel.product_id == product_id
-            ).first()
+            product = (
+                session.query(FactoryProductModel)
+                .filter(FactoryProductModel.product_id == product_id)
+                .first()
+            )
             return {
                 "product_id": product_id,
                 "factory_id": self.factory_id,
@@ -222,9 +252,13 @@ class Factory:
         """مخرجات المصنع."""
         session = self._Session()
         try:
-            products = session.query(FactoryProductModel).filter(
-                FactoryProductModel.factory_id == self.factory_id
-            ).order_by(FactoryProductModel.created_at.desc()).limit(limit).all()
+            products = (
+                session.query(FactoryProductModel)
+                .filter(FactoryProductModel.factory_id == self.factory_id)
+                .order_by(FactoryProductModel.created_at.desc())
+                .limit(limit)
+                .all()
+            )
             return [
                 {
                     "product_id": p.product_id,
@@ -244,9 +278,11 @@ class Factory:
         """تفاصيل منتج."""
         session = self._Session()
         try:
-            p = session.query(FactoryProductModel).filter(
-                FactoryProductModel.product_id == product_id
-            ).first()
+            p = (
+                session.query(FactoryProductModel)
+                .filter(FactoryProductModel.product_id == product_id)
+                .first()
+            )
             if not p:
                 return None
             return {
@@ -269,7 +305,9 @@ class FactoryRegistry:
     def __init__(self) -> None:
         self._engine = create_engine(
             get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
+            connect_args={"check_same_thread": False}
+            if get_database_url().startswith("sqlite")
+            else {},
         )
         FactoryBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
@@ -297,15 +335,22 @@ class FactoryRegistry:
         """13.6: تعيين مدير خط إنتاج."""
         session = self._Session()
         try:
-            factory = session.query(FactoryModel).filter(FactoryModel.factory_id == factory_id).first()
+            factory = (
+                session.query(FactoryModel).filter(FactoryModel.factory_id == factory_id).first()
+            )
             if not factory:
                 return {"error": "factory_not_found"}
             factory.manager_agent_id = agent_id
             session.commit()
             audit = PersistentAuditStore()
-            audit.append("factory.manager_assigned", "system", {
-                "factory_id": factory_id, "agent_id": agent_id,
-            })
+            audit.append(
+                "factory.manager_assigned",
+                "system",
+                {
+                    "factory_id": factory_id,
+                    "agent_id": agent_id,
+                },
+            )
             return {"factory_id": factory_id, "manager_agent_id": agent_id, "assigned": True}
         finally:
             session.close()

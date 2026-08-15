@@ -7,7 +7,6 @@ AMOS-Federation Full Governance + Federal Institutions (Phase 9)
 """
 
 import hashlib
-import json
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -22,8 +21,8 @@ from sqlalchemy import (
     String,
     Text,
     create_engine,
-    select,
     desc,
+    select,
 )
 from sqlalchemy.orm import DeclarativeBase
 
@@ -32,17 +31,22 @@ from amos_federation.common.database import get_database_url, get_session_factor
 
 class _GovBase(DeclarativeBase):
     """قاعدة نماذج الحوكمة الكاملة."""
+
     pass
 
 
 # === Models ===
 
+
 class ApprovalModel(_GovBase):
     """جدول الموافقات الموقعة بـ Ed25519."""
+
     __tablename__ = "approvals"
 
     id = Column(String, primary_key=True)
-    request_type = Column(String, nullable=False)  # model_promotion / agent_promotion / policy_change
+    request_type = Column(
+        String, nullable=False
+    )  # model_promotion / agent_promotion / policy_change
     target_id = Column(String, nullable=False)
     requester = Column(String, nullable=False)
     decision = Column(String, nullable=False)  # approve / reject
@@ -56,12 +60,15 @@ class ApprovalModel(_GovBase):
 
 class PromotionGateModel(_GovBase):
     """جدول بوابات الترقية الخمس."""
+
     __tablename__ = "promotion_gates"
 
     id = Column(String, primary_key=True)
     target_type = Column(String, nullable=False)  # model / agent
     target_id = Column(String, nullable=False)
-    gate = Column(String, nullable=False)  # evaluation / shadow / canary / human_approval / activation
+    gate = Column(
+        String, nullable=False
+    )  # evaluation / shadow / canary / human_approval / activation
     status = Column(String, nullable=False, default="pending")  # pending / passed / failed
     result = Column(JSON, default=dict)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
@@ -70,9 +77,12 @@ class PromotionGateModel(_GovBase):
 
 class ExecutiveRoleModel(_GovBase):
     """جدول الأدوار التنفيذية."""
+
     __tablename__ = "executive_roles"
 
-    role_name = Column(String, primary_key=True)  # coordinator / planning_advisor / security_advisor / spokesperson / operations_manager
+    role_name = Column(
+        String, primary_key=True
+    )  # coordinator / planning_advisor / security_advisor / spokesperson / operations_manager
     agent_id = Column(String, nullable=True)
     appointed_at = Column(DateTime, nullable=True)
     status = Column(String, default="vacant")  # vacant / filled
@@ -81,24 +91,30 @@ class ExecutiveRoleModel(_GovBase):
 
 class LegislationModel(_GovBase):
     """جدول التشريعات."""
+
     __tablename__ = "legislations"
 
     id = Column(String, primary_key=True)
     title = Column(String, nullable=False)
     body = Column(Text, nullable=False)
     proposer = Column(String, nullable=False)
-    status = Column(String, nullable=False, default="proposed")  # proposed / debate / voting / enacted / rejected
+    status = Column(
+        String, nullable=False, default="proposed"
+    )  # proposed / debate / voting / enacted / rejected
     votes_for = Column(Integer, default=0)
     votes_against = Column(Integer, default=0)
     votes_abstain = Column(Integer, default=0)
     voters = Column(JSON, default=list)  # list of agent_ids who voted
     enacted_rule_name = Column(String, nullable=True)  # rule name in Policy Engine
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
 
 class CourtCaseModel(_GovBase):
     """جدول قضايا المحكمة العليا."""
+
     __tablename__ = "court_cases"
 
     id = Column(String, primary_key=True)
@@ -116,6 +132,7 @@ class CourtCaseModel(_GovBase):
 
 class ComplianceReportModel(_GovBase):
     """جدول تقارير الامتثال."""
+
     __tablename__ = "compliance_reports"
 
     id = Column(String, primary_key=True)
@@ -134,45 +151,98 @@ class ComplianceReportModel(_GovBase):
 
 POLICY_RULES_EXPANDED = [
     # tool-registry
-    {"name": "tool_execution_restricted", "description": "تنفيذ الأدوات يتطلب صلاحية مناسبة", "decision": "deny",
-     "service": "tool-registry", "condition": {"field": "agent.role", "op": "not_in", "value": ["coordinator", "executor"]}},
-    {"name": "sandbox_isolation_enforced", "description": "الأدوات الخطيرة تتطلب sandbox", "decision": "deny",
-     "service": "tool-registry", "condition": {"field": "tool.sandbox_required", "op": "eq", "value": True}},
+    {
+        "name": "tool_execution_restricted",
+        "description": "تنفيذ الأدوات يتطلب صلاحية مناسبة",
+        "decision": "deny",
+        "service": "tool-registry",
+        "condition": {"field": "agent.role", "op": "not_in", "value": ["coordinator", "executor"]},
+    },
+    {
+        "name": "sandbox_isolation_enforced",
+        "description": "الأدوات الخطيرة تتطلب sandbox",
+        "decision": "deny",
+        "service": "tool-registry",
+        "condition": {"field": "tool.sandbox_required", "op": "eq", "value": True},
+    },
     # model-gateway
-    {"name": "model_cost_limit", "description": "حد التكلفة اليومي للنماذج", "decision": "deny",
-     "service": "model-gateway", "condition": {"field": "cost.daily_total", "op": "gt", "value": 100.0}},
-    {"name": "model_access_restricted", "description": "النماذج المتقدمة تتطلب دور أعلى", "decision": "deny",
-     "service": "model-gateway", "condition": {"field": "model.tier", "op": "eq", "value": "restricted"}},
+    {
+        "name": "model_cost_limit",
+        "description": "حد التكلفة اليومي للنماذج",
+        "decision": "deny",
+        "service": "model-gateway",
+        "condition": {"field": "cost.daily_total", "op": "gt", "value": 100.0},
+    },
+    {
+        "name": "model_access_restricted",
+        "description": "النماذج المتقدمة تتطلب دور أعلى",
+        "decision": "deny",
+        "service": "model-gateway",
+        "condition": {"field": "model.tier", "op": "eq", "value": "restricted"},
+    },
     # agent-runtime
-    {"name": "agent_not_isolated", "description": "الوكلاء المعزولون لا ينفذون", "decision": "deny",
-     "service": "agent-runtime", "condition": {"field": "agent.health_status", "op": "eq", "value": "isolated"}},
-    {"name": "agent_token_budget", "description": "حد ميزانية التوكنز لكل وكيل", "decision": "deny",
-     "service": "agent-runtime", "condition": {"field": "agent.tokens_used", "op": "gt", "value": 100000}},
+    {
+        "name": "agent_not_isolated",
+        "description": "الوكلاء المعزولون لا ينفذون",
+        "decision": "deny",
+        "service": "agent-runtime",
+        "condition": {"field": "agent.health_status", "op": "eq", "value": "isolated"},
+    },
+    {
+        "name": "agent_token_budget",
+        "description": "حد ميزانية التوكنز لكل وكيل",
+        "decision": "deny",
+        "service": "agent-runtime",
+        "condition": {"field": "agent.tokens_used", "op": "gt", "value": 100000},
+    },
     # governance
-    {"name": "kill_switch_halt", "description": "Kill Switch halt يمنع كل التنفيذ", "decision": "deny",
-     "service": "governance", "condition": {"field": "system.level", "op": "eq", "value": "halt"}},
-    {"name": "promotion_requires_gates", "description": "الترقية تتطلب اجتياز كل البوابات", "decision": "deny",
-     "service": "governance", "condition": {"field": "promotion.gates_passed", "op": "lt", "value": 5}},
+    {
+        "name": "kill_switch_halt",
+        "description": "Kill Switch halt يمنع كل التنفيذ",
+        "decision": "deny",
+        "service": "governance",
+        "condition": {"field": "system.level", "op": "eq", "value": "halt"},
+    },
+    {
+        "name": "promotion_requires_gates",
+        "description": "الترقية تتطلب اجتياز كل البوابات",
+        "decision": "deny",
+        "service": "governance",
+        "condition": {"field": "promotion.gates_passed", "op": "lt", "value": 5},
+    },
     # memory-service
-    {"name": "memory_tenant_isolation", "description": "عزل ذاكرة المستأجرين", "decision": "deny",
-     "service": "memory-service", "condition": {"field": "memory.tenant_mismatch", "op": "eq", "value": True}},
+    {
+        "name": "memory_tenant_isolation",
+        "description": "عزل ذاكرة المستأجرين",
+        "decision": "deny",
+        "service": "memory-service",
+        "condition": {"field": "memory.tenant_mismatch", "op": "eq", "value": True},
+    },
     # evaluation
-    {"name": "evaluation_threshold", "description": "الترقية تتطلب تقييم ≥ 70%", "decision": "deny",
-     "service": "evaluation", "condition": {"field": "evaluation.score", "op": "lt", "value": 0.7}},
+    {
+        "name": "evaluation_threshold",
+        "description": "الترقية تتطلب تقييم ≥ 70%",
+        "decision": "deny",
+        "service": "evaluation",
+        "condition": {"field": "evaluation.score", "op": "lt", "value": 0.7},
+    },
 ]
 
 
 # === 9.3: Ed25519 Signature ===
+
 
 class Ed25519Signer:
     """توقيع Ed25519 حقيقي للموافقات."""
 
     def __init__(self) -> None:
         try:
-            from cryptography.hazmat.primitives.asymmetric.ed25519 import (
-                Ed25519PrivateKey, Ed25519PublicKey,
-            )
             from cryptography.hazmat.primitives import serialization
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+                Ed25519PrivateKey,
+                Ed25519PublicKey,
+            )
+
             self._ed25519_available = True
             self._Ed25519PrivateKey = Ed25519PrivateKey
             self._Ed25519PublicKey = Ed25519PublicKey
@@ -205,7 +275,7 @@ class Ed25519Signer:
         """توقيع رسالة."""
         if self._ed25519_available:
             from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-            from cryptography.hazmat.primitives import serialization
+
             priv_bytes = bytes.fromhex(private_key_hex)
             private_key = Ed25519PrivateKey.from_private_bytes(priv_bytes)
             signature = private_key.sign(message.encode())
@@ -219,6 +289,7 @@ class Ed25519Signer:
         if self._ed25519_available:
             try:
                 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
                 pub_bytes = bytes.fromhex(public_key_hex)
                 sig_bytes = bytes.fromhex(signature_hex)
                 public_key = Ed25519PublicKey.from_public_bytes(pub_bytes)
@@ -233,6 +304,7 @@ class Ed25519Signer:
 
 
 # === 9.2 + 9.3: Approval System with Ed25519 ===
+
 
 class ApprovalSystem:
     """نظام الموافقات الموقعة بـ Ed25519."""
@@ -282,9 +354,15 @@ class ApprovalSystem:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.governance.approval_requested", {
-            "approval_id": approval_id, "request_type": request_type, "target_id": target_id,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.governance.approval_requested",
+            {
+                "approval_id": approval_id,
+                "request_type": request_type,
+                "target_id": target_id,
+            },
+        )
 
         return {
             "approval_id": approval_id,
@@ -332,9 +410,14 @@ class ApprovalSystem:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.governance.approval_decided", {
-            "approval_id": approval_id, "decision": decision,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.governance.approval_decided",
+            {
+                "approval_id": approval_id,
+                "decision": decision,
+            },
+        )
 
         return {"approval_id": approval_id, "decision": decision, "verified": verified}
 
@@ -364,14 +447,23 @@ class ApprovalSystem:
     def list_approvals(self, limit: int = 50) -> list[dict[str, Any]]:
         session = get_session_factory()()
         try:
-            records = session.execute(
-                select(ApprovalModel).order_by(desc(ApprovalModel.created_at)).limit(limit)
-            ).scalars().all()
+            records = (
+                session.execute(
+                    select(ApprovalModel).order_by(desc(ApprovalModel.created_at)).limit(limit)
+                )
+                .scalars()
+                .all()
+            )
             return [
                 {
-                    "id": r.id, "request_type": r.request_type, "target_id": r.target_id,
-                    "decision": r.decision, "signed_by": r.signed_by, "verified": r.verified,
-                    "notes": r.notes, "created_at": r.created_at.isoformat() if r.created_at else None,
+                    "id": r.id,
+                    "request_type": r.request_type,
+                    "target_id": r.target_id,
+                    "decision": r.decision,
+                    "signed_by": r.signed_by,
+                    "verified": r.verified,
+                    "notes": r.notes,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
                 }
                 for r in records
             ]
@@ -418,13 +510,25 @@ class PromotionSystem:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.governance.promotion_started", {
-            "target_type": target_type, "target_id": target_id,
-        })
 
-        return {"promotion_id": promotion_id, "target_type": target_type, "target_id": target_id, "gates": gates}
+        get_event_bus().publish(
+            "amos_federation.governance.promotion_started",
+            {
+                "target_type": target_type,
+                "target_id": target_id,
+            },
+        )
 
-    def pass_gate(self, target_type: str, target_id: str, gate: str, result: dict) -> dict[str, Any]:
+        return {
+            "promotion_id": promotion_id,
+            "target_type": target_type,
+            "target_id": target_id,
+            "gates": gates,
+        }
+
+    def pass_gate(
+        self, target_type: str, target_id: str, gate: str, result: dict
+    ) -> dict[str, Any]:
         """اجتياز بوابة محددة."""
         if gate not in GATE_ORDER:
             raise ValueError(f"بوابة غير معروفة: {gate}")
@@ -458,9 +562,14 @@ class PromotionSystem:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.governance.gate_passed", {
-            "gate": gate, "target_id": target_id,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.governance.gate_passed",
+            {
+                "gate": gate,
+                "target_id": target_id,
+            },
+        )
 
         return {"gate": gate, "status": "passed", "result": result}
 
@@ -482,9 +591,15 @@ class PromotionSystem:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.governance.gate_failed", {
-            "gate": gate, "target_id": target_id, "reason": reason,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.governance.gate_failed",
+            {
+                "gate": gate,
+                "target_id": target_id,
+                "reason": reason,
+            },
+        )
 
         return {"gate": gate, "status": "failed", "reason": reason}
 
@@ -492,17 +607,25 @@ class PromotionSystem:
         """عرض حالة الترقية."""
         session = get_session_factory()()
         try:
-            records = session.execute(
-                select(PromotionGateModel)
-                .where(PromotionGateModel.target_type == target_type)
-                .where(PromotionGateModel.target_id == target_id)
-                .order_by(PromotionGateModel.gate)
-            ).scalars().all()
-            gates = [{"gate": r.gate, "status": r.status, "result": r.result or {}} for r in records]
+            records = (
+                session.execute(
+                    select(PromotionGateModel)
+                    .where(PromotionGateModel.target_type == target_type)
+                    .where(PromotionGateModel.target_id == target_id)
+                    .order_by(PromotionGateModel.gate)
+                )
+                .scalars()
+                .all()
+            )
+            gates = [
+                {"gate": r.gate, "status": r.status, "result": r.result or {}} for r in records
+            ]
             all_passed = all(g["status"] == "passed" for g in gates)
             return {
-                "target_type": target_type, "target_id": target_id,
-                "gates": gates, "all_passed": all_passed,
+                "target_type": target_type,
+                "target_id": target_id,
+                "gates": gates,
+                "all_passed": all_passed,
                 "can_activate": all_passed and len(gates) == len(GATE_ORDER),
             }
         finally:
@@ -538,7 +661,9 @@ class ExecutiveBranch:
         try:
             for role in EXECUTIVE_ROLES:
                 existing = session.execute(
-                    select(ExecutiveRoleModel).where(ExecutiveRoleModel.role_name == role["role_name"])
+                    select(ExecutiveRoleModel).where(
+                        ExecutiveRoleModel.role_name == role["role_name"]
+                    )
                 ).scalar_one_or_none()
                 if not existing:
                     session.add(ExecutiveRoleModel(role_name=role["role_name"], status="vacant"))
@@ -552,6 +677,7 @@ class ExecutiveBranch:
             raise ValueError(f"دور غير معروف: {role_name}")
 
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         agent = get_population_registry().get_agent(agent_id)
         if not agent:
             raise ValueError(f"الوكيل {agent_id} غير موجود")
@@ -569,9 +695,14 @@ class ExecutiveBranch:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.executive.appointed", {
-            "role": role_name, "agent_id": agent_id,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.executive.appointed",
+            {
+                "role": role_name,
+                "agent_id": agent_id,
+            },
+        )
 
         return {"role": role_name, "agent_id": agent_id, "status": "filled"}
 
@@ -581,7 +712,8 @@ class ExecutiveBranch:
             records = session.execute(select(ExecutiveRoleModel)).scalars().all()
             return [
                 {
-                    "role_name": r.role_name, "agent_id": r.agent_id,
+                    "role_name": r.role_name,
+                    "agent_id": r.agent_id,
                     "status": r.status,
                     "appointed_at": r.appointed_at.isoformat() if r.appointed_at else None,
                 }
@@ -593,6 +725,7 @@ class ExecutiveBranch:
     def fill_all_roles(self) -> dict[str, Any]:
         """ملء كل الأدوار التنفيذية بوكلاء حقيقيين."""
         from amos_federation.services.agent_runtime.population import get_population_registry
+
         agents = get_population_registry().list_agents()
         # اختيار وكلاء مناسبين للأدوار
         role_agent_map = {
@@ -624,6 +757,7 @@ class ExecutiveBranch:
 
 # === 9.6: Legislative Branch ===
 
+
 class LegislativeBranch:
     """السلطة التشريعية — مجلس سياسات + دورة تشريعية كاملة."""
 
@@ -642,7 +776,11 @@ class LegislativeBranch:
         session = get_session_factory()()
         try:
             record = LegislationModel(
-                id=leg_id, title=title, body=body, proposer=proposer, status="proposed",
+                id=leg_id,
+                title=title,
+                body=body,
+                proposer=proposer,
+                status="proposed",
             )
             session.add(record)
             session.commit()
@@ -650,9 +788,14 @@ class LegislativeBranch:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.legislative.proposed", {
-            "legislation_id": leg_id, "title": title,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.legislative.proposed",
+            {
+                "legislation_id": leg_id,
+                "title": title,
+            },
+        )
 
         return {"legislation_id": leg_id, "title": title, "status": "proposed"}
 
@@ -715,14 +858,17 @@ class LegislativeBranch:
 
             # إضافة القانون لـ Policy Engine
             from amos_federation.services.governance.policy_engine import PolicyEngine, RegoRule
+
             pe = PolicyEngine()
             rule_name = f"legislated_{record.title[:30]}".replace(" ", "_")
-            pe.add_rule(RegoRule(
-                name=rule_name,
-                description=record.body,
-                conditions=[{"field": "legislation.enacted", "op": "eq", "value": True}],
-                decision="allow",
-            ))
+            pe.add_rule(
+                RegoRule(
+                    name=rule_name,
+                    description=record.body,
+                    conditions=[{"field": "legislation.enacted", "op": "eq", "value": True}],
+                    decision="allow",
+                )
+            )
             record.status = "enacted"
             record.enacted_rule_name = rule_name
             session.commit()
@@ -730,13 +876,20 @@ class LegislativeBranch:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.legislative.enacted", {
-            "legislation_id": legislation_id, "rule_name": rule_name,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.legislative.enacted",
+            {
+                "legislation_id": legislation_id,
+                "rule_name": rule_name,
+            },
+        )
 
         return {"legislation_id": legislation_id, "status": "enacted", "rule_name": rule_name}
 
-    def run_full_legislative_cycle(self, title: str, body: str, proposer: str, voters: list[tuple[str, str]]) -> dict[str, Any]:
+    def run_full_legislative_cycle(
+        self, title: str, body: str, proposer: str, voters: list[tuple[str, str]]
+    ) -> dict[str, Any]:
         """دورة تشريعية كاملة: اقتراح → مناقشة → تصويت → إقرار."""
         prop = self.propose(title, body, proposer)
         leg_id = prop["legislation_id"]
@@ -746,7 +899,8 @@ class LegislativeBranch:
             self.vote(leg_id, agent_id, vote)
         result = self.enact(leg_id)
         return {
-            "legislation_id": leg_id, "title": title,
+            "legislation_id": leg_id,
+            "title": title,
             "votes_for": len([v for _, v in voters if v == "for"]),
             "votes_against": len([v for _, v in voters if v == "against"]),
             "final_status": result["status"],
@@ -756,14 +910,24 @@ class LegislativeBranch:
     def list_legislations(self, limit: int = 50) -> list[dict[str, Any]]:
         session = get_session_factory()()
         try:
-            records = session.execute(
-                select(LegislationModel).order_by(desc(LegislationModel.created_at)).limit(limit)
-            ).scalars().all()
+            records = (
+                session.execute(
+                    select(LegislationModel)
+                    .order_by(desc(LegislationModel.created_at))
+                    .limit(limit)
+                )
+                .scalars()
+                .all()
+            )
             return [
                 {
-                    "id": r.id, "title": r.title, "body": r.body[:100],
-                    "proposer": r.proposer, "status": r.status,
-                    "votes_for": r.votes_for, "votes_against": r.votes_against,
+                    "id": r.id,
+                    "title": r.title,
+                    "body": r.body[:100],
+                    "proposer": r.proposer,
+                    "status": r.status,
+                    "votes_for": r.votes_for,
+                    "votes_against": r.votes_against,
                     "votes_abstain": r.votes_abstain,
                     "enacted_rule_name": r.enacted_rule_name,
                 }
@@ -786,6 +950,7 @@ class LegislativeBranch:
 
 # === 9.7: Judicial Branch ===
 
+
 class JudicialBranch:
     """السلطة القضائية — المحكمة العليا."""
 
@@ -798,14 +963,20 @@ class JudicialBranch:
         engine = create_engine(url, connect_args=connect_args)
         _GovBase.metadata.create_all(engine)
 
-    def file_case(self, plaintiff: str, defendant: str, subject: str, evidence: list | None = None) -> dict[str, Any]:
+    def file_case(
+        self, plaintiff: str, defendant: str, subject: str, evidence: list | None = None
+    ) -> dict[str, Any]:
         """رفع دعوى."""
         case_id = str(uuid.uuid4())
         session = get_session_factory()()
         try:
             record = CourtCaseModel(
-                id=case_id, plaintiff=plaintiff, defendant=defendant,
-                subject=subject, evidence=evidence or [], status="open",
+                id=case_id,
+                plaintiff=plaintiff,
+                defendant=defendant,
+                subject=subject,
+                evidence=evidence or [],
+                status="open",
             )
             session.add(record)
             session.commit()
@@ -813,9 +984,15 @@ class JudicialBranch:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.judicial.case_filed", {
-            "case_id": case_id, "plaintiff": plaintiff, "defendant": defendant,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.judicial.case_filed",
+            {
+                "case_id": case_id,
+                "plaintiff": plaintiff,
+                "defendant": defendant,
+            },
+        )
 
         return {"case_id": case_id, "status": "open"}
 
@@ -853,23 +1030,37 @@ class JudicialBranch:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.judicial.ruled", {
-            "case_id": case_id, "ruling": ruling, "judge": judge,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.judicial.ruled",
+            {
+                "case_id": case_id,
+                "ruling": ruling,
+                "judge": judge,
+            },
+        )
 
         return {"case_id": case_id, "ruling": ruling, "judge": judge, "status": "ruled"}
 
     def list_cases(self, limit: int = 50) -> list[dict[str, Any]]:
         session = get_session_factory()()
         try:
-            records = session.execute(
-                select(CourtCaseModel).order_by(desc(CourtCaseModel.created_at)).limit(limit)
-            ).scalars().all()
+            records = (
+                session.execute(
+                    select(CourtCaseModel).order_by(desc(CourtCaseModel.created_at)).limit(limit)
+                )
+                .scalars()
+                .all()
+            )
             return [
                 {
-                    "id": r.id, "plaintiff": r.plaintiff, "defendant": r.defendant,
-                    "subject": r.subject, "status": r.status,
-                    "ruling": r.ruling, "ruling_judge": r.ruling_judge,
+                    "id": r.id,
+                    "plaintiff": r.plaintiff,
+                    "defendant": r.defendant,
+                    "subject": r.subject,
+                    "status": r.status,
+                    "ruling": r.ruling,
+                    "ruling_judge": r.ruling_judge,
                     "arguments_count": len(r.arguments or []),
                 }
                 for r in records
@@ -879,6 +1070,7 @@ class JudicialBranch:
 
 
 # === 9.8: Supreme Oversight ===
+
 
 class SupremeOversight:
     """الرقابة العليا — تفتيش دوري + تدقيق + امتثال."""
@@ -898,6 +1090,7 @@ class SupremeOversight:
             period = datetime.now(UTC).strftime("%Y-%m")
 
         from amos_federation.common.persistent import PersistentAuditStore
+
         audit = PersistentAuditStore()
         chain_verify = audit.verify_chain()
         all_entries = audit.list_all(limit=10000)
@@ -926,9 +1119,13 @@ class SupremeOversight:
         session = get_session_factory()()
         try:
             record = ComplianceReportModel(
-                id=report_id, period=period, total_audits=total,
-                violations=violations, compliance_rate=compliance_rate,
-                findings=findings, recommendations=recommendations,
+                id=report_id,
+                period=period,
+                total_audits=total,
+                violations=violations,
+                compliance_rate=compliance_rate,
+                findings=findings,
+                recommendations=recommendations,
                 chain_verified=chain_verify.get("valid", False),
             )
             session.add(record)
@@ -937,28 +1134,46 @@ class SupremeOversight:
             session.close()
 
         from amos_federation.common.event_bus import get_event_bus
-        get_event_bus().publish("amos_federation.oversight.report_generated", {
-            "report_id": report_id, "period": period, "compliance_rate": compliance_rate,
-        })
+
+        get_event_bus().publish(
+            "amos_federation.oversight.report_generated",
+            {
+                "report_id": report_id,
+                "period": period,
+                "compliance_rate": compliance_rate,
+            },
+        )
 
         return {
-            "report_id": report_id, "period": period,
-            "total_audits": total, "violations": violations,
+            "report_id": report_id,
+            "period": period,
+            "total_audits": total,
+            "violations": violations,
             "compliance_rate": compliance_rate,
-            "findings": findings, "recommendations": recommendations,
+            "findings": findings,
+            "recommendations": recommendations,
             "chain_verified": chain_verify.get("valid", False),
         }
 
     def list_reports(self, limit: int = 20) -> list[dict[str, Any]]:
         session = get_session_factory()()
         try:
-            records = session.execute(
-                select(ComplianceReportModel).order_by(desc(ComplianceReportModel.created_at)).limit(limit)
-            ).scalars().all()
+            records = (
+                session.execute(
+                    select(ComplianceReportModel)
+                    .order_by(desc(ComplianceReportModel.created_at))
+                    .limit(limit)
+                )
+                .scalars()
+                .all()
+            )
             return [
                 {
-                    "id": r.id, "period": r.period, "total_audits": r.total_audits,
-                    "violations": r.violations, "compliance_rate": r.compliance_rate,
+                    "id": r.id,
+                    "period": r.period,
+                    "total_audits": r.total_audits,
+                    "violations": r.violations,
+                    "compliance_rate": r.compliance_rate,
                     "chain_verified": r.chain_verified,
                     "findings": r.findings or [],
                 }

@@ -10,8 +10,6 @@ AMOS-Federation Tool Catalog — Phase 4
 """
 
 from typing import Any
-from amos_federation.services.tool_registry.sandbox import ToolSandbox
-
 
 # === الفئات الـ12 ===
 
@@ -38,12 +36,15 @@ TOOL_CATALOG = {
     "python_execute": {"category": "data_extraction", "risk": "high", "desc": "تنفيذ كود Python"},
     "sql_query": {"category": "data_extraction", "risk": "high", "desc": "استعلام SQL للقراءة فقط"},
     "csv_parse": {"category": "data_extraction", "risk": "low", "desc": "تحليل ملفات CSV"},
-    "json_extract": {"category": "data_extraction", "risk": "low", "desc": "استخراج بيانات من JSON"},
+    "json_extract": {
+        "category": "data_extraction",
+        "risk": "low",
+        "desc": "استخراج بيانات من JSON",
+    },
     "regex_extract": {"category": "data_extraction", "risk": "low", "desc": "استخراج بأنماط regex"},
     "web_scrape": {"category": "data_extraction", "risk": "medium", "desc": "قراءة صفحة ويب"},
     "api_call": {"category": "data_extraction", "risk": "medium", "desc": "استدعاء API خارجي"},
     "file_read": {"category": "data_extraction", "risk": "low", "desc": "قراءة ملف"},
-
     # === معالجة نصوص (10) ===
     "text_summary": {"category": "text_processing", "risk": "low", "desc": "تلخيص نص"},
     "text_translate": {"category": "text_processing", "risk": "low", "desc": "ترجمة نص"},
@@ -55,7 +56,6 @@ TOOL_CATALOG = {
     "text_case": {"category": "text_processing", "risk": "low", "desc": "تحويل حالة الأحرف"},
     "text_hash": {"category": "text_processing", "risk": "low", "desc": "توليد hash للنص"},
     "text_diff": {"category": "text_processing", "risk": "low", "desc": "مقارنة نصين"},
-
     # === تحليل (10) ===
     "stats_basic": {"category": "analysis", "risk": "low", "desc": "إحصائيات أساسية"},
     "stats_correlation": {"category": "analysis", "risk": "low", "desc": "تحليل ارتباط"},
@@ -67,7 +67,6 @@ TOOL_CATALOG = {
     "trend_analyze": {"category": "analysis", "risk": "low", "desc": "تحليل اتجاهات"},
     "anomaly_detect": {"category": "analysis", "risk": "medium", "desc": "كشف شذوذ"},
     "data_validate": {"category": "analysis", "risk": "low", "desc": "التحقق من صحة بيانات"},
-
     # === إنشاء محتوى (8) ===
     "content_article": {"category": "content_creation", "risk": "low", "desc": "كتابة مقال"},
     "content_report": {"category": "content_creation", "risk": "low", "desc": "إنشاء تقرير"},
@@ -77,7 +76,6 @@ TOOL_CATALOG = {
     "content_outline": {"category": "content_creation", "risk": "low", "desc": "مخطط محتوى"},
     "content_template": {"category": "content_creation", "risk": "low", "desc": "توليد من قالب"},
     "content_format": {"category": "content_creation", "risk": "low", "desc": "تنسيق محتوى"},
-
     # === بحث (6) ===
     "search_keyword": {"category": "search", "risk": "low", "desc": "بحث بكلمة مفتاحية"},
     "search_index": {"category": "search", "risk": "low", "desc": "بحث في فهرس"},
@@ -85,7 +83,6 @@ TOOL_CATALOG = {
     "search_regex": {"category": "search", "risk": "low", "desc": "بحث بـ regex"},
     "search_metadata": {"category": "search", "risk": "low", "desc": "بحث في بيانات وصفية"},
     "searchsemantic": {"category": "search", "risk": "medium", "desc": "بحث دلالي"},
-
     # === اتصالات (6) ===
     "http_request": {"category": "communication", "risk": "high", "desc": "طلب HTTP"},
     "webhook_send": {"category": "communication", "risk": "medium", "desc": "إرسال webhook"},
@@ -93,7 +90,6 @@ TOOL_CATALOG = {
     "message_format": {"category": "communication", "risk": "low", "desc": "تنسيق رسالة"},
     "notification_create": {"category": "communication", "risk": "low", "desc": "إنشاء إشعار"},
     "api_document": {"category": "communication", "risk": "low", "desc": "توثيق API"},
-
     # === أمان (8) ===
     "hash_generate": {"category": "security", "risk": "low", "desc": "توليد hash"},
     "hash_verify": {"category": "security", "risk": "low", "desc": "التحقق من hash"},
@@ -103,7 +99,6 @@ TOOL_CATALOG = {
     "decrypt_text": {"category": "security", "risk": "high", "desc": "فك تشفير نص"},
     "audit_check": {"category": "security", "risk": "low", "desc": "فحص سجل تدقيق"},
     "permission_check": {"category": "security", "risk": "low", "desc": "فحص صلاحية"},
-
     # === وسائط (8) ===
     "chart_generate": {"category": "media", "risk": "low", "desc": "إنشاء رسم بياني"},
     "image_metadata": {"category": "media", "risk": "low", "desc": "بيانات وصفية للصورة"},
@@ -113,7 +108,6 @@ TOOL_CATALOG = {
     "video_metadata": {"category": "media", "risk": "low", "desc": "بيانات فيديو"},
     "pdf_extract": {"category": "media", "risk": "low", "desc": "استخراج نص PDF"},
     "qr_generate": {"category": "media", "risk": "low", "desc": "توليد QR code"},
-
     # === بنية تحتية (8) ===
     "file_write": {"category": "infrastructure", "risk": "medium", "desc": "كتابة ملف"},
     "file_copy": {"category": "infrastructure", "risk": "low", "desc": "نسخ ملف"},
@@ -123,7 +117,6 @@ TOOL_CATALOG = {
     "dir_create": {"category": "infrastructure", "risk": "low", "desc": "إنشاء مجلد"},
     "system_info": {"category": "infrastructure", "risk": "low", "desc": "معلومات النظام"},
     "process_status": {"category": "infrastructure", "risk": "low", "desc": "حالة العمليات"},
-
     # === حوكمة (8) ===
     "policy_check": {"category": "governance", "risk": "low", "desc": "فحص سياسة"},
     "audit_query": {"category": "governance", "risk": "low", "desc": "استعلام تدقيق"},
@@ -133,7 +126,6 @@ TOOL_CATALOG = {
     "budget_check": {"category": "governance", "risk": "low", "desc": "فحص ميزانية"},
     "compliance_check": {"category": "governance", "risk": "low", "desc": "فحص امتثال"},
     "vote_tally": {"category": "governance", "risk": "low", "desc": "عد أصوات"},
-
     # === تعليم (6) ===
     "quiz_generate": {"category": "education", "risk": "low", "desc": "توليد اختبار"},
     "quiz_grade": {"category": "education", "risk": "low", "desc": "تصحيح اختبار"},
@@ -141,7 +133,6 @@ TOOL_CATALOG = {
     "flashcard_create": {"category": "education", "risk": "low", "desc": "إنشاء بطاقة تعليمية"},
     "progress_track": {"category": "education", "risk": "low", "desc": "تتبع تقدم"},
     "lesson_plan": {"category": "education", "risk": "low", "desc": "خطة درس"},
-
     # === مالية (8) ===
     "budget_calculate": {"category": "finance", "risk": "low", "desc": "حساب ميزانية"},
     "cost_estimate": {"category": "finance", "risk": "low", "desc": "تقدير تكلفة"},
@@ -158,7 +149,7 @@ def get_catalog_stats() -> dict[str, Any]:
     """إحصائيات الكتالوج."""
     categories = {}
     risk_levels = {"low": 0, "medium": 0, "high": 0}
-    for tool_id, info in TOOL_CATALOG.items():
+    for _tool_id, info in TOOL_CATALOG.items():
         cat = info["category"]
         categories[cat] = categories.get(cat, 0) + 1
         risk_levels[info["risk"]] = risk_levels.get(info["risk"], 0) + 1
@@ -174,8 +165,13 @@ def get_catalog_stats() -> dict[str, Any]:
 def list_tools_by_category(category: str) -> list[dict[str, Any]]:
     """سرد الأدوات في فئة معينة."""
     return [
-        {"tool_id": tid, "name": tid, "category": info["category"],
-         "risk_level": info["risk"], "description": info["desc"]}
+        {
+            "tool_id": tid,
+            "name": tid,
+            "category": info["category"],
+            "risk_level": info["risk"],
+            "description": info["desc"],
+        }
         for tid, info in TOOL_CATALOG.items()
         if info["category"] == category
     ]
@@ -184,7 +180,12 @@ def list_tools_by_category(category: str) -> list[dict[str, Any]]:
 def list_all_tools() -> list[dict[str, Any]]:
     """سرد كل الأدوات."""
     return [
-        {"tool_id": tid, "name": tid, "category": info["category"],
-         "risk_level": info["risk"], "description": info["desc"]}
+        {
+            "tool_id": tid,
+            "name": tid,
+            "category": info["category"],
+            "risk_level": info["risk"],
+            "description": info["desc"],
+        }
         for tid, info in TOOL_CATALOG.items()
     ]

@@ -6,9 +6,6 @@ AMOS-Federation Governance Service
 تاريخ الإنشاء: 2026-08-15
 """
 
-import hashlib
-import uuid
-from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -19,14 +16,12 @@ from amos_federation.common.persistent import PersistentAuditStore
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
 from amos_federation.services.governance.canary import (
-    KILL_SWITCH_LEVELS,
+    check_gate,
     create_canary,
     create_promotion,
-    check_gate,
     get_canary,
     get_promotion,
     get_system_status,
-    is_system_halted,
     list_canaries,
     list_promotions,
     reset_kill_switch,
@@ -49,6 +44,7 @@ def _append_audit(action: str, actor: str, details: dict[str, Any]) -> dict[str,
 
 
 # === Request Models ===
+
 
 class PolicyCheckRequest(BaseModel):
     """طلب فحص سياسة."""
@@ -106,6 +102,7 @@ class CanaryMetricsRequest(BaseModel):
 
 # === Policy Endpoints ===
 
+
 @router.get("/policies", response_model=dict)
 async def list_policies(
     _: Annotated[dict[str, object], Depends(require_auth)],
@@ -126,6 +123,7 @@ async def check_policy_endpoint(
 
 
 # === Kill Switch Endpoints ===
+
 
 @router.get("/system/status", response_model=dict)
 async def system_status(
@@ -159,10 +157,12 @@ async def reset_kill_switch_endpoint(
 def _activate_kill_switch_safe(level: str, reason: str, activated_by: str) -> dict[str, Any]:
     """Wrapper آمن لتفعيل مفتاح الإيقاف."""
     from amos_federation.services.governance.canary import activate_kill_switch
+
     return activate_kill_switch(level, reason, activated_by)
 
 
 # === Promotion Gate Endpoints ===
+
 
 @router.post("/promotions", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_promotion_endpoint(
@@ -206,16 +206,21 @@ async def check_gate_endpoint(
     try:
         result = check_gate(promotion_id, request.gate_name, request.passed, request.notes)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    _append_audit("gate_checked", "system", {
-        "promotion_id": promotion_id,
-        "gate": request.gate_name,
-        "passed": request.passed,
-    })
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+    _append_audit(
+        "gate_checked",
+        "system",
+        {
+            "promotion_id": promotion_id,
+            "gate": request.gate_name,
+            "passed": request.passed,
+        },
+    )
     return result
 
 
 # === Canary Endpoints ===
+
 
 @router.post("/canary", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_canary_endpoint(
@@ -258,12 +263,17 @@ async def update_canary_metrics_endpoint(
     """تحديث مقاييس Canary."""
     try:
         result = update_canary_metrics(
-            canary_id, request.requests, request.errors,
-            request.avg_latency_ms, request.quality_score
+            canary_id,
+            request.requests,
+            request.errors,
+            request.avg_latency_ms,
+            request.quality_score,
         )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-    _append_audit("canary_metrics_updated", "system", {"canary_id": canary_id, "metrics": result["metrics"]})
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    _append_audit(
+        "canary_metrics_updated", "system", {"canary_id": canary_id, "metrics": result["metrics"]}
+    )
     return result
 
 
@@ -276,12 +286,13 @@ async def rollback_canary_endpoint(
     try:
         result = rollback_canary(canary_id)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     _append_audit("canary_rollback", "system", {"canary_id": canary_id})
     return result
 
 
 # === Audit Log Endpoints ===
+
 
 @router.get("/audit", response_model=list[dict])
 async def list_audit_log(
@@ -302,6 +313,7 @@ async def verify_audit_chain(
 
 # === Event Bus endpoints ===
 
+
 @router.get("/events", response_model=list[dict])
 async def list_events(
     _: Annotated[dict[str, object], Depends(require_auth)],
@@ -310,6 +322,7 @@ async def list_events(
 ) -> list[dict[str, Any]]:
     """عرض الأحداث المنشورة في Event Bus."""
     from amos_federation.common.event_bus import get_event_bus
+
     return get_event_bus().get_events(subject=subject, limit=limit)
 
 
@@ -320,6 +333,7 @@ async def count_events(
 ) -> dict[str, Any]:
     """عدد الأحداث في Event Bus."""
     from amos_federation.common.event_bus import get_event_bus
+
     return {"count": get_event_bus().count(subject=subject)}
 
 
@@ -329,10 +343,12 @@ async def list_event_contracts(
 ) -> dict[str, Any]:
     """عرض عقود الأحداث المعرفة."""
     from amos_federation.common.event_bus import EVENT_CONTRACTS
+
     return EVENT_CONTRACTS
 
 
 # === Policy Engine (Rego-like) ===
+
 
 @router.get("/policy/rules", response_model=list[dict])
 async def list_policy_rules(
@@ -374,4 +390,6 @@ async def check_tool_access(
 
 
 _service = SERVICES["governance"]
-app = create_service_app(_service["name"], _service["port"], "Policy Engine + Audit Log + Kill Switch + Canary", [router])
+app = create_service_app(
+    _service["name"], _service["port"], "Policy Engine + Audit Log + Kill Switch + Canary", [router]
+)

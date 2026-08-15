@@ -11,35 +11,37 @@ from fastapi.testclient import TestClient
 
 from amos_federation.common.auth import create_access_token
 from amos_federation.services.agent_runtime.population import get_population_registry
+from amos_federation.services.control_console.main import app
 from amos_federation.services.governance.expansion import (
     FULL_POPULATION_CATEGORIES,
     SPECIALIZATION_TRACKS,
     TOTAL_TARGET_POPULATION,
     PopulationExpansion,
+    RetirementSystem,
     SpecializationProgram,
     University,
-    RetirementSystem,
-    get_expansion,
-    get_specialization,
-    get_university,
-    get_retirement,
 )
-from amos_federation.services.control_console.main import app
 
 AUTH_HEADERS = {
-    "Authorization": "Bearer " + create_access_token("tester", [
-        "governance:read", "governance:write",
-    ])
+    "Authorization": "Bearer "
+    + create_access_token(
+        "tester",
+        [
+            "governance:read",
+            "governance:write",
+        ],
+    )
 }
 client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
 def seed_and_clean():
+    from sqlalchemy import create_engine, delete
+
+    from amos_federation.common.database import get_database_url, get_session_factory
     from amos_federation.services.governance.canary import reset_kill_switch
-    from amos_federation.common.database import get_session_factory, get_database_url
     from amos_federation.services.governance.expansion import _ExpansionBase
-    from sqlalchemy import delete, create_engine
 
     reset_kill_switch()
     url = get_database_url()
@@ -53,14 +55,20 @@ def seed_and_clean():
 
     # Clean expansion tables
     from amos_federation.services.governance.expansion import (
+        ExpansionBatchModel,
+        RetirementRecordModel,
         SpecializationResultModel,
         UniversityOutputModel,
-        RetirementRecordModel,
-        ExpansionBatchModel,
     )
+
     session = get_session_factory()()
     try:
-        for model in [SpecializationResultModel, UniversityOutputModel, RetirementRecordModel, ExpansionBatchModel]:
+        for model in [
+            SpecializationResultModel,
+            UniversityOutputModel,
+            RetirementRecordModel,
+            ExpansionBatchModel,
+        ]:
             session.execute(delete(model))
         session.commit()
     finally:
@@ -69,6 +77,7 @@ def seed_and_clean():
 
 
 # === 11.1: Population expansion ===
+
 
 def test_full_population_categories_exist() -> None:
     """الفئات السكانية الكاملة موجودة."""
@@ -137,6 +146,7 @@ def test_expansion_stats() -> None:
 def test_batch_publishes_event() -> None:
     """إنشاء دفعة ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.expansion.batch_created")
     PopulationExpansion().create_batch("reserve", 5)
@@ -152,6 +162,7 @@ def test_full_categories_have_tools() -> None:
 
 
 # === 11.2: Specialization ===
+
 
 def test_specialization_tracks_exist() -> None:
     """مسارات التخصص الستة موجودة."""
@@ -208,6 +219,7 @@ def test_take_exam_fail() -> None:
 def test_exam_publishes_event() -> None:
     """الاختبار ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.specialization.exam_completed")
     SpecializationProgram().take_exam("agent-001", "finance", 90.0)
@@ -240,6 +252,7 @@ def test_list_specialized_by_track() -> None:
 
 
 # === 11.3: University ===
+
 
 def test_university_research_topics() -> None:
     """مواضيع البحث متاحة."""
@@ -281,9 +294,12 @@ def test_approve_output() -> None:
     """اعتماد مخرج جامعي."""
     uni = University()
     output = uni.submit_output(
-        output_type="tool", title="أداة جديدة",
-        author_agent_id="agent-001", track="industry",
-        content="أداة لتحسين الإنتاج", quality_score=0.0,
+        output_type="tool",
+        title="أداة جديدة",
+        author_agent_id="agent-001",
+        track="industry",
+        content="أداة لتحسين الإنتاج",
+        quality_score=0.0,
     )
     result = uni.approve_output(output["output_id"], quality_score=0.9)
     assert result["approved"] is True
@@ -319,6 +335,7 @@ def test_produce_first_output() -> None:
 def test_output_publishes_event() -> None:
     """تقديم مخرج ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     bus = get_event_bus()
     initial = bus.count("amos_federation.university.output_submitted")
     University().submit_output("paper", "test", "agent-001", "science", "content")
@@ -326,6 +343,7 @@ def test_output_publishes_event() -> None:
 
 
 # === 11.4: Retirement ===
+
 
 def test_retire_agent() -> None:
     """تقاعد وكيل."""
@@ -373,6 +391,7 @@ def test_get_archived_data() -> None:
 def test_retirement_publishes_event() -> None:
     """التقاعد ينشر حدثًا."""
     from amos_federation.common.event_bus import get_event_bus
+
     registry = get_population_registry()
     agents = registry.list_agents()
     if not agents:
@@ -396,6 +415,7 @@ def test_retired_agent_state_updated() -> None:
 
 
 # === Control Console integration ===
+
 
 def test_ui_expansion_stats() -> None:
     resp = client.get("/v1/expansion/stats", headers=AUTH_HEADERS)

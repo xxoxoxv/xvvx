@@ -18,11 +18,11 @@ from pathlib import Path
 def check_readme(directory: Path) -> list[str]:
     """تحقق من وجود README.md في كل مجلد يحتوي على ملفات."""
     errors = []
-    skip_dirs = {".git", "__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache", "node_modules", ".venv", "venv", "env"}
+    skip_dirs = {".git", "__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache", "node_modules", ".venv", "venv", "env", ".egg-info", "egg-info"}
     for item in sorted(directory.rglob("*")):
         if item.is_dir():
-            # Skip if any parent is in skip_dirs
-            if any(part in skip_dirs for part in item.parts):
+            # Skip if any parent is in skip_dirs or ends with .egg-info
+            if any(part in skip_dirs for part in item.parts) or item.name.endswith(".egg-info"):
                 continue
             readme = item / "README.md"
             if not readme.exists():
@@ -64,15 +64,17 @@ def check_file_header(directory: Path) -> list[str]:
 
     extensions = ["*.md", "*.py", "*.yaml", "*.yml", "*.rego", "*.sql", "*.json"]
 
-    skip_dirs = {".git", "__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache", "node_modules", ".venv", "venv", "env"}
+    skip_dirs = {".git", "__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache", "node_modules", ".venv", "venv", "env", ".egg-info", "egg-info"}
     for pattern in extensions:
         for filepath in sorted(directory.rglob(pattern)):
             if filepath.name == "README.md":
                 continue  # READMEs are checked separately
             if any(exempt in filepath.name for exempt in exempt_patterns):
                 continue
-            # Skip files inside skipped directories
-            if any(part in skip_dirs for part in filepath.parts):
+            # Skip files inside skipped directories or .egg-info
+            if any(part in skip_dirs for part in filepath.parts) or any(
+                part.endswith(".egg-info") for part in filepath.parts
+            ):
                 continue
 
             try:
