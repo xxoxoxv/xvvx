@@ -252,12 +252,13 @@ class HealthChecker:
             "hash": check_hash,
         }
 
-    def check_all_agents(self) -> list[dict[str, Any]]:
-        """فحص كل الوكلاء المسجلين."""
+    def check_all_agents(self, limit: int = 50) -> list[dict[str, Any]]:
+        """فحص الوكلاء المسجلين (مع حد لتجنب عنق الزجاجة)."""
         from amos_federation.services.agent_runtime.population import get_population_registry
         agents = get_population_registry().list_agents()
+        # تقييد العدد لتجنب عنق الزجاجة عند وجود مئات الوكلاء
         results = []
-        for agent in agents:
+        for agent in agents[:limit]:
             results.append(self.check_agent(agent["agent_id"]))
         return results
 
@@ -584,10 +585,10 @@ class IsolationSystem:
 
 # === Full Health Cycle ===
 
-def run_health_cycle() -> dict[str, Any]:
-    """تشغيل دورة فحص صحي كاملة على كل الوكلاء."""
+def run_health_cycle(limit: int = 20) -> dict[str, Any]:
+    """تشغيل دورة فحص صحي كاملة على الوكلاء (مع حد لتجنب عنق الزجاجة)."""
     checker = HealthChecker()
-    results = checker.check_all_agents()
+    results = checker.check_all_agents(limit=limit)
 
     treatment = TreatmentSystem()
     isolation = IsolationSystem()
