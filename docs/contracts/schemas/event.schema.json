@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/event.schema.json",
+  "title": "AMOS-Federation Event",
+  "description": "Event schema for the runtime domain. Combines the `event_store` and `durable_events` Supabase tables with the full event schema from blueprint section 12.1. Events are published on NATS JetStream subject `amos_federation.{domain}.{event_type}` and persisted durably.",
+  "type": "object",
+  "required": ["event_id", "timestamp", "event_type", "actor", "action", "chain_hash"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Surrogate primary key (auto-increment) from event_store / durable_events."
+    },
+    "event_id": {
+      "type": "string",
+      "description": "Unique event identifier. UUID v7 (time-ordered)."
+    },
+    "subject": {
+      "type": "string",
+      "description": "NATS subject the event was published on, e.g. amos_federation.task.created."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Time the event occurred."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "request.received",
+        "plan.created",
+        "policy.checked",
+        "agent.assigned",
+        "tool.executed",
+        "result.produced",
+        "critic.reviewed",
+        "result.delivered",
+        "experience.stored",
+        "model.trained",
+        "model.evaluated",
+        "model.promoted",
+        "model.rolled_back",
+        "governance.approved",
+        "governance.rejected",
+        "security.incident",
+        "system.halt",
+        "task.created",
+        "experience.recorded",
+        "approval.signed"
+      ],
+      "description": "Event type enum from blueprint 12.1, extended with domain event contracts."
+    },
+    "actor": {
+      "type": "object",
+      "description": "The entity that caused the event (blueprint 12.1).",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["human", "agent", "system", "external_model"],
+          "description": "Kind of actor."
+        },
+        "id": {
+          "type": "string",
+          "description": "Actor identifier."
+        },
+        "version": {
+          "type": "string",
+          "description": "Optional actor version."
+        }
+      },
+      "additionalProperties": false
+    },
+    "action": {
+      "type": "string",
+      "description": "The action that was performed."
+    },
+    "resource": {
+      "type": "string",
+      "description": "Resource the action acted upon."
+    },
+    "data": {
+      "type": "string",
+      "description": "Event payload. Stored as text in event_store/durable_events; semantically a JSON-encoded object."
+    },
+    "inputs_hash": {
+      "type": "string",
+      "description": "Hash of the event inputs."
+    },
+    "outputs_hash": {
+      "type": "string",
+      "description": "Hash of the event outputs."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional event metadata.",
+      "additionalProperties": true
+    },
+    "parent_event": {
+      "type": "string",
+      "description": "Identifier of the parent event in the causal chain."
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Correlation id linking events in the same workflow (durable_events)."
+    },
+    "causation_id": {
+      "type": "string",
+      "description": "Causation id: the event that directly caused this one (durable_events)."
+    },
+    "schema_version": {
+      "type": "string",
+      "description": "Version of the event schema (durable_events).",
+      "default": "1.0"
+    },
+    "chain_hash": {
+      "type": "string",
+      "description": "SHA-256 hash chaining this event to the previous one: sha256:concat(previous_chain + this_event)."
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Provenance of the event (blueprint 12.1).",
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Where the event originated."
+        },
+        "method": {
+          "type": "string",
+          "description": "How the event was produced."
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Confidence score for the event.",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Persistence timestamp."
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "runtime",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}

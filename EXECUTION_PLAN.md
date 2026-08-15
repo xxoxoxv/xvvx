@@ -25,7 +25,7 @@
 
 | المجال | مكتمل | الإجمالي | الحالة |
 |---|---:|---:|---|
-| المراحل | 2 | 9 | DOING |
+| المراحل | 3 | 9 | DOING |
 | المجالات المغطاة | 12 | 12 | DONE |
 | النوى المنشأة | 96 | 96 | DONE |
 | جداول قاعدة البيانات | 23 | 23 | DONE |
@@ -38,18 +38,18 @@
 
 | المجال | P0 | P1 | P2 | P3 | P4 | P5 | P6 | P7 | P8 | P9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| core | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| royal | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| federal | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| states | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| institutions | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| agents | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| tools | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| interfaces | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| runtime | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| docs | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| ops | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| tests | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| core | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| royal | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| federal | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| states | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| institutions | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| agents | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| tools | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| interfaces | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| runtime | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| docs | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| ops | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| tests | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
 
 ---
 
@@ -91,26 +91,26 @@
 
 ---
 
-## المرحلة 2 — العقود والمخططات (NEXT)
+## المرحلة 2 — العقود والمخططات (DONE)
 
 **الهدف:** تعريف "العقود" بين الأجزاء قبل التنفيذ الحقيقي.
 
 | المجال | المهمة | الحالة |
 |---|---|---|
-| tools | مخطط بيانات الأدوات (مدخلات/مخرجات) | TODO |
-| agents | مخطط هوية الوكيل | TODO |
-| institutions | مخطط المؤسسة | TODO |
-| runtime | مخطط المهمة ومخطط الحدث | TODO |
-| interfaces | مخطط الواجهة | TODO |
-| royal | مخطط الموافقة ومخطط التدقيق | TODO |
-| federal | مخطط المعاملة المالية | TODO |
-| core | مخطط الذاكرة ومخطط الخبرة | TODO |
-| states | مخطط السياسة الولائية | TODO |
-| ops | مخطط السجل ومخطط المقياس | TODO |
-| tests | مخطط اختبار الدخان | TODO |
-| docs | قالب قرار العمارة (ADR) | TODO |
+| tools | مخطط بيانات الأدوات (مدخلات/مخرجات) | DONE |
+| agents | مخطط هوية الوكيل | DONE |
+| institutions | مخطط المؤسسة | DONE |
+| runtime | مخطط المهمة ومخطط الحدث | DONE |
+| interfaces | مخطط الواجهة | DONE |
+| royal | مخطط الموافقة ومخطط التدقيق | DONE |
+| federal | مخطط المعاملة المالية | DONE |
+| core | مخطط الذاكرة ومخطط الخبرة | DONE |
+| states | مخطط السياسة الولائية | DONE |
+| ops | مخطط السجل ومخطط المقياس | DONE |
+| tests | مخطط اختبار الدخان | DONE |
+| docs | قالب قرار العمارة (ADR) | DONE |
 
-**تعريف الإنجاز:** كل مخطط موثق بـ JSON Schema أو ما يعادله.
+**تعريف الإنجاز:** كل مخطط موثق بـ JSON Schema أو ما يعادله. ✓ مكتمل — 12 مخطط + قالب ADR
 
 ---
 
@@ -275,3 +275,4 @@
 | 2026-08-15 | P0 | خطة التنفيذ المرحلية | (هذا الـ commit) |
 | 2026-08-15 | P1 | سجل الذاكرة والمعرفة (core/memory/index.md) | `eb0bcd61` |
 | 2026-08-15 | P1 | 11 سجل وفهرس (كل المجالات) | (هذا الـ commit) |
+| 2026-08-15 | P2 | 12 مخطط JSON Schema + قالب ADR | (هذا الـ commit) |

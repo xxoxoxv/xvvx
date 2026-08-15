@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/interface.schema.json",
+  "title": "AMOS-Federation Interface",
+  "description": "Interface schema. Based on the `interface_registry` Supabase table. Interfaces are owner-facing entry points (API, CLI, web) generated on demand.",
+  "type": "object",
+  "required": ["id", "interface_id", "name"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Primary key (auto-increment integer)."
+    },
+    "interface_id": {
+      "type": "string",
+      "description": "Unique business identifier for the interface."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable interface name."
+    },
+    "description": {
+      "type": "string",
+      "description": "What the interface exposes and who it serves."
+    },
+    "interface_type": {
+      "type": "string",
+      "enum": ["api", "cli", "web", "custom"],
+      "description": "Kind of interface.",
+      "default": "custom"
+    },
+    "route_path": {
+      "type": "string",
+      "description": "Route path or command path the interface is served at."
+    },
+    "html_content": {
+      "type": "string",
+      "description": "HTML content for web-type interfaces."
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Who created the interface (agent id or 'system').",
+      "default": "system"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "inactive", "draft", "deprecated"],
+      "description": "Operational status of the interface.",
+      "default": "active"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Interface creation timestamp."
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "interfaces",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}

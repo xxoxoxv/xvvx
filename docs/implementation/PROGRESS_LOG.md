@@ -6,6 +6,33 @@
 
 ## 2026-08-15
 
+### [P2] 12 مخطط JSON Schema + قالب ADR
+- **Commit:** (هذا الـ commit)
+- **ما تم:**
+  - إنشاء `docs/contracts/schemas/` بـ 12 ملف JSON Schema (Draft-07)
+  - `tools.schema.json` — مخطط الأدوات (مدخلات/مخرجات) مواءم مع جدول `tools` + §8.3
+  - `agent.schema.json` — مخطط هوية الوكيل مواءم مع `agents` + `agent_population`
+  - `institution.schema.json` — مخطط المؤسسة مواءم مع `institutions`
+  - `task.schema.json` — مخطط المهمة مواءم مع `tasks`
+  - `event.schema.json` — مخطط الحدث مواءم مع `event_store` + `durable_events` + §12.1
+  - `interface.schema.json` — مخطط الواجهة مواءم مع `interface_registry`
+  - `approval.schema.json` — مخطط الموافقة والتدقيق مواءم مع `approvals` + `audit_entries` + `reviews`
+  - `treasury.schema.json` — مخطط المعاملة المالية مواءم مع `treasury_transactions` + `treasury_budgets` + `treasury_reports`
+  - `memory.schema.json` — مخطط الذاكرة والخبرة مواءم مع `memories` + `experiences`
+  - `state_policy.schema.json` — مخطط السياسة الولائية مواءم مع `legislations` + `compliance_reports`
+  - `observability.schema.json` — مخطط السجل والمقياس مواءم مع `agent_health_checks` + `agent_isolations` + `agent_treatments`
+  - `smoke_test.schema.json` — مخطط اختبار الدخان
+  - `docs/adr/template.md` — قالب قرار العمارة (ADR) ثنائي اللغة
+  - `docs/contracts/README.md` — فهرس العقود
+  - كل مخطط يحتوي `x-amos` metadata + `additionalProperties: false`
+  - التحقق: جميع الملفات JSON صالحة + متوافقة مع Draft-07
+  - تحديث `EXECUTION_PLAN.md` (P2 → DONE، 3/9 مراحل)
+- **الحالة:** DONE
+
+---
+
+## 2026-08-15
+
 ### [P0] هيكلة Monorepo بـ 12 مجالاً
 - **Commit:** `73b0c3f3`
 - **ما تم:**

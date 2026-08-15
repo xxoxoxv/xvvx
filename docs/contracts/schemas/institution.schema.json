@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/institution.schema.json",
+  "title": "AMOS-Federation Institution",
+  "description": "Institution schema. Based on the `institutions` Supabase table. Institutions are the state organs: banks, universities, courts, factories.",
+  "type": "object",
+  "required": ["id", "institution_id", "name", "type"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Primary key (auto-increment integer)."
+    },
+    "institution_id": {
+      "type": "string",
+      "description": "Unique business identifier for the institution."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable institution name."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["bank", "university", "court", "factory", "agency", "other"],
+      "description": "Institution type."
+    },
+    "state": {
+      "type": "string",
+      "description": "State/jurisdiction the institution belongs to."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "suspended", "closed", "pending"],
+      "description": "Operational status of the institution.",
+      "default": "active"
+    },
+    "head_agent_id": {
+      "type": "string",
+      "description": "Identifier of the agent heading this institution."
+    },
+    "budget": {
+      "type": "integer",
+      "description": "Budget allocated to the institution.",
+      "default": 0
+    },
+    "established_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp the institution was established."
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp the institution was closed, if applicable."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Free-form metadata about the institution.",
+      "default": {}
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "institutions",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}

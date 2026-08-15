@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/approval.schema.json",
+  "title": "AMOS-Federation Approval and Audit",
+  "description": "Approval and audit schema for the royal domain. Combines the `approvals`, `audit_entries`, and `reviews` Supabase tables. Covers signed approvals, the immutable audit hash chain, and critic reviews.",
+  "type": "object",
+  "required": ["id", "request_type"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Primary key. Unique approval identifier (varchar)."
+    },
+    "request_type": {
+      "type": "string",
+      "description": "Type of approval requested (e.g. model_promotion, tool_generation, decree)."
+    },
+    "target_id": {
+      "type": "string",
+      "description": "Identifier of the entity being approved."
+    },
+    "requester": {
+      "type": "string",
+      "description": "Who requested the approval (agent id or human id)."
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["approved", "rejected", "pending", "revoked"],
+      "description": "Decision rendered on the request."
+    },
+    "signed_by": {
+      "type": "string",
+      "description": "Who signed the approval decision."
+    },
+    "signature": {
+      "type": "string",
+      "description": "Ed25519 digital signature over the approval payload."
+    },
+    "public_key": {
+      "type": "string",
+      "description": "Public key used to verify the signature."
+    },
+    "verified": {
+      "type": "boolean",
+      "description": "Whether the signature has been cryptographically verified.",
+      "default": false
+    },
+    "notes": {
+      "type": "string",
+      "description": "Reviewer notes accompanying the decision."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Approval creation timestamp."
+    },
+    "audit_entry": {
+      "type": "object",
+      "description": "Immutable audit entry from the `audit_entries` table, chained by SHA-256 hashes.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Audit entry primary key."
+        },
+        "action": {
+          "type": "string",
+          "description": "The action that was audited."
+        },
+        "actor": {
+          "type": "string",
+          "description": "Who performed the action."
+        },
+        "details": {
+          "type": "object",
+          "description": "Structured details of the audited action.",
+          "additionalProperties": true
+        },
+        "prev_hash": {
+          "type": "string",
+          "description": "SHA-256 hash of the previous audit entry in the chain."
+        },
+        "hash": {
+          "type": "string",
+          "description": "SHA-256 hash of this audit entry."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Audit entry creation timestamp."
+        }
+      },
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "description": "Critic review from the `reviews` table.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Review primary key."
+        },
+        "task_id": {
+          "type": "string",
+          "description": "Task the review evaluates."
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Agent whose work is being reviewed."
+        },
+        "quality_score": {
+          "type": "number",
+          "description": "Quality score assigned by the critic.",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "feedback": {
+          "type": "string",
+          "description": "Free-text feedback from the critic."
+        },
+        "approved": {
+          "type": "boolean",
+          "description": "Whether the review approved the work."
+        },
+        "criteria": {
+          "type": "object",
+          "description": "Structured review criteria and their results.",
+          "additionalProperties": true
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Review creation timestamp."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "royal",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}
