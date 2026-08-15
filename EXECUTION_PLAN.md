@@ -25,12 +25,12 @@
 
 | المجال | مكتمل | الإجمالي | الحالة |
 |---|---:|---:|---|
-| المراحل | 1 | 9 | DOING |
+| المراحل | 2 | 9 | DOING |
 | المجالات المغطاة | 12 | 12 | DONE |
 | النوى المنشأة | 96 | 96 | DONE |
 | جداول قاعدة البيانات | 23 | 23 | DONE |
 | اختبارات الدخان | 0 | 12 | TODO |
-| السجلات (Registries) | 1 | 12 | DOING |
+| السجلات (Registries) | 12 | 12 | DONE |
 
 ---
 
@@ -39,17 +39,17 @@
 | المجال | P0 | P1 | P2 | P3 | P4 | P5 | P6 | P7 | P8 | P9 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | core | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| royal | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| federal | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| states | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| institutions | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| agents | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| tools | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| interfaces | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| runtime | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| docs | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| ops | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| tests | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| royal | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| federal | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| states | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| institutions | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| agents | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| tools | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| interfaces | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| runtime | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| docs | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| ops | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| tests | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
 
 ---
 
@@ -68,30 +68,30 @@
 
 ---
 
-## المرحلة 1 — سجلات الحقيقة (NEXT)
+## المرحلة 1 — سجلات الحقيقة (DONE)
 
 **الهدف:** جعل كل مجال قابلاً للاكتشاف. إنشاء سجلات وفهارس لكل مجال.
 
 | المجال | المهمة | الملف | الحالة |
 |---|---|---|---|
 | core | سجل الذاكرة والمعرفة | `core/memory/index.md` | DONE |
-| core | فهرس الميثاق | `core/meta/registry.md` | NEXT |
-| royal | فهرس المراسيم الملكية | `royal/decrees.md` | NEXT |
-| federal | فهرس السلطات الثلاث | `federal/index.md` | NEXT |
-| states | فهرس الولايات | `states/index.md` | NEXT |
-| institutions | سجل المؤسسات (8 موجودة) | `institutions/registry/index.md` | NEXT |
-| agents | سجل الوكلاء (342 موجود) | `agents/registry/index.md` | NEXT |
-| tools | سجل الأدوات (10 موجودة) | `tools/registry/index.md` | NEXT |
-| interfaces | سجل الواجهات | `interfaces/registry.md` | NEXT |
-| runtime | فهرس الأحداث (157 موجودة) | `runtime/events/index.md` | NEXT |
-| docs | فهرس الوثائق | `docs/index.md` | NEXT |
-| ops | فهرس العمليات | `ops/index.md` | NEXT |
+| core | فهرس الميثاق | `core/meta/registry.md` | DONE |
+| royal | فهرس المراسيم الملكية | `royal/decrees.md` | DONE |
+| federal | فهرس السلطات الثلاث | `federal/index.md` | DONE |
+| states | فهرس الولايات | `states/index.md` | DONE |
+| institutions | سجل المؤسسات (8 موجودة) | `institutions/registry/index.md` | DONE |
+| agents | سجل الوكلاء (342 موجود) | `agents/registry/index.md` | DONE |
+| tools | سجل الأدوات (10 موجودة) | `tools/registry/index.md` | DONE |
+| interfaces | سجل الواجهات | `interfaces/registry.md` | DONE |
+| runtime | فهرس الأحداث (157 موجودة) | `runtime/events/index.md` | DONE |
+| docs | فهرس الوثائق | `docs/index.md` | DONE |
+| ops | فهرس العمليات | `ops/index.md` | DONE |
 
 **تعريف الإنجاز:** كل سجل يحتوي على قائمة كاملة مرتبطة بقاعدة البيانات حيث ينطبق.
 
 ---
 
-## المرحلة 2 — العقود والمخططات
+## المرحلة 2 — العقود والمخططات (NEXT)
 
 **الهدف:** تعريف "العقود" بين الأجزاء قبل التنفيذ الحقيقي.
 
@@ -273,4 +273,5 @@
 | 2026-08-15 | P0 | هيكلة Monorepo بـ 12 مجالاً | `73b0c3f3` |
 | 2026-08-15 | P0 | 96 NUCLEUS.md لكل مجلد فرعي | `67378945` |
 | 2026-08-15 | P0 | خطة التنفيذ المرحلية | (هذا الـ commit) |
-| 2026-08-15 | P1 | سجل الذاكرة والمعرفة (core/memory/index.md) | (هذا الـ commit) |
+| 2026-08-15 | P1 | سجل الذاكرة والمعرفة (core/memory/index.md) | `eb0bcd61` |
+| 2026-08-15 | P1 | 11 سجل وفهرس (كل المجالات) | (هذا الـ commit) |
