@@ -1,0 +1,14 @@
+id: imported-governance-audits-crud-rag
+name: CRUD-RAG
+source_url: https://github.com/CRUD-RAG/CRUD-RAG
+source_type: github_repository
+original_category: أدوات تقييم واختبار
+assigned_place: governance/audits
+slug: crud-rag
+import_status: registered
+integration_status: not_integrated
+license_status: pending_review
+security_status: pending_review
+pulled_at: '2026-08-15'
+notes: Imported as a candidate employee; not active until evaluation and governance
+  approval. Source code not vendored to avoid repo bloat.

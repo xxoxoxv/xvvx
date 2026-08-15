@@ -1,0 +1,14 @@
+id: imported-infrastructure-gpt-pilot
+name: GPT Pilot
+source_url: https://github.com/Pythagora-io/gpt-pilot
+source_type: github_repository
+original_category: وكلاء برمجيين وتطوير
+assigned_place: states/infrastructure
+slug: gpt-pilot
+import_status: registered
+integration_status: not_integrated
+license_status: pending_review
+security_status: pending_review
+pulled_at: '2026-08-15'
+notes: Imported as a candidate employee; not active until evaluation and governance
+  approval. Source code not vendored to avoid repo bloat.

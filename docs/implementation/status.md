@@ -332,5 +332,20 @@ Federal Council
 - ⚠️ Orchestrator و Agent Runtime لا تزال تستخدم PopulationRegistry (يدعم PostgreSQL تلقائيًا) لكن لم يُختبرا عبر endpoint
 - ⚠️ Training لا يزال InMemory (حسب الخارطة، Phase 14)
 
+## المرحلة 1 — السحب (استيراد الوكلاء الخارجيين كموضفين مرشحين)
+
+**الحالة:** منفّذة ✅
+
+**ما تم:**
+- سحب 296 إطار/وكيل خارجي من قائمة المصادر (>500 سطر مع إزالة التكرار) إلى مجلد خاص بكل واحد
+- كل وكيل في مكانه المخصص حسب التخصص، وليس في الجذر: `agents/identities/imported/<domain>/<agent-slug>/`
+- لكل وكيل: `identity.md` (هوية كموظف مرشح) + `upstream.yaml` (المصدر وحالة الفحص)
+- سجل مركزي: `agents/registry/imported_citizens.yaml` (296 مواطن مستورد)
+- **لم يُنسخ كود المصدر** — منع تضخم المستودع ومشاكل التراخيص؛ المصدر موثّق في upstream.yaml
+- التوزيع: federal-executive (70)، states-infrastructure (72)، states-culture (51)، tools (35)، governance-audits (19)، states-science (13)، memory (13)، security (7)، observability (4)، states-finance (4)، states-health (3)، states-law (2)، models (2)، governance (1)
+- كل وكيل بحالة `imported_candidate` بلا صلاحيات إنتاجية قبل الفحص والتدريب والاعتماد
+
+**بوابة الخروج:** تحقّق من وجود مجلد + identity.md + upstream.yaml لكل وكيل، وسجل مركزي سليم. (لمعيار "إدارة 2800+ وكيل" — البنية قابلة للتوسع، والتوسع الفعلي يأتي في المراحل اللاحقة بعد ربط المصادر وتدريبها.)
+
 ## المؤجل (حسب الخارطة الجديدة v1.0)
 - Phase 12-17: الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق

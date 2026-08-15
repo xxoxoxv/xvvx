@@ -1,0 +1,14 @@
+id: imported-culture-ai-town
+name: AI-town
+source_url: https://github.com/a16z-infra/ai-town
+source_type: github_repository
+original_category: وكلاء إبداعيين ومحاكاة
+assigned_place: states/culture
+slug: ai-town
+import_status: registered
+integration_status: not_integrated
+license_status: pending_review
+security_status: pending_review
+pulled_at: '2026-08-15'
+notes: Imported as a candidate employee; not active until evaluation and governance
+  approval. Source code not vendored to avoid repo bloat.

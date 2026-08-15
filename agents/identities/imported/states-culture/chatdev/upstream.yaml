@@ -1,0 +1,14 @@
+id: imported-culture-chatdev
+name: ChatDev
+source_url: https://github.com/OpenBMB/ChatDev
+source_type: github_repository
+original_category: وكلاء إبداعيين ومحاكاة
+assigned_place: states/culture
+slug: chatdev
+import_status: registered
+integration_status: not_integrated
+license_status: pending_review
+security_status: pending_review
+pulled_at: '2026-08-15'
+notes: Imported as a candidate employee; not active until evaluation and governance
+  approval. Source code not vendored to avoid repo bloat.

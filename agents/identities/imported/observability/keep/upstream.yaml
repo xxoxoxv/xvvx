@@ -1,0 +1,14 @@
+id: imported-observability-keep-2
+name: Keep (devops)
+source_url: https://github.com/keephq/keep
+source_type: github_repository
+original_category: وكلاء DevOps والسحابة
+assigned_place: observability
+slug: keep
+import_status: registered
+integration_status: not_integrated
+license_status: pending_review
+security_status: pending_review
+pulled_at: '2026-08-15'
+notes: Imported as a candidate employee; not active until evaluation and governance
+  approval. Source code not vendored to avoid repo bloat.
