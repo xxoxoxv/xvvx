@@ -20,7 +20,7 @@ Federal Council
 | **Orchestrator** | MVP | تخطيط حتمي يعمل، لا Temporal ولا NATS — استدعاءات مباشرة |
 | **Agent Runtime** | MVP | Base/Worker Agent يعمل، Tool Sandbox محاكاة (12 أداة Mock) — لا Docker ولا عزل حقيقي |
 | **Tool Registry** | Persistent/Real | تسجيل دائم بـ SQLAlchemy، 6 أدوات حقيقية تعمل فعليًا (python_execute, sql_query, http_request, document_analysis, chart_generate, text_summary)، Sandbox معزول مع قيود موارد، Policy Check قبل كل تنفيذ |
-| **Model Gateway** | MVP | مسار Claude موجود لكن غير مُختبَر بمفتاح حقيقي، fallback محلي حتمي — لا vLLM، لا نموذج محلي |
+| **Model Gateway** | Persistent/Real | مسار Claude حقيقي (مع مفتاح)، Model Layer مع caching دائم، cost tracking دائم بـ SQLAlchemy، benchmark حقيقي — لا vLLM، لا نموذج محلي GPU |
 | **Memory Service** | Persistent | تخزين SQLAlchemy/SQLite دائم، بحث Jaccard بكلمات مفتاحية — لا Redis، لا Qdrant |
 | **Evaluation** | Persistent | تسجيل خبرات SQLAlchemy/SQLite دائم، benchmark هيكلي، gap analyzer — بيانات تبقى بعد إعادة التشغيل |
 | **Critic** | Persistent | تقييم حتمي بقواعد ثابتة، تخزين SQLAlchemy/SQLite دائم |
@@ -96,11 +96,23 @@ Federal Council
 - execute_tool_with_governance: Kill Switch → Policy Engine → تنفيذ → حدث
 - 20 اختبار أدوات حقيقية (تنفيذ + عزل + حوكمة)
 - 213 اختبار إجمالي (193 + 20 جديد)
-- ملاحظة: Docker غير متوفر — subprocess sandbox كبديل حقيقي مع قيود موارد
+
+### Phase 5: النماذج الحقيقية
+- Model Layer حقيقي (model_gateway/model_layer.py):
+  - Caching دائم: نفس السؤال لا يُعاد استدعاؤه (SHA-256 key، SQLAlchemy)
+  - Cost tracking دائم: كل استدعاء يُسجل في DB مع التكلفة الحقيقية
+  - أسعار حقيقية لكل ألف رمز (Claude Sonnet $0.003/$0.015، Opus $0.015/$0.075)
+  - benchmark_models: مقارنة أداء النماذج (latency، tokens، cost، cache hits)
+  - invoke_with_cache: استدعاء مع caching تلقائي
+  - get_cost_summary: ملخص تراكمي مفصّل لكل نموذج
+- endpoints: /v1/models/cost-summary، /v1/models/invoke-cached، /v1/models/benchmark
+- 14 اختبار نموذج (caching + cost + benchmark + persistence)
+- 227 اختبار إجمالي (213 + 14 جديد)
+- ملاحظة: Claude API جاهز لكن بلا مفتاح — fallback محلي يعمل فعليًا. vLLM غير متوفر (لا GPU)
 
 ## الحالة الحقيقية
-البيانات دائمة. الأحداث منشورة. الحوكمة تعمل. الأدوات تنفذ فعليًا. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
+البيانات دائمة. الأحداث منشورة. الحوكمة تعمل. الأدوات تنفذ فعليًا. النماذج تعمل مع caching وتكلفة دائمة. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker/GPU) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
 
 ## المؤجل (حسب الخارطة الجديدة v1.0)
-- Phase 5: النماذج الحقيقية (Claude + vLLM)
-- Phase 6-17: السكان، المؤسسات، الفيدرالية، المصانع، التعلم، الإطلاق
+- Phase 6: السكان الأوائل (20 وكيل + المدرسة الأولى)
+- Phase 7-17: واجهة التحكم، النظام الصحي، المؤسسات، الخزانة، التوسع، الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق
