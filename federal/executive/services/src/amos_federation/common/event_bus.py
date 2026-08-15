@@ -36,10 +36,11 @@ class EventBus:
     """ناقل أحداث حقيقي مع تخزين دائم واشتراكات."""
 
     def __init__(self) -> None:
-        self._engine = create_engine(
-            get_database_url(),
-            connect_args={"check_same_thread": False} if get_database_url().startswith("sqlite") else {},
-        )
+        url = get_database_url()
+        connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
+        if url.startswith("postgresql"):
+            connect_args = {"sslmode": "require", "connect_timeout": 15}
+        self._engine = create_engine(url, connect_args=connect_args, pool_pre_ping=True, pool_size=5, max_overflow=10)
         EventBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
         self._handlers: dict[str, list[Callable[[dict[str, Any]], None]]] = {}

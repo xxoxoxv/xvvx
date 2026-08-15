@@ -6,10 +6,11 @@ AMOS-Federation Database Layer
 تاريخ الإنشاء: 2026-08-15
 """
 
+import contextlib
 import os
 import uuid
+from collections.abc import Generator
 from datetime import UTC, datetime
-from typing import Any, Generator
 
 from sqlalchemy import (
     JSON,
@@ -144,6 +145,20 @@ def get_database_url() -> str:
     )
 
 
+def _is_postgres() -> bool:
+    return get_database_url().startswith("postgresql")
+
+
+def _pg_connect_args() -> dict:
+    """معاملات اتصال إضافية لـ PostgreSQL (Supabase يتطلب SSL)."""
+    if not _is_postgres():
+        return {"check_same_thread": False}
+    return {
+        "sslmode": "require",
+        "connect_timeout": 15,
+    }
+
+
 _engine = None
 _SessionLocal = None
 
@@ -154,8 +169,19 @@ def get_engine():
     if _engine is None:
         url = get_database_url()
         connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-        _engine = create_engine(url, connect_args=connect_args, echo=False)
+        if url.startswith("postgresql"):
+            connect_args = {"sslmode": "require", "connect_timeout": 15}
+        _engine = create_engine(url, connect_args=connect_args, echo=False, pool_pre_ping=True, pool_size=5, max_overflow=10)
     return _engine
+
+
+def reset_engine() -> None:
+    """إعادة تعيين المحرك — للاختبارات والتغيير بين SQLite و PostgreSQL."""
+    global _engine, _SessionLocal
+    if _engine is not None:
+        _engine.dispose()
+    _engine = None
+    _SessionLocal = None
 
 
 def get_session_factory():
@@ -221,10 +247,10 @@ def db_cursor():
         finally:
             conn.close()
     else:
-        # PostgreSQL path for production
+        # PostgreSQL path for production (Supabase)
         import psycopg2
         from psycopg2.extras import RealDictCursor
-        conn = psycopg2.connect(db_url)
+        conn = psycopg2.connect(db_url, sslmode="require", connect_timeout=15)
         try:
             yield conn.cursor(cursor_factory=RealDictCursor)
             conn.commit()

@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     claude_api_key: str = ""
     default_model: str = "claude-sonnet-4-20250514"
 
+    # Database URL (مباشر للـ SQLAlchemy)
+    database_url: str = ""
+
     @property
     def postgres_dsn(self) -> str:
         return (
@@ -69,7 +72,7 @@ class Settings(BaseSettings):
     def redis_url(self) -> str:
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
-    model_config = {"env_file": ".env", "env_prefix": "AMOS_"}
+    model_config = {"env_file": ".env", "env_prefix": "AMOS_", "extra": "ignore"}
 
 
 settings = Settings()
