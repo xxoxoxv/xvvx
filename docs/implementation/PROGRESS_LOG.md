@@ -6,6 +6,24 @@
 
 ## 2026-08-15
 
+### [P8] الحوكمة والأمن والمراقبة — 7 بروتوكولات
+- **Commit:** (هذا الـ commit)
+- **ما تم:**
+  - `royal/governance/approvals/thresholds.md` — عتبات الموافقة حسب الخطورة
+  - `royal/security/guardrails/index.md` — فهرس الحواجز الواقية
+  - `royal/security/isolation/protocol.md` — بروتوكول العزل
+  - `royal/security/kill-switch/protocol.md` — بروتوكول المفتاح الكهربائي
+  - `royal/governance/audits/reports.md` — تقارير التدقيق الدورية
+  - `ops/observability/dashboards/plan.md` — خطة لوحات المراقبة
+  - `ops/continuity/disaster-recovery/playbook.md` — كتيب التعافي من الكوارث
+  - كل بروتوكول: مخطط + ضمانات + اختبار قبول
+  - تحديث `EXECUTION_PLAN.md` (P8 → DONE، 9/9، royal + ops P8 DONE)
+- **الحالة:** DONE
+
+---
+
+## 2026-08-15
+
 ### [P7] الواجهات — 4 مواصفات
 - **Commit:** (هذا الـ commit)
 - **ما تم:**
