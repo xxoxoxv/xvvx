@@ -362,6 +362,53 @@ async def release_agent(
     return get_isolation_system().release(isolation_id, decision)
 
 
+# === 9.2-9.8: Federation Governance endpoints ===
+
+@router.get("/approvals", response_model=list[dict])
+async def list_approvals(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> list[dict[str, Any]]:
+    """9.2: عرض الموافقات."""
+    from amos_federation.services.governance.federation import get_approval_system
+    return get_approval_system().list_approvals()
+
+
+@router.get("/legislations", response_model=list[dict])
+async def list_legislations(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> list[dict[str, Any]]:
+    """9.6: عرض التشريعات."""
+    from amos_federation.services.governance.federation import get_legislative_branch
+    return get_legislative_branch().list_legislations()
+
+
+@router.get("/court-cases", response_model=list[dict])
+async def list_court_cases(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> list[dict[str, Any]]:
+    """9.7: عرض القضايا."""
+    from amos_federation.services.governance.federation import get_judicial_branch
+    return get_judicial_branch().list_cases()
+
+
+@router.get("/compliance-reports", response_model=list[dict])
+async def list_compliance_reports(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> list[dict[str, Any]]:
+    """9.8: عرض تقارير الامتثال."""
+    from amos_federation.services.governance.federation import get_supreme_oversight
+    return get_supreme_oversight().list_reports()
+
+
+@router.get("/executive-roles", response_model=list[dict])
+async def list_executive_roles(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> list[dict[str, Any]]:
+    """9.5: عرض الأدوار التنفيذية."""
+    from amos_federation.services.governance.federation import get_executive_branch
+    return get_executive_branch().list_roles()
+
+
 # === HTML Interface ===
 
 @router.get("/ui", response_class=HTMLResponse)
