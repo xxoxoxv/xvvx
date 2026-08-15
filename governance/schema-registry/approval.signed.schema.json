@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "amos_federation/events/approval.signed.schema.json",
+  "$comment": "الهدف: تعريف عقد حدث موافقة بشرية موقعة رقميًا (Ed25519) | النطاق: governance/approvals, all services | المالك: governance/schema-registry | تاريخ الإنشاء: 2026-08-15",
+  "title": "ApprovalSignedEvent",
+  "description": "حدث يُنشر عند توقيع موافقة أو رفض بشري على قرار حكومي",
+  "type": "object",
+  "required": ["event_id", "timestamp", "event_type", "source", "data", "chain_hash"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event_type": {
+      "type": "string",
+      "const": "approval.signed"
+    },
+    "source": {
+      "type": "string",
+      "const": "governance-service"
+    },
+    "data": {
+      "type": "object",
+      "required": ["approval_id", "type", "decision", "reviewer_id", "signed_artifact"],
+      "properties": {
+        "approval_id": {
+          "type": "string",
+          "pattern": "^appr-[a-z0-9-]+$"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "model_promotion",
+            "agent_birth",
+            "agent_death",
+            "kill_switch_activation",
+            "constitutional_amendment",
+            "budget_override"
+          ]
+        },
+        "decision": {
+          "type": "string",
+          "enum": ["approved", "rejected"]
+        },
+        "reviewer_id": {
+          "type": "string",
+          "description": "معرّف المراجع البشري"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "signed_artifact": {
+          "type": "object",
+          "required": ["signature", "payload_hash", "algorithm"],
+          "properties": {
+            "signature": {
+              "type": "string",
+              "pattern": "^ed25519:[a-zA-Z0-9+/=]+$"
+            },
+            "payload_hash": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            "algorithm": {
+              "type": "string",
+              "const": "Ed25519"
+            }
+          }
+        }
+      }
+    },
+    "chain_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  }
+}

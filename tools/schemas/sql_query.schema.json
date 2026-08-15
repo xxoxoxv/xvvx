@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "amos_federation/tools/sql_query.schema.json",
+  "$comment": "الهدف: تعريف JSON Schema لمدخلات ومخرجات أداة sql_query | النطاق: كل الوكلاء الذين يستخدمون أداة استعلام SQL | المالك: tools/schemas | تاريخ الإنشاء: 2026-08-15",
+  "title": "SQL Query Tool — Input/Output Schema",
+  "type": "object",
+  "properties": {
+    "input": {
+      "type": "object",
+      "required": ["database", "query"],
+      "properties": {
+        "database": {
+          "type": "string",
+          "enum": ["financial_db", "sales_db", "market_data"],
+          "description": "اسم قاعدة البيانات المعتمدة"
+        },
+        "query": {
+          "type": "string",
+          "maxLength": 10000,
+          "description": "استعلام SQL للقراءة فقط"
+        },
+        "timeout": {
+          "type": "integer",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 120,
+          "description": "الحد الأقصى لزمن التنفيذ بالثواني"
+        },
+        "max_rows": {
+          "type": "integer",
+          "default": 1000,
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "الحد الأقصى لعدد الصفوف المعادة"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["rows", "columns", "row_count", "execution_time_ms"],
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": { "type": "object" },
+          "description": "الصفوف المعادة من الاستعلام"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "type"],
+            "properties": {
+              "name": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["integer", "text", "real", "numeric", "date", "timestamp", "boolean", "uuid", "json"]
+              }
+            }
+          },
+          "description": "أسماء وأنواع الأعمدة"
+        },
+        "row_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "عدد الصفوف المعادة"
+        },
+        "execution_time_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "زمن التنفيذ بالميلي ثانية"
+        },
+        "truncated": {
+          "type": "boolean",
+          "description": "هل قُصّت النتائج عند max_rows"
+        }
+      }
+    }
+  }
+}

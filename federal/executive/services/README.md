@@ -1,0 +1,42 @@
+# federal/executive/services/ — الخدمات التنفيذية
+
+## التعريف
+الخدمات التقنية الفعلية للسلطة التنفيذية. هنا تقيم api-gateway, orchestrator-service, agent-runtime-service. كل خدمة لها Dockerfile ومواصفاتها الخاصة.
+
+## النطاق
+FastAPI services, Dockerfiles, configuration files, health checks.
+
+## المالك
+Federal Council
+
+## تاريخ الإنشاء
+2026-08-15
+
+## بصمة الهوية
+يخضع هذا المجلد لقانون هوية الملفات (المادة الدستورية 009).
+كل ملف داخله يجب أن يحتوي على ترويسة تعريفية.
+
+## الخدمات المنفّذة
+
+| الخدمة | المنفذ | الحالة |
+|---|---:|---|
+| api-gateway | 8000 | استقبال المهام، JWT، وسجل الوكلاء والأدوات |
+| orchestrator | 8001 | تخطيط حتمي للمهام |
+| agent-runtime | 8002 | هيكل تشغيلي؛ التنفيذ في الأسبوعين 7-8 |
+| tool-registry | 8003 | هيكل تشغيلي؛ التنفيذ في الأسبوعين 7-8 |
+| model-gateway | 8004 | هيكل تشغيلي؛ التنفيذ في الأسبوعين 9-10 |
+| memory-service | 8005 | هيكل تشغيلي؛ التنفيذ في الأسابيع 11-13 |
+| evaluation | 8006 | هيكل تشغيلي؛ التنفيذ في الأسبوعين 9-10 |
+| critic | 8007 | هيكل تشغيلي؛ التنفيذ في الأسبوعين 9-10 |
+| governance | 8009 | هيكل تشغيلي؛ التنفيذ في الأسابيع 11-13 |
+
+## التشغيل
+
+```bash
+cp .env.example .env
+make up
+make run SERVICE=api-gateway PORT=8000
+python -m pytest tests/ -q
+```
+
+كل خدمة تعرض `GET /health` و`GET /ready`. تحمي بوابة API مسارات `/v1` برمز JWT Bearer موقع بمفتاح `AMOS_JWT_SECRET`.

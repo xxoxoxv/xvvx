@@ -1,0 +1,97 @@
+# سجل الأدوات — Tool Index
+# الهدف: تسجيل كل أداة في النظام قبل أن يتمكن أي وكيل من استخدامها
+# النطاق: كل الأدوات المسجلة في كل الولايات
+# المالك: tools/registry
+# تاريخ الإنشاء: 2026-08-15
+
+tools:
+  - id: "sql_query"
+    name: "SQL Query Executor"
+    version: "2.1.0"
+    status: "active"
+    risk_level: "low"
+    sandbox_required: true
+    permissions_required: ["data.read"]
+    owner: "states/finance"
+
+  - id: "python_execute"
+    name: "Python Code Executor"
+    version: "1.5.0"
+    status: "active"
+    risk_level: "medium"
+    sandbox_required: true
+    permissions_required: ["code.execute"]
+    owner: "states/infrastructure"
+
+  - id: "chart_generate"
+    name: "Chart Generator"
+    version: "1.2.0"
+    status: "active"
+    risk_level: "low"
+    sandbox_required: true
+    permissions_required: ["output.generate"]
+    owner: "states/finance"
+
+  - id: "document_analysis"
+    name: "Document Analyzer"
+    version: "1.0.0"
+    status: "active"
+    risk_level: "medium"
+    sandbox_required: true
+    permissions_required: ["document.read"]
+    owner: "states/law"
+
+  - id: "legal_search"
+    name: "Legal Search Engine"
+    version: "1.1.0"
+    status: "active"
+    risk_level: "low"
+    sandbox_required: false
+    permissions_required: ["search.execute"]
+    owner: "states/law"
+
+  - id: "research_apis"
+    name: "External Research APIs"
+    version: "2.0.0"
+    status: "active"
+    risk_level: "medium"
+    sandbox_required: true
+    permissions_required: ["external_api.call"]
+    owner: "states/science"
+
+  - id: "data_analysis"
+    name: "Statistical Data Analysis"
+    version: "1.3.0"
+    status: "active"
+    risk_level: "medium"
+    sandbox_required: true
+    permissions_required: ["data.read", "code.execute"]
+    owner: "states/science"
+
+  - id: "medical_dbs"
+    name: "Medical Database Query"
+    version: "1.0.0"
+    status: "active"
+    risk_level: "high"
+    sandbox_required: true
+    permissions_required: ["data.read", "phi.access"]
+    owner: "states/health"
+    pii_required: true
+
+  - id: "generation"
+    name: "Content Generation"
+    version: "2.5.0"
+    status: "active"
+    risk_level: "medium"
+    sandbox_required: true
+    permissions_required: ["output.generate"]
+    owner: "states/culture"
+
+  - id: "design"
+    name: "Design Tool"
+    version: "1.0.0"
+    status: "active"
+    risk_level: "low"
+    sandbox_required: true
+    permissions_required: ["output.generate"]
+    owner: "states/culture"

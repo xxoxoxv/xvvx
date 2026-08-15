@@ -1,0 +1,71 @@
+# Tool Manifest: sql_query
+# الهدف: توصيف أداة استعلام SQL — المدخلات، المخرجات، الصلاحيات، حدود الصندوق الرمل
+# النطاق: كل الوكلاء الذين يستخدمون أداة sql_query
+# المالك: tools/registry/manifests
+# تاريخ الإنشاء: 2026-08-15
+#
+# Executes read-only SQL queries on approved databases
+
+tool_id: "sql_query"
+name: "SQL Query Executor"
+version: "2.1.0"
+status: "active"
+protocol: "openapi"
+
+description: "Executes read-only SQL queries on approved databases"
+
+input_schema:
+  type: object
+  properties:
+    database:
+      type: string
+      enum: ["financial_db", "sales_db", "market_data"]
+    query:
+      type: string
+      maxLength: 10000
+    timeout:
+      type: integer
+      default: 30
+      maximum: 120
+  required: ["database", "query"]
+
+output_schema:
+  type: object
+  properties:
+    rows:
+      type: array
+    columns:
+      type: array
+    row_count:
+      type: integer
+    execution_time_ms:
+      type: integer
+
+permissions_required:
+  - "data.read"
+
+risk_level: "low"
+sandbox_required: true
+sandbox_config:
+  resource_limits:
+    max_memory_mb: 512
+    max_cpu_seconds: 30
+    max_rows_returned: 10000
+  network_access: false
+  file_system: "read_only"
+
+rate_limits:
+  per_agent: 60
+  global: 1000
+
+audit:
+  log_inputs: true
+  log_outputs: true
+  retain_days: 3650
+
+tool_bom:
+  dependencies:
+    - "psycopg2-binary==2.9.9"
+    - "sqlalchemy==2.0.30"
+  base_image: "python:3.12-slim"
+  checksum: "sha256:abc123def456..."

@@ -1,0 +1,44 @@
+# Model BOM Template — قائمة مكونات النموذج
+# الهدف: توثيق كل مكون يدخل في بناء النموذج (base, LoRA, data, dependencies)
+# النطاق: كل نماذج النظام (alpha, beta, gamma)
+# المالك: security/supply-chain
+# تاريخ الإنشاء: 2026-08-15
+
+model_id: "{{ model_id }}"
+base_model: "{{ base_model }}"
+base_model_checksum: "sha256:..."
+base_model_signature: "cosign:..."
+
+training:
+  method: "QLoRA"
+  lora_rank: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  learning_rate: 0.0002
+
+data:
+  dataset_id: "{{ dataset_id }}"
+  dataset_path: "s3://amos-federation/training/{{ dataset_id }}.jsonl"
+  samples_count: 0
+  data_bom_ref: "{{ data_bom_id }}"
+  pii_checked: true
+  poisoning_checked: true
+  holdout_contamination_check: true
+
+dependencies:
+  - name: "transformers"
+    version: "4.42.0"
+    checksum: "sha256:..."
+  - name: "peft"
+    version: "0.11.0"
+    checksum: "sha256:..."
+  - name: "datasets"
+    version: "2.20.0"
+    checksum: "sha256:..."
+
+artifact:
+  adapter_path: "s3://amos-federation/models/{{ model_id }}/adapter/"
+  adapter_checksum: "sha256:..."
+  adapter_signature: "cosign:..."
+  created_at: "{{ timestamp }}"
+  created_by: "{{ builder_id }}"
