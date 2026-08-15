@@ -27,7 +27,7 @@ Federal Council
 | **Governance** | Persistent/Real | Policy Engine Rego-like حقيقي (7 قواعد)، Kill Switch حقيقي بمستوياته الأربعة، Audit Log دائم INSERT-only بـ SHA-256 hash chain + كشف تلاعب |
 | **Training/LoRA** | Mock | محاكاة حتمية للتدريب — لا PEFT، لا transformers، لا MinIO، لا artifacts حقيقية |
 | **Shadow Testing** | Mock | ألفا وبيتا محاكاة بـ functions — لا نماذج حقيقية، لا مقارنة فعلية |
-| **Control Console** | غير موجود | لا واجهة React — لم تُبنَ بعد |
+| **Control Console** | Real | واجهة HTML/JS حقيقية على المنفذ 3000، كل رقم من خدمات حية، Kill Switch + Agent Control + Audit + Cost |
 | **Event Bus** | Persistent | EventBus دائم بـ SQLAlchemy/SQLite، اشتراكات + wildcards، 12 عقد أحداث، EventPublisher يدعم NATS أو fallback محلي |
 | **PostgreSQL** | غير مفعل | SQLAlchemy مثبت، لا اتصال حقيقي، لا migrations |
 | **Redis** | غير مفعل | حزمة مثبتة، لا اتصال |
@@ -128,9 +128,23 @@ Federal Council
 - 18 اختبار سكان (registry + school + lifecycle + daily routine + integration)
 - 245 اختبار إجمالي (227 + 18 جديد)
 
+### Phase 7: منصة التحكم البشري (Control Console)
+- خدمة control-console جديدة على المنفذ 3000 (services/control_console/main.py):
+  - واجهة HTML/JS حقيقية تُخدم من FastAPI (لا React — لا Node.js في البيئة)
+  - لوحة تحكم شاملة: /v1/dashboard يجمع بيانات حقيقية من كل الخدمات
+  - 7.1: عرض Agents, Tasks, Models, Memory, Cost فعليًا
+  - 7.2: عرض حالة كل وكيل (active/paused/retired) مرتبطة بجدول agents الحقيقي
+  - 7.3: عرض سجل التدقيق — كل قرار من سلسلة الـ hash ظاهر وقابل للتحقق
+  - 7.4: إيقاف/تفعيل أي وكيل من الواجهة (يستدعي API حقيقيًا + ينشر حدثًا)
+  - 7.5: زر الموافقة/الرفض (signature_pending — يُكتمل في Phase 9 مع Ed25519)
+  - 7.6: زر Kill Switch بأربعة مستويات (normal/alert/degraded/halt) مرتبط فعليًا
+  - 7.7: عرض التكلفة اللحظية والتراكمية ($ و tokens) من Cost Tracking الحقيقي
+  - 7.8: كل رقم من خدمات حقيقية لا Mock (اختبار يتحقق من ذلك)
+- 25 اختبار تحكم (dashboard + agents + audit + kill switch + approval + cost + events + UI + real-data)
+- 271 اختبار إجمالي (245 + 25 جديد + 1 تعديل)
+
 ## الحالة الحقيقية
-البيانات دائمة. الأحداث منشورة. الحوكمة تعمل. الأدوات تنفذ فعليًا. النماذج تعمل مع caching وتكلفة. 20 وكيل حقيقي بعهود تشغيلية ومدرسة ودورة حياة. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker/GPU) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
+البيانات دائمة. الأحداث منشورة. الحوكمة تعمل. الأدوات تنفذ فعليًا. النماذج تعمل مع caching وتكلفة. 20 وكيل حقيقي بعهود تشغيلية ومدرسة ودورة حياة. واجهة تحكم بشري حقيقية تعرض كل شيء وتسمح بالتحكم الفوري. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker/GPU) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
 
 ## المؤجل (حسب الخارطة الجديدة v1.0)
-- Phase 7: واجهة التحكم البشري (Control Console)
 - Phase 8-17: النظام الصحي، المؤسسات، الخزانة، التوسع، الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق
