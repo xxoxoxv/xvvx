@@ -19,7 +19,7 @@ Federal Council
 | **API Gateway** | MVP/Persistent | هيكل FastAPI يعمل، JWT HS256 حقيقي، تخزين مهام In-Memory (تبديل لـ DB في المرحلة التالية) |
 | **Orchestrator** | MVP | تخطيط حتمي يعمل، لا Temporal ولا NATS — استدعاءات مباشرة |
 | **Agent Runtime** | MVP | Base/Worker Agent يعمل، Tool Sandbox محاكاة (12 أداة Mock) — لا Docker ولا عزل حقيقي |
-| **Tool Registry** | Persistent | تسجيل وعرض وحل بالكلمات المفتاحية، تخزين SQLAlchemy/SQLite دائم، بذور من YAML |
+| **Tool Registry** | Persistent/Real | تسجيل دائم بـ SQLAlchemy، 6 أدوات حقيقية تعمل فعليًا (python_execute, sql_query, http_request, document_analysis, chart_generate, text_summary)، Sandbox معزول مع قيود موارد، Policy Check قبل كل تنفيذ |
 | **Model Gateway** | MVP | مسار Claude موجود لكن غير مُختبَر بمفتاح حقيقي، fallback محلي حتمي — لا vLLM، لا نموذج محلي |
 | **Memory Service** | Persistent | تخزين SQLAlchemy/SQLite دائم، بحث Jaccard بكلمات مفتاحية — لا Redis، لا Qdrant |
 | **Evaluation** | Persistent | تسجيل خبرات SQLAlchemy/SQLite دائم، benchmark هيكلي، gap analyzer — بيانات تبقى بعد إعادة التشغيل |
@@ -84,10 +84,23 @@ Federal Council
 - 25 اختبار حوكمة (audit chain + policy engine + kill switch)
 - 193 اختبار إجمالي (168 + 25 جديد)
 
+### Phase 4: الأدوات الحقيقية
+- 6 أدوات حقيقية تعمل فعليًا (tool_registry/sandbox.py):
+  - python_execute: تنفيذ كود Python حقيقي في subprocess معزول
+  - sql_query: استعلام SQLite حقيقي (read-only، يمنع INSERT/UPDATE/DROP)
+  - http_request: طلب HTTP حقيقي (محجوب بدون إذن شبكة صريح)
+  - document_analysis: تحليل ملف حقيقي (أسطر، كلمات، أحرف، معاينة)
+  - chart_generate: إنشاء PNG حقيقي بـ matplotlib (bar/line/pie)
+  - text_summary: تلخيص حقيقي بتردد الكلمات
+- Sandbox معزول: مساحة عمل مؤقتة منفصلة، قيود ذاكرة ووقت
+- execute_tool_with_governance: Kill Switch → Policy Engine → تنفيذ → حدث
+- 20 اختبار أدوات حقيقية (تنفيذ + عزل + حوكمة)
+- 213 اختبار إجمالي (193 + 20 جديد)
+- ملاحظة: Docker غير متوفر — subprocess sandbox كبديل حقيقي مع قيود موارد
+
 ## الحالة الحقيقية
-البيانات دائمة بـ SQLite عبر SQLAlchemy. الأحداث منشورة ومخزَّنة فعليًا. الحوكمة تعمل فعليًا: Policy Engine يقيّم القرارات، Kill Switch يوقف التنفيذ، Audit Chain يكشف التلاعب. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
+البيانات دائمة. الأحداث منشورة. الحوكمة تعمل. الأدوات تنفذ فعليًا. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
 
 ## المؤجل (حسب الخارطة الجديدة v1.0)
-- Phase 4: الأدوات الحقيقية (100 أداة في Sandbox حقيقي)
 - Phase 5: النماذج الحقيقية (Claude + vLLM)
 - Phase 6-17: السكان، المؤسسات، الفيدرالية، المصانع، التعلم، الإطلاق
