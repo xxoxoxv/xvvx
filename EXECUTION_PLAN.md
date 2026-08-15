@@ -47,7 +47,7 @@
 | tools | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | interfaces | DONE | DONE | DONE | DONE | DONE | TODO | DONE | TODO | TODO | TODO |
 | runtime | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
-| docs | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
+| docs | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | DONE | DONE |
 | ops | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | DONE | TODO |
 | tests | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 
@@ -226,16 +226,16 @@
 
 ---
 
-## المرحلة 9 — النضج والفصل المستقبلي
+## المرحلة 9 — النضج والفصل المستقبلي (DONE)
 
 **الهدف:** التحضير للاستخراج المستقبلي دون تقسيم مبكر.
 
 | المهمة | الحالة |
 |---|---|
-| معايير جاهزية الاستخراج (amos-runtime, amos-interfaces, ...) | TODO |
-| سياسة الإصدار | TODO |
-| نضج CI/الاختبارات | TODO |
-| نموذج الحوكمة طويل الأمد | TODO |
+| معايير جاهزية الاستخراج (amos-runtime, amos-interfaces, ...) | DONE |
+| سياسة الإصدار | DONE |
+| نضج CI/الاختبارات | DONE |
+| نموذج الحوكمة طويل الأمد | DONE |
 
 **تعريف الإنجاز:** معايير واضحة ل متى وكيف يُفصل أي جزء.
 
@@ -282,3 +282,4 @@
 | 2026-08-15 | P6 | تفعيل المؤسسات والولايات: 10 تدفقات موثقة | (هذا الـ commit) |
 | 2026-08-15 | P7 | الواجهات: 4 مواصفات واجهة | (هذا الـ commit) |
 | 2026-08-15 | P8 | الحوكمة والأمن والمراقبة: 7 بروتوكولات | (هذا الـ commit) |
+| 2026-08-15 | P9 | النضج والفصل المستقبلي: 4 معايير | (هذا الـ commit) |
