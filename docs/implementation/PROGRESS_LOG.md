@@ -6,6 +6,28 @@
 
 ## 2026-08-15
 
+### [P6] تفعيل المؤسسات والولايات — 10 تدفقات
+- **Commit:** (هذا الـ commit)
+- **ما تم:**
+  - `institutions/bank/flow.md` — تدفق الخزانة (treasury_transactions + budgets + reports)
+  - `institutions/university/flow.md` — تدفق تدريب الوكلاء (training_queue → school_results → agent_population)
+  - `institutions/court/flow.md` — تدفق المراجعة والأحكام (reviews + audit_entries + event_store)
+  - `institutions/factory/flow.md` — تدفق توليد الأدوات (tool_generation_queue → tools)
+  - `states/health/flow.md` — فحوصات الوكلاء (health_checks + treatments + isolations)
+  - `states/finance/flow.md` — الميزانيات الولائية (legislations + budgets + transactions)
+  - `states/science/flow.md` — البحث والتقييم (compliance_reports + memories + experiences)
+  - `states/law/flow.md` — السياسات والعقود (legislations + compliance_reports + reviews)
+  - `states/infrastructure/flow.md` — خارطة الخدمات (interface_registry + tools + event_store)
+  - `states/culture/flow.md` — معايير الهوية (agents + agent_population + memories)
+  - كل تدفق: مخطط Mermaid + خطوات + جداول مرتبطة + اختبار قبول
+  - تصحيح محاذاة أعمدة مصفوفة EXECUTION_PLAN.md (10 أعمدة)
+  - تحديث `EXECUTION_PLAN.md` (P6 → DONE، 7/9 مراحل، states + institutions P6 DONE)
+- **الحالة:** DONE
+
+---
+
+## 2026-08-15
+
 ### [P5] حلقة التشغيل الأساسية — أول نبضة قلب
 - **Commit:** (هذا الـ commit)
 - **ما تم:**
