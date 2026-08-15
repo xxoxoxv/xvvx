@@ -484,6 +484,99 @@ async def generate_treasury_report(
     return get_treasury().generate_financial_report(period=period, report_type=report_type)
 
 
+# === 11.x: Expansion endpoints ===
+
+@router.get("/expansion/stats", response_model=dict)
+async def get_expansion_stats(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """11.1: إحصائيات التوسع السكاني."""
+    from amos_federation.services.governance.expansion import get_expansion
+    return get_expansion().expansion_stats()
+
+
+@router.post("/expansion/run", response_model=dict)
+async def run_expansion(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    batch_size: int = Query(default=50, ge=1, le=200),
+) -> dict[str, Any]:
+    """11.1: تشغيل التوسع السكاني."""
+    from amos_federation.services.governance.expansion import get_expansion
+    return get_expansion().run_full_expansion(batch_size=batch_size)
+
+
+@router.get("/specialization/tracks", response_model=dict)
+async def get_specialization_tracks(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """11.2: مسارات التخصص."""
+    from amos_federation.services.governance.expansion import get_specialization
+    return get_specialization().get_tracks()
+
+
+@router.post("/specialization/enroll", response_model=dict)
+async def enroll_specialization(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    agent_id: str = Query(...),
+    track: str = Query(...),
+) -> dict[str, Any]:
+    """11.2: تسجيل في مسار تخصص."""
+    from amos_federation.services.governance.expansion import get_specialization
+    return get_specialization().enroll_agent(agent_id, track)
+
+
+@router.post("/specialization/exam", response_model=dict)
+async def take_specialization_exam(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    agent_id: str = Query(...),
+    track: str = Query(...),
+    score: float = Query(..., ge=0.0, le=100.0),
+) -> dict[str, Any]:
+    """11.2: اختبار تخصص."""
+    from amos_federation.services.governance.expansion import get_specialization
+    return get_specialization().take_exam(agent_id, track, score)
+
+
+@router.get("/university/outputs", response_model=list[dict])
+async def list_university_outputs(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    track: str | None = Query(default=None),
+    approved_only: bool = Query(default=False),
+) -> list[dict[str, Any]]:
+    """11.3: مخرجات الجامعة."""
+    from amos_federation.services.governance.expansion import get_university
+    return get_university().list_outputs(track=track, approved_only=approved_only)
+
+
+@router.post("/university/produce", response_model=dict)
+async def produce_university_output(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """11.3: إنتاج أول مخرج جامعي."""
+    from amos_federation.services.governance.expansion import get_university
+    return get_university().produce_first_output()
+
+
+@router.get("/retirement/list", response_model=list[dict])
+async def list_retired(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> list[dict[str, Any]]:
+    """11.4: الوكلاء المتقاعدون."""
+    from amos_federation.services.governance.expansion import get_retirement
+    return get_retirement().get_retired_agents()
+
+
+@router.post("/retirement/retire", response_model=dict)
+async def retire_agent(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    agent_id: str = Query(...),
+    reason: str = Query(default="health_failure"),
+) -> dict[str, Any]:
+    """11.4: تقاعد وكيل."""
+    from amos_federation.services.governance.expansion import get_retirement
+    return get_retirement().retire_agent(agent_id, reason)
+
+
 # === HTML Interface ===
 
 @router.get("/ui", response_class=HTMLResponse)
