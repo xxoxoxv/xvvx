@@ -11,7 +11,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:  # pragma: no cover
+    from core.sovereignty.decree import RoyalDecree
 
 
 class Branch(str, Enum):
@@ -62,6 +65,7 @@ class ActionRequest:
     review_days: int = 0                     # فترة المراجعة (المادة الخامسة)
     council_approval_pct: float = 0.0        # نسبة موافقة مجلس السياسات
     has_identity_header: bool = True         # المادة التاسعة
+    royal_decree: "RoyalDecree | None" = None  # مرسوم ملكي موقَّع (المادة العاشرة)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def approved_by(self, branch: Branch) -> bool:

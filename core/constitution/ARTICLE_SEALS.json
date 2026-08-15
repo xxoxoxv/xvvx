@@ -48,6 +48,11 @@
       "file": "009-file-identity-law.md",
       "title": "المادة التاسعة — قانون هوية الملفات",
       "sha256": "9daeef2acbff6693be711552a15e294dfe1dcc24489cc603710b81d7265eaa89"
+    },
+    "A010": {
+      "file": "010-royal-sovereignty.md",
+      "title": "المادة العاشرة — السيادة الملكية",
+      "sha256": "d0423c5ec5adde38bca9efa0e3bfcab48eecac315ba09569ad7049e869c53d1f"
     }
   }
 }

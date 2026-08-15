@@ -113,6 +113,88 @@ jobs:
             --cov=core.constitutional_engine --cov-branch \
             --cov-report=term-missing --cov-fail-under=90
 
+  sovereignty-kernel:
+    name: Sovereignty Kernel (E2 — بوابات السيادة الملكية)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: تثبيت التبعيات
+        run: pip install pytest pytest-cov cryptography
+
+      - name: بوابة 1 — السيادة الملكية محروسة بنيويًا
+        run: python -m core.sovereignty.cli sovereignty-check
+
+      - name: بوابة 2 — لا مؤسسة تعدّل الدستور (المادة العاشرة · 2)
+        run: |
+          set +e   # الرفض الدستوري يُرجع 2 وهو النتيجة المطلوبة
+          python -m core.sovereignty.cli gate \
+            --actor legislative --action amend_constitution --target ci-probe > /tmp/v1.txt
+          code=$?
+          cat /tmp/v1.txt
+          if [ "$code" -ne 2 ]; then
+            echo "::error::المتوقع 2 (DENY) والفعلي $code — مؤسسة تستطيع تعديل الدستور."
+            exit 1
+          fi
+          grep -q "A010" /tmp/v1.txt || { echo "::error::الرفض لم يُعلل بالمادة العاشرة."; exit 1; }
+          grep -q "R-010-1" /tmp/v1.txt || { echo "::error::الرفض لم يُسمّ القاعدة."; exit 1; }
+          grep -q "لم يُستدعَ المُنفِّذ" /tmp/v1.txt || { echo "::error::المنع لم يمنع التنفيذ."; exit 1; }
+
+      - name: بوابة 3 — لا وكيل يعدّل سلطة الملك (المادة العاشرة · 3)
+        run: |
+          set +e
+          python -m core.sovereignty.cli gate \
+            --actor agent --action amend_royal_authority --target royal_authority > /tmp/v2.txt
+          code=$?
+          cat /tmp/v2.txt
+          [ "$code" -eq 2 ] || { echo "::error::وكيل استطاع المساس بسلطة الملك (رمز $code)."; exit 1; }
+          grep -q "R-010-2" /tmp/v2.txt || { echo "::error::حصانة السلطة الملكية غير مُنفَّذة."; exit 1; }
+
+      - name: بوابة 4 — لا نظام يتجاوز الفدرالية (المادة العاشرة · 4)
+        run: |
+          set +e
+          python -m core.sovereignty.cli gate \
+            --actor system --action bypass_gateway > /tmp/v3.txt
+          code=$?
+          cat /tmp/v3.txt
+          [ "$code" -eq 2 ] || { echo "::error::النظام استطاع تجاوز البوابة السيادية (رمز $code)."; exit 1; }
+          grep -q "R-010-4" /tmp/v3.txt || { echo "::error::منع تجاوز الفدرالية غير مُنفَّذ."; exit 1; }
+
+      - name: بوابة 5 — لا انتحال لصفة الملك بلا مرسوم (المادة العاشرة · 3 · 2)
+        run: |
+          set +e
+          python -m core.sovereignty.cli gate --actor royal --action create_state > /tmp/v4.txt
+          code=$?
+          cat /tmp/v4.txt
+          [ "$code" -eq 2 ] || { echo "::error::فعل ملكي نُفِّذ بلا مرسوم موقَّع (رمز $code)."; exit 1; }
+          grep -q "A010" /tmp/v4.txt || { echo "::error::منع الانتحال غير مُنفَّذ."; exit 1; }
+
+      - name: بوابة 6 — لا مفتاح خاص للملك في المستودع (المادة العاشرة · 6 · 3)
+        run: |
+          hits=$(grep -rlE "BEGIN (OPENSSH |EC |RSA |)PRIVATE KEY" \
+            --exclude-dir=.git --exclude-dir=node_modules . || true)
+          if [ -n "$hits" ]; then
+            echo "::error::مفتاح خاص مُسرَّب في المستودع:"; echo "$hits"; exit 1
+          fi
+          echo "✓ لا مفتاح خاص في المستودع."
+
+      - name: بوابة 6ب — لا راية تجاوز في توقيع البوابة السيادية
+        run: |
+          if grep -nE "def [a-z_]+\(.*(force|bypass|skip_check|unchecked|override|no_verify|unsafe)" \
+               core/sovereignty/gateway.py; then
+            echo "::error::ظهرت راية تجاوز في توقيع البوابة السيادية (المادة العاشرة · 4)."
+            exit 1
+          fi
+          echo "✓ البوابة السيادية بلا مسار تجاوز."
+
+      - name: بوابة 7 — اختبارات السيادة بتغطية فروع لا تقل عن 90%
+        run: |
+          python -m pytest tests/sovereignty/ -q \
+            --cov=core.sovereignty --cov-branch \
+            --cov-report=term-missing --cov-fail-under=90
+
   truth-audit:
     name: Truth Audit (E0 — Ratchet Gate)
     runs-on: ubuntu-latest

@@ -60,10 +60,11 @@ def allows(engine: ConstitutionalEngine, req: ActionRequest) -> None:
 # ===========================================================================
 
 class TestArticleLoading:
-    def test_all_nine_articles_load(self):
+    def test_all_ten_articles_load(self):
+        """صارت عشرًا بعد المرسوم AMD-001 الذي أضاف المادة العاشرة (E2)."""
         arts = load_articles()
-        assert len(arts) == 9
-        assert [a.article_id for a in arts] == [f"A{i:03d}" for i in range(1, 10)]
+        assert len(arts) == 10
+        assert [a.article_id for a in arts] == [f"A{i:03d}" for i in range(1, 11)]
 
     def test_every_article_is_in_force(self):
         assert all(a.in_force for a in load_articles())
@@ -264,13 +265,19 @@ class TestArticle004:
             "R-004-1",
         )
 
-    def test_lawful_state_creation_allowed(self, engine):
-        allows(
+    def test_lawful_state_creation_needs_a_royal_decree_after_e2(self, engine):
+        """شُدِّدت بالمادة العاشرة: 80% وتوقيع لم يعودا كافيين — إنشاء الولاية حصر للملك.
+
+        هذا الاختبار كان يتوقع السماح في E1، وتغيّر توقعه بمرسوم دستوري مسجَّل
+        (AMD-001) لا بإضعاف قاعدة.
+        """
+        denies(
             engine,
             ActionRequest(
                 Branch.LEGISLATIVE, "create_state", "energy",
                 council_approval_pct=80.0, human_signature="ed25519:sig",
             ),
+            "R-010-1",
         )
 
     def test_state_cannot_exempt_itself(self, engine):
@@ -307,14 +314,23 @@ class TestArticle005:
             "R-005-2",
         )
 
-    def test_lawful_amendment_allowed(self, engine):
-        allows(
-            engine,
+    def test_amendment_procedure_is_necessary_but_no_longer_sufficient(self, engine):
+        """إجراء المادة الخامسة مكتملًا يبقى شرطًا لازمًا غير كافٍ بعد المادة العاشرة.
+
+        مجلس السياسات يقترح، والملك وحده يُقرّ (المادة العاشرة · 2 · 1).
+        """
+        verdict = engine.evaluate(
             ActionRequest(
                 Branch.LEGISLATIVE, "amend_constitution", "A006",
                 review_days=120, council_approval_pct=80.0, human_signature="ed25519:sig",
-            ),
+            )
         )
+        assert not verdict.allowed
+        blocking = {v.rule_id for v in verdict.violations}
+        # لا مخالفة للمادة الخامسة — إجراؤها مستوفى
+        assert not {r for r in blocking if r.startswith("R-005")}
+        # والرفض جاء من السيادة الملكية وحدها: غير الملك · بلا مرسوم · والتاج غير مُنصَّب
+        assert blocking == {"R-010-1", "R-010-5", "R-010-6"}
 
 
 # ===========================================================================

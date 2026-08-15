@@ -39,7 +39,7 @@ def check_file_header(directory: Path) -> list[str]:
     # (المولَّد آليًا لا يحمل ترويسة يدوية — هويته موثّقة في README مجلده)
     exempt_patterns = [
         ".gitignore", ".gitattributes", ".example", "LICENSE",
-        "truth_matrix.json", "truth_baseline.json",
+        "truth_matrix.json", "truth_baseline.json", "CROWN_KEYS.json",
     ]
 
     # Identity markers that count as a valid header

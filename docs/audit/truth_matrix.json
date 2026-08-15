@@ -4,22 +4,22 @@
   "domains": {
     "core": {
       "domain": "core",
-      "md_files": 54,
-      "py_files": 9,
+      "md_files": 57,
+      "py_files": 15,
       "yaml_files": 0,
-      "code_lines": 965,
+      "code_lines": 1905,
       "nucleus_count": 13,
       "nucleus_status": {
         "unspecified": 13
       },
       "has_readme": false,
-      "real_source_hits": 3,
+      "real_source_hits": 4,
       "fake_hits": 2,
       "in_memory_hits": 0,
       "secret_hits": 0,
-      "observed_hits": 0,
+      "observed_hits": 2,
       "api_routes": 0,
-      "test_refs": 14,
+      "test_refs": 35,
       "identity_violations": 3,
       "deployed": true,
       "columns": {
@@ -30,7 +30,7 @@
         "INTEGRATED": true,
         "TESTED": true,
         "SECURED": true,
-        "OBSERVED": false,
+        "OBSERVED": true,
         "DEPLOYED": true,
         "PROVEN": false
       },
@@ -39,7 +39,7 @@
     },
     "royal": {
       "domain": "royal",
-      "md_files": 47,
+      "md_files": 48,
       "py_files": 2,
       "yaml_files": 1,
       "code_lines": 83,
@@ -54,9 +54,9 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 3,
+      "test_refs": 13,
       "identity_violations": 4,
-      "deployed": false,
+      "deployed": true,
       "columns": {
         "DOCUMENTED": false,
         "IMPLEMENTED": true,
@@ -66,10 +66,10 @@
         "TESTED": true,
         "SECURED": true,
         "OBSERVED": false,
-        "DEPLOYED": false,
+        "DEPLOYED": true,
         "PROVEN": false
       },
-      "maturity": "INTEGRATED",
+      "maturity": "DEPLOYED",
       "findings_count": 0
     },
     "federal": {
@@ -389,10 +389,10 @@
     },
     "tests": {
       "domain": "tests",
-      "md_files": 6,
-      "py_files": 5,
+      "md_files": 7,
+      "py_files": 7,
       "yaml_files": 0,
-      "code_lines": 622,
+      "code_lines": 1522,
       "nucleus_count": 5,
       "nucleus_status": {
         "unspecified": 5
@@ -404,7 +404,7 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 40,
+      "test_refs": 42,
       "identity_violations": 2,
       "deployed": true,
       "columns": {

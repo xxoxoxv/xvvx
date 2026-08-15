@@ -1,5 +1,14 @@
 # AMOS-Federation — العاصمة الفدرالية الرقمية
 
+> **نظام الحكم:** هذه الدولة **ملكية دستورية فدرالية**. الفدرالية تسري على كل فعل
+> وكل حركة، وللملك **السيادة المطلقة**؛ وهو الجهة الوحيدة المخوَّلة بتعديل الدستور
+> أو النظام. لا مؤسسة ولا فرع ولا وكيل ولا النظام نفسه يملك ذلك، ولا يملك تعديل
+> سلطة الملك أو تجاوزها — وهذا محروس تنفيذيًا في
+> [`core/sovereignty/`](core/sovereignty/README.md) بموجب
+> [المادة العاشرة](core/constitution/articles/010-royal-sovereignty.md)
+> ([المرسوم AMD-001](core/constitution/amendments/AMD-001-royal-sovereignty.md)).
+
+
 > **ابدأ من [ARCHITECTURE.md](ARCHITECTURE.md) — دستور البنية ودليل الوكيل الجديد.**
 >
 > **ثم اقرأ [docs/governance/WORKING_PRINCIPLE.md](docs/governance/WORKING_PRINCIPLE.md) — مبدأ العمل الملزم.**

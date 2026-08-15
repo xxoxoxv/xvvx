@@ -26,3 +26,10 @@
 المادة الخامسة كاملًا (90 يومًا مراجعة · 75% موافقة · توقيع بشري Ed25519)
 ويُسجَّل في [`amendments/`](amendments/)، ثم يُعاد الختم بـ
 `python -m core.constitutional_engine.cli seal`.
+
+## المادة العاشرة والمرسوم AMD-001
+
+أُضيفت [المادة العاشرة — السيادة الملكية](articles/010-royal-sovereignty.md) بموجب
+[المرسوم AMD-001](amendments/AMD-001-royal-sovereignty.md)، فصار عدد المواد **10**
+وأُعيد ختمها كلها. تُنفَّذ بسبع قواعد `R-010-1..7` وتُحرَس في
+[`core/sovereignty/`](../sovereignty/README.md).
