@@ -1,7 +1,7 @@
 # حالة تنفيذ AMOS-Federation
 
 ## التعريف
-سجل الحالة الهندسي لخطة التسعين يومًا بعد إنجاز المراحل 0-3.
+سجل الحالة الهندسي لخطة التسعين يومًا بعد إنجاز المراحل 0-4.
 
 ## النطاق
 يوثق المنجز وما بقي في خريطة الخدمات، API، الحاويات، والاختبارات.
@@ -53,9 +53,19 @@ Federal Council
   - Gap Analyzer: يكتشف المجالات ذات معدل الفشل > 30%.
 - 94 اختبار: 74 من المراحل 0-2 + 20 جديد (critic, benchmark).
 
+### المرحلة 4: Alpha/Beta Shadow (أسابيع 17-22)
+- Model Gateway محدّث: دعم نموذجين (alpha + beta) + تتبع التكلفة.
+  - `POST /v1/models/invoke` يسجل التكلفة لكل استدعاء.
+  - `GET /v1/cost/summary` ملخص التكاليف مصنّف حسب النموذج.
+- Shadow Testing Framework: تشغيل ألفا وبيتا بالتوازي مع مقارنة.
+  - `POST /v1/shadow/test` يوجّه الطلب لكلا النموذجين ويسجّل المقارنة.
+  - `GET /v1/shadow/results` + `GET /v1/shadow/results/{id}` لعرض النتائج.
+  - `GET /v1/shadow/stats` ملخص إحصائي (تشابه متوسط، فرق زمن الاستجابة).
+  - مقارنة حتمية: تشابه نصي (Jaccard)، فرق latency، فرق tokens، فرق تكلفة.
+- 104 اختبار: 94 من المراحل 0-3 + 10 جديد (shadow, cost tracking).
+
 ## المؤجل
 - الأسبوعان 11-13: Redis/Qdrant الفعليان، عزل المستأجرين على مستوى قاعدة البيانات، hardening، restore drills، واختبارات الحمل.
-- المرحلة 4: Alpha/Beta Shadow — نموذجين بالتوازي + Shadow Testing.
 - المرحلة 5: LoRA Factory — تدريب + Model Registry.
 - المرحلة 6: Governance + Canary — Policy Engine + Kill Switch.
 - واجهة control-console ليست خدمة Python ضمن هذا التنفيذ، وتبقى ضمن واجهة الويب المخطط لها.
