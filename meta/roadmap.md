@@ -1,11 +1,13 @@
 # خارطة الطريق
 
 ## المرحلة 0: التأسيس (2026 Q3)
-- بناء البنية الأساسية
-- Docker Compose + CI/CD
-- قاعدة البيانات + Event Bus
+- ✓ بناء البنية الأساسية
+- ✓ Docker Compose + CI/CD
+- ✓ قاعدة البيانات + Event Bus
 
 ## المرحلة 1: MVP (2026 Q4)
+- ✓ الأسبوعان 3-4: هياكل الخدمات + OpenTelemetry + Health checks
+- ✓ الأسبوعان 5-6: JWT + API المهام + Orchestrator planner
 - 3 وكلاء + 10 أدوات
 - مهمة كاملة من الطلب للتسليم
 - ذاكرة + Experience Replay

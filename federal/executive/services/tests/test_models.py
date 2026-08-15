@@ -5,6 +5,7 @@
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
 """
+
 import uuid
 
 from amos_federation.common.database import generate_uuid

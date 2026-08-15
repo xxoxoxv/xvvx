@@ -1,0 +1,12 @@
+# AMOS-Federation Docker Ignore
+# الهدف: استبعاد الملفات غير اللازمة من سياق البناء
+# النطاق: federal/executive/services
+# المالك: federal/executive/services
+# تاريخ الإنشاء: 2026-08-15
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+.git
+*.pyc
+tests
