@@ -42,3 +42,5 @@ Thumbs.db
 *.db
 *.sqlite
 *.egg-info/
+federal/executive/services/src/amos_federation.egg-info/
+federal/executive/services/*.egg-info/
