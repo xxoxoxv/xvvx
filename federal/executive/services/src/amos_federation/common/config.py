@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     # OpenTelemetry
     otlp_endpoint: str = "http://localhost:4317"
     service_name: str = "amos-federation"
+    service_port: int = 8000
 
     # بوابة النماذج
     claude_api_key: str = ""
