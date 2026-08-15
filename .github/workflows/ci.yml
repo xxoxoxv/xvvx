@@ -40,8 +40,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e ".[dev]"
+      - run: pip install -r requirements.lock
+      - run: pip install -e . --no-deps
       - run: pytest tests/ -v --tb=short
+
+  lockfile-check:
+    name: Lockfile Consistency
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: federal/executive/services
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: |
+          # Verify critical packages are in lock file
+          for pkg in fastapi uvicorn sqlalchemy anthropic structlog pydantic; do
+            grep -qi "^${pkg}==" requirements.lock || (echo "MISSING: $pkg in requirements.lock" && exit 1)
+          done
 
   identity-check:
     name: Repository Identity (Article 009)
