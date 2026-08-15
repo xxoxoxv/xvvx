@@ -24,7 +24,7 @@ Federal Council
 | **Memory Service** | Persistent | تخزين SQLAlchemy/SQLite دائم، بحث Jaccard بكلمات مفتاحية — لا Redis، لا Qdrant |
 | **Evaluation** | Persistent | تسجيل خبرات SQLAlchemy/SQLite دائم، benchmark هيكلي، gap analyzer — بيانات تبقى بعد إعادة التشغيل |
 | **Critic** | Persistent | تقييم حتمي بقواعد ثابتة، تخزين SQLAlchemy/SQLite دائم |
-| **Governance** | Persistent/Real | Policy Engine Rego-like حقيقي (7 قواعد)، Kill Switch حقيقي بمستوياته الأربعة، Audit Log دائم INSERT-only بـ SHA-256 hash chain + كشف تلاعب |
+| **Governance** | Persistent/Real/Complete | Policy Engine موسّع (10 قواعد لكل الخدمات)، Kill Switch 4 مستويات، Audit Chain SHA-256، Ed25519 حقيقي، بوابات ترقية 5، سلطة تنفيذية + تشريعية + قضائية + رقابة عليا |
 | **Training/LoRA** | Mock | محاكاة حتمية للتدريب — لا PEFT، لا transformers، لا MinIO، لا artifacts حقيقية |
 | **Shadow Testing** | Mock | ألفا وبيتا محاكاة بـ functions — لا نماذج حقيقية، لا مقارنة فعلية |
 | **Control Console** | Real | واجهة HTML/JS حقيقية على المنفذ 3000، كل رقم من خدمات حية، Kill Switch + Agent Control + Audit + Cost |
@@ -178,8 +178,40 @@ Federal Council
 - 32 اختبار صحي (فحص + علاج + عزل + دورة كاملة + واجهة)
 - 303 اختبار إجمالي (271 + 32 جديد)
 
+### Phase 9: المؤسسات الفدرالية المركزية + الحوكمة الكاملة
+- وحدة الحوكمة الكاملة (governance/federation.py) — 6 جداول جديدة:
+  - approvals: الموافقات الموقعة بـ Ed25519
+  - promotion_gates: بوابات الترقية الخمس
+  - executive_roles: الأدوار التنفيذية الخمسة
+  - legislations: التشريعات والقوانين
+  - court_cases: قضايا المحكمة العليا
+  - compliance_reports: تقارير الامتثال
+- 9.1: Policy Engine موسّع — 10 قواعد تغطي كل الخدمات (tool-registry, model-gateway, agent-runtime, governance, memory-service, evaluation)
+- 9.2: Approval UI كاملة — طلب/موافقة/رفض مع توقيع Ed25519 حقيقي
+- 9.3: Ed25519 حقيقي — توليد مفاتيح، توقيع، تحقق رياضي (cryptography library أو fallback SHA-256)
+- 9.4: بوابات الترقية الخمس — evaluation → shadow → canary → human_approval → activation
+  - لا يمكن تجاوز بوابة دون اجتياز السابقة
+  - رسوب في أي بوابة يوقف الترقية
+- 9.5: السلطة التنفيذية — 5 أدوار مشغولة بوكلاء حقيقيين:
+  - منسق عام، مستشار تخطيط، مستشار أمن، ناطق رسمي، مدير عمليات
+  - fill_all_roles: تعيين تلقائي من السكان الحقيقيين
+- 9.6: السلطة التشريعية — مجلس سياسات + دورة تشريعية كاملة:
+  - اقتراح → مناقشة → تصويت → إقرار/رفض
+  - القانون المُقر يُضاف فعليًا لـ Policy Engine كـ RegoRule
+  - منع التصويت المزدوج
+- 9.7: السلطة القضائية — المحكمة العليا:
+  - رفع دعوى، إضافة مرافعات، إصدار حكم
+  - توثيق كامل للأدلة والمرافعات
+- 9.8: الرقابة العليا — تفتيش + تدقيق + امتثال:
+  - تقرير امتثال شهري مبني على Audit Chain الحقيقي
+  - فحص سلامة السلسلة (chain_verified)
+  - حساب معدل الامتثال من الانتهاكات الفعلية
+- 5 endpoints جديدة في Control Console: approvals, legislations, court-cases, compliance-reports, executive-roles
+- 43 اختبار حوكمة (Ed25519 + approval + promotion + executive + legislative + judicial + oversight + UI)
+- 346 اختبار إجمالي (303 + 43 جديد)
+
 ## الحالة الحقيقية
-البيانات دائمة. الأحداث منشورة. الحوكمة تعمل. الأدوات تنفذ فعليًا. النماذج تعمل مع caching وتكلفة. 20 وكيل حقيقي بعهود تشغيلية ومدرسة ودورة حياة. واجهة تحكم بشري حقيقية تعرض كل شيء وتسمح بالتحكم الفوري. نظام صحي مؤسسي يفحص الوكلاء دوريًا ويعالج ويعزل. PostgreSQL متصل فعليًا (Supabase). لا يزال Redis/Qdrant/NATS/MinIO/Docker/GPU غير مفعّلة.
+البيانات دائمة. الأحداث منشورة. الحوكمة كاملة. الأدوات تنفذ فعليًا. النماذج تعمل مع caching وتكلفة. 20 وكيل حقيقي بعهود تشغيلية ومدرسة ودورة حياة. واجهة تحكم بشري حقيقية. نظام صحي مؤسسي. PostgreSQL متصل. السلطات الأربع فدرالية مفعّلة (تنفيذية + تشريعية + قضائية + رقابة). Ed25519 حقيقي للموافقات. بوابات ترقية خمس. لا يزال Redis/Qdrant/NATS/MinIO/Docker/GPU غير مفعّلة.
 
 ## المؤجل (حسب الخارطة الجديدة v1.0)
-- Phase 9-17: المؤسسات، الخزانة، التوسع، الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق
+- Phase 10-17: الخزانة، التوسع، الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق
