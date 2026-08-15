@@ -18,7 +18,7 @@
 | L2 — اختبارات وحدة | اختبارات دوال الوكلاء/الأدوات | TODO |
 | L3 — اختبارات تكامل | اختبار الحلقة الكاملة (P5) | مواصفة ✓، تنفيذ TODO |
 | L4 — CI تلقائي | تشغيل تلقائي على كل push | ✓ وظيفة smoke في `.github/workflows/ci.yml` (P9) |
-| L5 — تغطية ≥ 80% | تقارير تغطية | TODO |
+| L5 — تغطية ≥ 80% | تقارير تغطية | ✓ 87.8% خط + بوابة fail_under=80 (P9) |
 
 ## 3. خط أنابيب CI المقترح
 ```mermaid
@@ -36,10 +36,34 @@ graph LR
 1. **P9** — إضافة اختبارات وحدة (L2) لكل stub.
 2. **P9** — تنفيذ اختبار تكامل الحلقة (L3) وفق `runtime/scenarios/single_task_execution.md`.
 3. **P9 ✓** — وظيفة CI لتشغيل اختبارات الدخان تلقائيًا (L4).
-4. **مستقبلي** — تحسين التغطية إلى 80%+ (L5) كشرط للاستخراج.
+4. **P9 ✓** — رفع التغطية إلى ≥80% مع بوابة `fail_under=80` في `pyproject.toml` (L5).
+5. **مستقبلي** — رفع تغطية الأفرع (branch) فوق 80%.
 
 ## 6. اختبار القبول
 ```bash
 test -f docs/maturity/ci_maturity.md && grep -q "L5" docs/maturity/ci_maturity.md \
   && echo "ci_maturity: OK" || echo "ci_maturity: FAIL"
+```
+
+## 7. بوابة التغطية (L5)
+أُضيف إعداد `[tool.coverage]` إلى `federal/executive/services/pyproject.toml`:
+
+- `source = ["amos_federation"]` — قياس تغطية الحزمة فقط.
+- `branch = true` — تفعيل تغطية الأفرع.
+- `fail_under = 80` — فشل CI إن هبطت التغطية عن 80%.
+- `omit` — استبعاد نقاط الدخول `*/services/*/main.py` و `__main__.py`.
+
+### النتائج الحالية (P9)
+| المؤشر | القيمة |
+|---|---|
+| اختبارات ناجحة | 591 passed / 8 skipped |
+| تغطية الأسطر | 87.8% |
+| بوابة fail_under=80 | PASS |
+| وظيفة CI | `coverage` في `.github/workflows/ci.yml` |
+
+### تشغيل التغطية محليًا
+```bash
+cd federal/executive/services
+pip install -e ".[dev]"
+pytest tests/ --cov --cov-report=term-missing
 ```

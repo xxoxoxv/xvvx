@@ -43,7 +43,7 @@ def check():
         dict: domain, nucleus_files, schemas, registries, status.
     """
     nucleus_files = _count_nucleus_files()
-    status = "pass" if nucleus_files >= 103 and SCHEMAS == 13 and REGISTRIES == 12 else "fail"
+    status = "pass" if nucleus_files >= 105 and SCHEMAS == 13 and REGISTRIES == 12 else "fail"
     return {
         "domain": "docs",
         "nucleus_files": nucleus_files,
