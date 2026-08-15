@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/agent.schema.json",
+  "title": "AMOS-Federation Agent",
+  "description": "Agent identity schema. Based on the `agents` Supabase table, incorporating population/training fields from the `agent_population` table.",
+  "type": "object",
+  "required": ["id", "name", "role"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Primary key. Unique agent identifier (varchar)."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable agent name."
+    },
+    "role": {
+      "type": "string",
+      "description": "Agent role (e.g. worker, supervisor, orchestrator, critic)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "idle", "training", "isolated", "retired", "draft"],
+      "description": "Current lifecycle status of the agent."
+    },
+    "permissions": {
+      "type": "array",
+      "description": "Permissions granted to the agent.",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "allowed_tools": {
+      "type": "array",
+      "description": "Tool ids the agent is permitted to invoke.",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "token_budget": {
+      "type": "integer",
+      "description": "Maximum token budget allocated to the agent.",
+      "minimum": 0
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Tenant isolation key."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Agent creation timestamp."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp."
+    },
+    "population": {
+      "type": "object",
+      "description": "Population/training metadata sourced from the `agent_population` table.",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "Foreign reference to the agent id in the population registry."
+        },
+        "category": {
+          "type": "string",
+          "description": "Population category (e.g. worker, supervisor, red-team)."
+        },
+        "state": {
+          "type": "string",
+          "description": "Population state (e.g. enrolled, schooling, graduated, retired)."
+        },
+        "tokens_used": {
+          "type": "integer",
+          "description": "Cumulative tokens consumed by the agent.",
+          "minimum": 0
+        },
+        "school_score": {
+          "type": "string",
+          "description": "Score achieved during the training school (stored as varchar)."
+        },
+        "specialization": {
+          "type": "string",
+          "description": "Domain specialization of the agent."
+        },
+        "graduated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the agent graduated from the school."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "agents",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}

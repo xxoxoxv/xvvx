@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/memory.schema.json",
+  "title": "AMOS-Federation Memory and Experience",
+  "description": "Memory and experience schema for the core domain. Combines the `memories` and `experiences` Supabase tables. Memories are key-value knowledge; experiences are recorded outcomes of task execution.",
+  "type": "object",
+  "required": ["key"],
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Primary key. Unique memory key (varchar)."
+    },
+    "value": {
+      "type": "string",
+      "description": "Memory value (text)."
+    },
+    "keywords": {
+      "type": "array",
+      "description": "Keywords for Jaccard similarity search over memories.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Tenant isolation key."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Memory creation timestamp."
+    },
+    "experience": {
+      "type": "object",
+      "description": "Experience record from the `experiences` table.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Primary key. Unique experience identifier (varchar)."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["success", "failure", "gap", "repair"],
+          "description": "Outcome type of the experience."
+        },
+        "task_id": {
+          "type": "string",
+          "description": "Task that produced this experience."
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Agent that produced this experience."
+        },
+        "model_used": {
+          "type": "string",
+          "description": "Model used to produce the experience."
+        },
+        "outcome": {
+          "type": "object",
+          "description": "Structured outcome of the experience.",
+          "additionalProperties": true
+        },
+        "quality_score": {
+          "type": "number",
+          "description": "Quality score of the experience.",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "provenance": {
+          "type": "object",
+          "description": "Provenance of the experience (source, method, verified).",
+          "additionalProperties": true
+        },
+        "tenant_id": {
+          "type": "string",
+          "description": "Tenant isolation key."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Experience creation timestamp."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "core",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}

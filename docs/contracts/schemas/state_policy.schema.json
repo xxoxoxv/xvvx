@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/state_policy.schema.json",
+  "title": "AMOS-Federation State Policy",
+  "description": "State policy schema for the states domain. Combines the `legislations` and `compliance_reports` Supabase tables. Legislations are bills proposed, voted on, and enacted into rules; compliance reports audit adherence.",
+  "type": "object",
+  "required": ["id", "title", "body"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Primary key. Unique legislation identifier (varchar)."
+    },
+    "title": {
+      "type": "string",
+      "description": "Title of the legislation."
+    },
+    "body": {
+      "type": "string",
+      "description": "Full text body of the legislation."
+    },
+    "proposer": {
+      "type": "string",
+      "description": "Who proposed the legislation (agent id or institution id)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["proposed", "in_review", "voting", "enacted", "rejected", "repealed"],
+      "description": "Legislative status."
+    },
+    "votes_for": {
+      "type": "integer",
+      "description": "Number of votes in favor.",
+      "minimum": 0
+    },
+    "votes_against": {
+      "type": "integer",
+      "description": "Number of votes against.",
+      "minimum": 0
+    },
+    "votes_abstain": {
+      "type": "integer",
+      "description": "Number of abstentions.",
+      "minimum": 0
+    },
+    "voters": {
+      "type": "array",
+      "description": "List of voters and their vote choices.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "voter_id": {
+            "type": "string"
+          },
+          "vote": {
+            "type": "string",
+            "enum": ["for", "against", "abstain"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "enacted_rule_name": {
+      "type": "string",
+      "description": "Name of the rule enacted once the legislation passes."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Legislation creation timestamp."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp."
+    },
+    "compliance_report": {
+      "type": "object",
+      "description": "Compliance report from the `compliance_reports` table.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Report primary key."
+        },
+        "period": {
+          "type": "string",
+          "description": "Reporting period."
+        },
+        "report_type": {
+          "type": "string",
+          "enum": ["daily", "weekly", "monthly", "quarterly", "annual"],
+          "description": "Type of compliance report."
+        },
+        "total_audits": {
+          "type": "integer",
+          "description": "Total number of audits performed.",
+          "minimum": 0
+        },
+        "violations": {
+          "type": "integer",
+          "description": "Number of violations found.",
+          "minimum": 0
+        },
+        "compliance_rate": {
+          "type": "number",
+          "description": "Compliance rate (0-1).",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "findings": {
+          "type": "object",
+          "description": "Structured audit findings.",
+          "additionalProperties": true
+        },
+        "recommendations": {
+          "type": "object",
+          "description": "Structured recommendations from the audit.",
+          "additionalProperties": true
+        },
+        "chain_verified": {
+          "type": "boolean",
+          "description": "Whether the audit chain was verified for this report.",
+          "default": false
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Report creation timestamp."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "states",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}
