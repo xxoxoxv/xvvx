@@ -1,6 +1,6 @@
 """
 AMOS-Federation Memory Service
-الهدف: تخزين واسترجاع الذاكرة التشغيلية والمعرفية
+الهدف: تخزين واسترجاع الذاكرة التشغيلية والمعرفية — دائم بـ SQLAlchemy
 النطاق: خدمة memory-service على المنفذ 8005
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
@@ -12,13 +12,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from amos_federation.common.auth import require_auth
+from amos_federation.common.persistent import PersistentMemoryStore
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.schemas import MemoryQuery, MemoryStore as MemoryStoreModel
 from amos_federation.common.service import create_service_app
-from amos_federation.services.memory_service.store import InMemoryVectorStore
 
 router = APIRouter(prefix="/v1", tags=["memory-service"])
-memory_store = InMemoryVectorStore()
+memory_store = PersistentMemoryStore()
 
 
 @router.post("/memory/store", response_model=dict)
@@ -36,7 +36,7 @@ async def query_memory(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> list[dict[str, Any]]:
     """البحث في الذاكرة بنص استعلام."""
-    results = memory_store.query(query.query, query.tenant_id, query.limit)
+    results = memory_store.query(query.query, limit=query.limit, tenant_id=query.tenant_id)
     if not results:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -51,7 +51,7 @@ async def search_memory(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> list[dict[str, Any]]:
     """بحث في الذاكرة — اسم بديل لـ /memory/query."""
-    results = memory_store.query(query.query, query.tenant_id, query.limit)
+    results = memory_store.query(query.query, limit=query.limit, tenant_id=query.tenant_id)
     return results  # قد تكون قائمة فارغة
 
 
@@ -72,11 +72,12 @@ async def memory_stats(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
     """إحصائيات الذاكرة."""
+    stats = memory_store.stats()
     return {
-        "total_items": memory_store.count(),
-        "store_type": "in_memory_keyword",
+        "total_items": stats.get("total_entries", 0),
+        "store_type": "persistent_sqlalchemy",
     }
 
 
 _service = SERVICES["memory-service"]
-app = create_service_app(_service["name"], _service["port"], "ذاكرة تشغيلية ومعرفية", [router])
+app = create_service_app(_service["name"], _service["port"], "ذاكرة تشغيلية ومعرفية دائمة", [router])

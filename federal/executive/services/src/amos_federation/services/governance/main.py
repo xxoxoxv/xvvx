@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from amos_federation.common.auth import require_auth
+from amos_federation.common.persistent import PersistentAuditStore
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
 from amos_federation.services.governance.canary import (
@@ -36,27 +37,14 @@ from amos_federation.services.governance.policy import POLICIES, check_policy
 
 router = APIRouter(prefix="/v1", tags=["governance"])
 
-# === Audit Log (hash chain) ===
+# === Audit Log (hash chain) — دائم بـ SQLAlchemy ===
 
-_audit_log: list[dict[str, Any]] = []
+_audit_store = PersistentAuditStore()
 
 
 def _append_audit(action: str, actor: str, details: dict[str, Any]) -> dict[str, Any]:
-    """إضافة سجل audit مع hash chain."""
-    prev_hash = _audit_log[-1]["hash"] if _audit_log else "0" * 64
-    entry_data = f"{prev_hash}:{action}:{actor}:{details}"
-    current_hash = hashlib.sha256(entry_data.encode()).hexdigest()
-    entry = {
-        "audit_id": f"audit-{uuid.uuid4()}",
-        "timestamp": datetime.now(UTC).isoformat(),
-        "action": action,
-        "actor": actor,
-        "details": details,
-        "prev_hash": prev_hash,
-        "hash": current_hash,
-    }
-    _audit_log.append(entry)
-    return entry
+    """إضافة سجل audit مع hash chain دائم."""
+    return _audit_store.append(action, actor, details)
 
 
 # === Request Models ===
@@ -291,7 +279,7 @@ async def list_audit_log(
     limit: int = Query(default=50, ge=1, le=500),
 ) -> list[dict[str, Any]]:
     """عرض سجل التدقيق."""
-    return _audit_log[-limit:]
+    return _audit_store.list_all(limit=limit)
 
 
 @router.get("/audit/verify", response_model=dict)
@@ -299,14 +287,7 @@ async def verify_audit_chain(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
     """التحقق من سلامة سلسلة Audit Log."""
-    if not _audit_log:
-        return {"valid": True, "entries": 0, "message": "السجل فارغ"}
-    prev_hash = "0" * 64
-    for entry in _audit_log:
-        if entry["prev_hash"] != prev_hash:
-            return {"valid": False, "entries": len(_audit_log), "message": "السلسلة مكسورة"}
-        prev_hash = entry["hash"]
-    return {"valid": True, "entries": len(_audit_log), "message": "السلسلة سليمة"}
+    return _audit_store.verify_chain()
 
 
 _service = SERVICES["governance"]
