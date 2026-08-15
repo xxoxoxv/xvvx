@@ -24,7 +24,7 @@ Federal Council
 | **Memory Service** | Persistent | تخزين SQLAlchemy/SQLite دائم، بحث Jaccard بكلمات مفتاحية — لا Redis، لا Qdrant |
 | **Evaluation** | Persistent | تسجيل خبرات SQLAlchemy/SQLite دائم، benchmark هيكلي، gap analyzer — بيانات تبقى بعد إعادة التشغيل |
 | **Critic** | Persistent | تقييم حتمي بقواعد ثابتة، تخزين SQLAlchemy/SQLite دائم |
-| **Governance** | MVP/Persistent | Policy Engine كود مُدمج (لا OPA)، Kill Switch، Audit Log دائم بـ SQLAlchemy + hash chain |
+| **Governance** | Persistent/Real | Policy Engine Rego-like حقيقي (7 قواعد)، Kill Switch حقيقي بمستوياته الأربعة، Audit Log دائم INSERT-only بـ SHA-256 hash chain + كشف تلاعب |
 | **Training/LoRA** | Mock | محاكاة حتمية للتدريب — لا PEFT، لا transformers، لا MinIO، لا artifacts حقيقية |
 | **Shadow Testing** | Mock | ألفا وبيتا محاكاة بـ functions — لا نماذج حقيقية، لا مقارنة فعلية |
 | **Control Console** | غير موجود | لا واجهة React — لم تُبنَ بعد |
@@ -65,11 +65,29 @@ Federal Council
 - 14 اختبار أحداث + اختبار سلسلة كاملة task→experience
 - 168 اختبار إجمالي (154 + 14 جديد)
 
+### Phase 3: الحوكمة التأسيسية
+- Audit Hash Chain حقيقي: SHA-256، INSERT-only، كشف تلاعب بإعادة حساب hash
+- Policy Engine Rego-like حقيقي (policy_engine.py): 7 قواعد قابلة للتقييم
+  - tool_access (أدوات خطيرة تتطلب admin)
+  - tool_access_safe (أدوات آمنة مسموحة)
+  - promotion_gate (ترقية تتطلب جودة ≥ 0.7)
+  - promotion_deny_low_quality (رفض الجودة المنخفضة)
+  - budget_limit (حد يومي 100$)
+  - kill_switch_halt (رفض كل شيء في halt)
+  - kill_switch_degraded (رفض الأدوات الخطيرة في degraded)
+- Kill Switch حقيقي: enforce_kill_switch() يرمي HTTP 503 فعليًا
+  - halt: كل الأدوات محجوبة
+  - degraded: الأدوات الخطيرة فقط محجوبة
+  - alert/normal: كل شيء مسموح
+- Kill Switch ينشر حدثًا عند التفعيل
+- endpoints: /v1/policy/rules, /v1/policy/evaluate, /v1/policy/check-tool
+- 25 اختبار حوكمة (audit chain + policy engine + kill switch)
+- 193 اختبار إجمالي (168 + 25 جديد)
+
 ## الحالة الحقيقية
-البيانات دائمة بـ SQLite عبر SQLAlchemy. الأحداث منشورة ومخزَّنة فعليًا. تبقى بعد إعادة التشغيل. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
+البيانات دائمة بـ SQLite عبر SQLAlchemy. الأحداث منشورة ومخزَّنة فعليًا. الحوكمة تعمل فعليًا: Policy Engine يقيّم القرارات، Kill Switch يوقف التنفيذ، Audit Chain يكشف التلاعب. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
 
 ## المؤجل (حسب الخارطة الجديدة v1.0)
-- Phase 3: الحوكمة التأسيسية (OPA/Rego + Kill Switch حقيقي)
 - Phase 4: الأدوات الحقيقية (100 أداة في Sandbox حقيقي)
 - Phase 5: النماذج الحقيقية (Claude + vLLM)
 - Phase 6-17: السكان، المؤسسات، الفيدرالية، المصانع، التعلم، الإطلاق

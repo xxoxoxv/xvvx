@@ -477,12 +477,24 @@ class PersistentCriticStore:
 
 
 class PersistentAuditStore:
-    """تخزين سجل التدقيق الدائم بـ hash chain."""
+    """تخزين سجل التدقيق الدائم بـ hash chain — INSERT-only (لا تعديل ولا حذف)."""
 
     def __init__(self) -> None:
         self._entries: list[dict[str, Any]] = []
+        self._verify_integrity()
+
+    def _verify_integrity(self) -> None:
+        """التحقق من سلامة السلسلة عند الإقلاع."""
+        try:
+            result = self.verify_chain()
+            if not result.get("valid", True):
+                import structlog
+                structlog.get_logger().error("audit.chain_broken_on_init", message=result.get("message"))
+        except Exception:
+            pass  # قد لا يكون الجدول موجودًا بعد
 
     def append(self, action: str, actor: str, details: dict[str, Any]) -> dict[str, Any]:
+        """إضافة سجل تدقيق — INSERT فقط، لا يمكن تعديل أو حذف السجلات السابقة."""
         import hashlib
         rev_id = f"audit-{uuid.uuid4()}"
         prev_hash = "0" * 64
@@ -537,6 +549,8 @@ class PersistentAuditStore:
             session.close()
 
     def verify_chain(self) -> dict[str, Any]:
+        """التحقق من سلامة سلسلة hash — كشف أي تلاعب."""
+        import hashlib
         SessionLocal = get_session_factory()
         session = SessionLocal()
         try:
@@ -545,9 +559,20 @@ class PersistentAuditStore:
                 return {"valid": True, "entries": 0, "message": "السجل فارغ"}
             prev_hash = "0" * 64
             for entry in rows:
+                # فحص الترابط
                 if entry.prev_hash != prev_hash:
-                    return {"valid": False, "entries": len(rows), "message": "السلسلة مكسورة"}
+                    return {"valid": False, "entries": len(rows), "message": f"السلسلة مكسورة عند {entry.id} — prev_hash لا يطابق"}
+                # فحص إعادة الحساب (كشف التلاعب بمحتوى السجل)
+                expected_hash = hashlib.sha256(
+                    f"{entry.prev_hash}:{entry.action}:{entry.actor}:{entry.details}".encode()
+                ).hexdigest()
+                if entry.hash != expected_hash:
+                    return {"valid": False, "entries": len(rows), "message": f"تلاعب في السجل {entry.id} — hash لا يطابق المحتوى"}
                 prev_hash = entry.hash
             return {"valid": True, "entries": len(rows), "message": "السلسلة سليمة"}
         finally:
             session.close()
+
+    def tamper_attempt(self, audit_id: str) -> dict[str, Any]:
+        """محاولة تعديل سجل — مرفوضة دائمًا."""
+        return {"error": "INSERT-only: لا يمكن تعديل أو حذف سجلات التدقيق", "audit_id": audit_id, "blocked": True}

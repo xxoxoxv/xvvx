@@ -30,6 +30,15 @@ def activate_kill_switch(level: str, reason: str, activated_by: str) -> dict[str
     _system_state["reason"] = reason
     _system_state["activated_at"] = datetime.now(UTC).isoformat()
     _system_state["activated_by"] = activated_by
+    # نشر حدث
+    from amos_federation.common.event_bus import get_event_bus
+    get_event_bus().publish("amos_federation.policy.checked", {
+        "policy_name": "kill_switch",
+        "allowed": level == "normal",
+        "violations": [reason] if level != "normal" else [],
+        "level": level,
+        "activated_by": activated_by,
+    })
     return _system_state.copy()
 
 
@@ -45,6 +54,43 @@ def reset_kill_switch() -> dict[str, Any]:
 def is_system_halted() -> bool:
     """هل النظام متوقف؟"""
     return _system_state["level"] == "halt"
+
+
+def is_execution_blocked(tool: str | None = None) -> bool:
+    """هل التنفيذ محجوب؟ في halt كل شيء محجوب. في degraded الأدوات الخطيرة محجوبة."""
+    level = _system_state["level"]
+    if level == "halt":
+        return True
+    if level == "degraded" and tool in ["python_execute", "sql_query", "http_request"]:
+        return True
+    return False
+
+
+def enforce_kill_switch(tool: str, role: str = "user") -> dict[str, Any]:
+    """تطبيق Kill Switch على تنفيذ أداة. يرمي HTTPException إذا محجوب."""
+    from fastapi import HTTPException
+    level = _system_state["level"]
+    if level == "halt":
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "system_halted",
+                "message": "النظام متوقف — Kill Switch مفعّل بمستوى halt",
+                "level": level,
+                "reason": _system_state["reason"],
+            },
+        )
+    if level == "degraded" and tool in ["python_execute", "sql_query", "http_request"]:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "system_degraded",
+                "message": f"النظام في وضع متدهور — الأداة '{tool}' محجوبة",
+                "level": level,
+                "reason": _system_state["reason"],
+            },
+        )
+    return {"allowed": True, "level": level}
 
 
 # === Promotion Gates ===
