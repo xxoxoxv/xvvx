@@ -30,7 +30,7 @@
 | النوى المنشأة | 96 | 96 | DONE |
 | جداول قاعدة البيانات | 23 | 23 | DONE |
 | اختبارات الدخان | 0 | 12 | TODO |
-| السجلات (Registries) | 0 | 6 | TODO |
+| السجلات (Registries) | 1 | 12 | DOING |
 
 ---
 
@@ -38,7 +38,7 @@
 
 | المجال | P0 | P1 | P2 | P3 | P4 | P5 | P6 | P7 | P8 | P9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| core | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| core | DONE | DONE | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
 | royal | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
 | federal | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
 | states | DONE | NEXT | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
@@ -74,7 +74,7 @@
 
 | المجال | المهمة | الملف | الحالة |
 |---|---|---|---|
-| core | سجل الذاكرة والمعرفة | `core/memory/index.md` | NEXT |
+| core | سجل الذاكرة والمعرفة | `core/memory/index.md` | DONE |
 | core | فهرس الميثاق | `core/meta/registry.md` | NEXT |
 | royal | فهرس المراسيم الملكية | `royal/decrees.md` | NEXT |
 | federal | فهرس السلطات الثلاث | `federal/index.md` | NEXT |
@@ -273,3 +273,4 @@
 | 2026-08-15 | P0 | هيكلة Monorepo بـ 12 مجالاً | `73b0c3f3` |
 | 2026-08-15 | P0 | 96 NUCLEUS.md لكل مجلد فرعي | `67378945` |
 | 2026-08-15 | P0 | خطة التنفيذ المرحلية | (هذا الـ commit) |
+| 2026-08-15 | P1 | سجل الذاكرة والمعرفة (core/memory/index.md) | (هذا الـ commit) |
