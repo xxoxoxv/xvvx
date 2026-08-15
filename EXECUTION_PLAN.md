@@ -25,7 +25,7 @@
 
 | المجال | مكتمل | الإجمالي | الحالة |
 |---|---:|---:|---|
-| المراحل | 7 | 9 | DOING |
+| المراحل | 8 | 9 | DOING |
 | المجالات المغطاة | 12 | 12 | DONE |
 | النوى المنشأة | 96 | 96 | DONE |
 | جداول قاعدة البيانات | 23 | 23 | DONE |
@@ -45,7 +45,7 @@
 | institutions | DONE | DONE | DONE | DONE | DONE | TODO | DONE | TODO | TODO | TODO |
 | agents | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | tools | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
-| interfaces | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| interfaces | DONE | DONE | DONE | DONE | DONE | TODO | DONE | TODO | TODO | TODO |
 | runtime | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | docs | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | ops | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
@@ -193,16 +193,16 @@
 
 ---
 
-## المرحلة 7 — الواجهات
+## المرحلة 7 — الواجهات (DONE)
 
 **الهدف:** نقاط دخول قابلة للاستخدام للبشر والوكلاء.
 
 | المجال | المهمة | الحالة |
 |---|---|---|
-| interfaces/api | عقد API كامل | TODO |
-| interfaces/cli | خريطة الأوامر | TODO |
-| interfaces/web | مخطط لوحة المالك | TODO |
-| interfaces/registry | ربط السجل بـ Supabase | TODO |
+| interfaces/api | عقد API كامل | DONE |
+| interfaces/cli | خريطة الأوامر | DONE |
+| interfaces/web | مخطط لوحة المالك | DONE |
+| interfaces/registry | ربط السجل بـ Supabase | DONE |
 
 **تعريف الإنجاز:** كل واجهة لها مواصفة قابلة للتنفيذ.
 
@@ -280,3 +280,4 @@
 | 2026-08-15 | P4 | 11 وثيقة ربط قاعدة بيانات + ملخص | (هذا الـ commit) |
 | 2026-08-15 | P5 | حلقة التشغيل الأساسية: 5 مواصفات + مخطط + سيناريو | (هذا الـ commit) |
 | 2026-08-15 | P6 | تفعيل المؤسسات والولايات: 10 تدفقات موثقة | (هذا الـ commit) |
+| 2026-08-15 | P7 | الواجهات: 4 مواصفات واجهة | (هذا الـ commit) |

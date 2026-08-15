@@ -6,6 +6,20 @@
 
 ## 2026-08-15
 
+### [P7] الواجهات — 4 مواصفات
+- **Commit:** (هذا الـ commit)
+- **ما تم:**
+  - `interfaces/api/contract.md` — عقد REST API كامل (v1، نقاط نهاية، حدود معدل)
+  - `interfaces/cli/command_map.md` — خريطة أوامر CLI (amos <domain> <action>)
+  - `interfaces/web/owner_dashboard.md` — مخطط لوحة المالك (KPIs + WebSocket)
+  - `interfaces/registry.md` — تفعيل ربط السجل بـ Supabase + تدفق تسجيل الواجهة
+  - تحديث `EXECUTION_PLAN.md` (P7 → DONE، 8/9، interfaces P7 DONE)
+- **الحالة:** DONE
+
+---
+
+## 2026-08-15
+
 ### [P6] تفعيل المؤسسات والولايات — 10 تدفقات
 - **Commit:** (هذا الـ commit)
 - **ما تم:**
