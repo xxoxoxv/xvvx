@@ -20,7 +20,7 @@ import argparse
 import json
 import sys
 
-from .articles import load_articles, verify_seals, write_seals
+from .articles import load_articles, load_preamble, verify_seals, write_seals
 from .engine import ConstitutionalEngine
 from .ledger import ConstitutionalLedger
 from .model import ActionRequest, Branch
@@ -28,7 +28,10 @@ from .model import ActionRequest, Branch
 
 def _cmd_seal(_: argparse.Namespace) -> int:
     payload = write_seals()
-    print(f"[SEAL] خُتمت {len(payload['seals'])} مادة دستورية.")
+    seals = payload["seals"]
+    n_articles = sum(1 for k in seals if k != "PRE")
+    extra = " + الديباجة" if "PRE" in seals else ""
+    print(f"[SEAL] خُتمت {n_articles} مادة{extra} — {len(seals)} نصًّا دستوريًّا.")
     for aid, e in payload["seals"].items():
         print(f"  {aid}  {e['sha256'][:16]}…  {e['title']}")
     return 0
@@ -42,7 +45,9 @@ def _cmd_verify(_: argparse.Namespace) -> int:
             print(f"  - {p}")
         return 1
     arts = load_articles()
-    print(f"[VERIFY] ✓ {len(arts)} مادة مطابقة لختمها المسجل.")
+    pre = load_preamble()
+    extra = " + الديباجة" if pre else ""
+    print(f"[VERIFY] ✓ {len(arts)} مادة{extra} مطابقة لختمها المسجل.")
     return 0
 
 

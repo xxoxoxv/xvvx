@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -553,3 +554,47 @@ class TestLedger:
         """السجل لا يوفر دالة حذف — المنع بالتصميم لا بالسياسة."""
         forbidden = {"delete", "remove", "truncate", "clear", "purge", "pop", "update", "rewrite"}
         assert not forbidden & {m for m in dir(ConstitutionalLedger) if not m.startswith("_")}
+
+
+# ── ختم الديباجة (E3 · التفسير INT-002) ─────────────────────────────────────
+
+
+def test_preamble_is_sealed_and_tamper_is_detected():
+    """الديباجة نص دستوري مختوم — لا نص حرًّا يُعدَّل بصمت (التفسير INT-002).
+
+    كان الثابت `PREAMBLE` مُعلَنًا في المحرك وغير مُستخدَم في سطر واحد، وترويسة
+    الوحدة تزعم أن نطاقها يشمل الديباجة — فكانت وثيقةً تزعم ما لا ينفّذه كود.
+    هذا الاختبار يمنع رجوع الحال.
+    """
+    from core.constitutional_engine.articles import (
+        SEALS_PATH,
+        load_constitutional_text,
+        load_preamble,
+        verify_seals,
+    )
+
+    pre = load_preamble()
+    assert pre is not None, "الديباجة غير محمَّلة"
+    assert pre.article_id == "PRE"
+
+    # داخل النص الخاضع للختم
+    assert "PRE" in {a.article_id for a in load_constitutional_text()}
+
+    # ومختومة فعلًا في السجل، لا مجرد محمَّلة
+    seals = json.loads(SEALS_PATH.read_text(encoding="utf-8"))["seals"]
+    assert seals["PRE"]["sha256"] == pre.sha256
+    assert seals["PRE"]["file"] == "core/constitution/preamble.md"
+
+    # وأي مساس بنصها يُرصَد
+    tampered = replace(pre, text=pre.text + "\nسطر مُدَسّ.\n", sha256="0" * 64)
+    problems = verify_seals(articles=[tampered])
+    assert any("PRE" in p for p in problems), "تعديل الديباجة مرّ بلا رصد"
+
+
+def test_preamble_is_sealed_but_is_not_an_article():
+    """تُختَم ولا تُصير مادة: العدد يبقى عشرًا (INT-002 · ثالثًا)."""
+    from core.constitutional_engine.articles import load_articles
+
+    arts = load_articles()
+    assert len(arts) == 10
+    assert all(a.article_id != "PRE" for a in arts)

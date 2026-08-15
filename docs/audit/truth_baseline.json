@@ -1,16 +1,16 @@
 {
-  "updated_at": "2026-08-15T22:21:31+00:00",
-  "findings_total": 111,
+  "updated_at": "2026-08-15T23:15:14+00:00",
+  "findings_total": 110,
   "by_kind": {
     "IN_MEMORY_STORE": 64,
     "HARDCODED_SECRET": 4,
-    "SILENT_FALLBACK": 32,
+    "SILENT_FALLBACK": 31,
     "HARDCODED_TRUTH": 10,
     "SANDBOX_DISABLED": 1
   },
   "by_severity": {
     "HIGH": 68,
     "CRITICAL": 15,
-    "MEDIUM": 28
+    "MEDIUM": 27
   }
 }

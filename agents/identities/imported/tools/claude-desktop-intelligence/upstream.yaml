@@ -1,3 +1,9 @@
+# الهدف: تسجيل مصدر المواطن المستورد «Claude Desktop Intelligence» وحالة سحبه وترخيصه وفحصه الأمني.
+# النطاق: هذا الوكيل وحده. لا يحمل كودًا ولا صلاحيات — بيانات تسجيل فقط.
+# المالك: agents/registry — تحت إشراف الحوكمة الفدرالية.
+# المجال المخصص: tools
+# ملاحظة: هذا الملف مصدر الحقيقة لبطاقة README.md المولَّدة في هذا المجلد.
+#         بعد أي تعديل هنا، أعد تشغيل tools/governance/generate_identity_cards.py
 id: imported-tools-claude-desktop-intelligence
 name: Claude Desktop Intelligence
 source_url: https://github.com/claude-desktop-intelligence/claude-desktop-intelligence

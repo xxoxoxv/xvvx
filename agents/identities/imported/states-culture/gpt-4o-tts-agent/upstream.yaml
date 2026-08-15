@@ -1,3 +1,9 @@
+# الهدف: تسجيل مصدر المواطن المستورد «GPT-4o-TTS-Agent» وحالة سحبه وترخيصه وفحصه الأمني.
+# النطاق: هذا الوكيل وحده. لا يحمل كودًا ولا صلاحيات — بيانات تسجيل فقط.
+# المالك: agents/registry — تحت إشراف الحوكمة الفدرالية.
+# المجال المخصص: states-culture
+# ملاحظة: هذا الملف مصدر الحقيقة لبطاقة README.md المولَّدة في هذا المجلد.
+#         بعد أي تعديل هنا، أعد تشغيل tools/governance/generate_identity_cards.py
 id: imported-culture-gpt-4o-tts-agent
 name: GPT-4o-TTS-Agent
 source_url: https://github.com/gpt-4o-tts/gpt-4o-tts-agent

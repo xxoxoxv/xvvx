@@ -39,7 +39,10 @@ class TestVerifyGate:
     def test_seal_writes_all_ten(self, capsys):
         """عشر مواد بعد إضافة المادة العاشرة بالمرسوم AMD-001."""
         assert main(["seal"]) == 0
-        assert "خُتمت 10 مادة" in capsys.readouterr().out
+        out = capsys.readouterr().out
+        # عشر مواد + الديباجة = أحد عشر نصًّا مختومًا (التفسير INT-002)
+        assert "خُتمت 10 مادة + الديباجة" in out
+        assert "11 نصًّا دستوريًّا" in out
 
 
 class TestEvaluateCommand:

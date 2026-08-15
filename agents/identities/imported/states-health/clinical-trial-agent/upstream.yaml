@@ -1,3 +1,9 @@
+# الهدف: تسجيل مصدر المواطن المستورد «Clinical-Trial-Agent» وحالة سحبه وترخيصه وفحصه الأمني.
+# النطاق: هذا الوكيل وحده. لا يحمل كودًا ولا صلاحيات — بيانات تسجيل فقط.
+# المالك: agents/registry — تحت إشراف الحوكمة الفدرالية.
+# المجال المخصص: states-health
+# ملاحظة: هذا الملف مصدر الحقيقة لبطاقة README.md المولَّدة في هذا المجلد.
+#         بعد أي تعديل هنا، أعد تشغيل tools/governance/generate_identity_cards.py
 id: imported-health-clinical-trial-agent
 name: Clinical-Trial-Agent
 source_url: https://github.com/clinical-trial-agent/clinical-trial-agent

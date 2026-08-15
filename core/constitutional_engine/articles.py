@@ -1,7 +1,8 @@
 """
 محمّل المواد الدستورية وبصماتها — Constitutional Article Loader & Sealing (E1)
 الهدف: قراءة نصوص المواد من القرص، وحساب بصمة SHA-256 لكل مادة، وكشف أي تعديل غير مصرح به على الدستور.
-النطاق: core/constitution/articles/*.md و core/constitution/preamble.md فقط. لا يعدّل نص أي مادة إطلاقًا.
+النطاق: core/constitution/articles/*.md و core/constitution/preamble.md. لا يعدّل نص أي مادة إطلاقًا.
+تاريخ آخر تعديل: 2026-08-16 (E3) — الديباجة صارت مختومة فعلًا بعد أن كان ثابتها معلَّقًا بلا استخدام.
 المالك: core/constitutional_engine/
 تاريخ الإنشاء: 2026-08-16
 تاريخ آخر تعديل: 2026-08-16
@@ -56,6 +57,31 @@ def _title_of(text: str, fallback: str) -> str:
     return fallback
 
 
+def load_preamble(path: Path | None = None) -> Article | None:
+    """حمّل الديباجة كنص دستوري مختوم برقم `PRE`.
+
+    الديباجة ليست مادة — لا رقم لها ولا قواعد تنفيذية — لكنها **نص دستوري** من
+    رتبة المواد، فيها تُعلَن غايات الدولة. كانت في E1 معلَّقة: الثابت `PREAMBLE`
+    مُعلَنًا وغير مُستخدَم، فكان نصها **قابلًا للتعديل بصمت** بلا ختم يكشفه —
+    وهو ما رصده فحص هوية المستودع في E3. تُختَم الآن كما تُختَم المواد.
+
+    ترجع `None` إذا لم يوجد ملف الديباجة، فلا يتوقف المحرك على وجودها.
+    """
+    src = Path(path) if path else PREAMBLE
+    if not src.exists():
+        return None
+    text = src.read_text(encoding="utf-8")
+    return Article(
+        article_id="PRE",
+        number=0,
+        slug="preamble",
+        title=_title_of(text, "الديباجة"),
+        path=src,
+        text=text,
+        sha256=_sha256(text),
+    )
+
+
 def load_articles(articles_dir: Path | None = None) -> list[Article]:
     """حمّل كل المواد مرتبة برقمها. يرفع خطأً إذا لم يوجد أي مادة —
     دولة بلا دستور مقروء لا يجوز أن تُقلع صامتة."""
@@ -94,14 +120,25 @@ class SealMismatchError(RuntimeError):
     """يُرفع عند اكتشاف تعديل غير مصرح به على نص مادة."""
 
 
+def load_constitutional_text(articles_dir: Path | None = None) -> list[Article]:
+    """كل نص دستوري خاضع للختم: الديباجة ثم المواد مرتبة.
+
+    هذه هي الدالة التي يعتمدها الختم والتحقق — لا `load_articles` — حتى لا يبقى
+    نص دستوري خارج الحراسة.
+    """
+    pre = load_preamble()
+    arts = load_articles(articles_dir)
+    return ([pre] if pre else []) + arts
+
+
 def current_seals(articles: list[Article] | None = None) -> dict[str, str]:
-    arts = articles if articles is not None else load_articles()
+    arts = articles if articles is not None else load_constitutional_text()
     return {a.article_id: a.sha256 for a in arts}
 
 
 def write_seals(path: Path | None = None, articles: list[Article] | None = None) -> dict:
     """اختم الدستور. يُستدعى يدويًا فقط بعد تعديل مصرح به وفق المادة الخامسة."""
-    arts = articles if articles is not None else load_articles()
+    arts = articles if articles is not None else load_constitutional_text()
     target = Path(path) if path else SEALS_PATH
     payload = {
         "$comment": (
@@ -111,7 +148,21 @@ def write_seals(path: Path | None = None, articles: list[Article] | None = None)
         "schema_version": 1,
         "algorithm": "sha256",
         "normalization": "LF endings, trailing whitespace stripped, document stripped",
-        "seals": {a.article_id: {"file": a.path.name, "title": a.title, "sha256": a.sha256} for a in arts},
+        # المسار نسبةً لجذر المستودع لا الاسم المجرّد: الديباجة خارج مجلد المواد،
+        # ومن قرأ الاسم وحده افترض موضعًا فأخطأ (التفسير INT-002).
+        "seals": {
+            a.article_id: {
+                # نسبةً لجذر المستودع متى أمكن؛ وإلا فالاسم (مواد من مسار مؤقت
+                # في الاختبارات). لا try/except صامت — الشرط مُعلَن.
+                "file": (
+                    a.path.relative_to(REPO_ROOT).as_posix()
+                    if a.path.is_relative_to(REPO_ROOT) else a.path.name
+                ),
+                "title": a.title,
+                "sha256": a.sha256,
+            }
+            for a in arts
+        },
     }
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -121,7 +172,7 @@ def write_seals(path: Path | None = None, articles: list[Article] | None = None)
 def verify_seals(path: Path | None = None, articles: list[Article] | None = None) -> list[str]:
     """قارن الدستور الحالي بختمه المسجل. يرجع قائمة المخالفات (فارغة = سليم)."""
     target = Path(path) if path else SEALS_PATH
-    arts = articles if articles is not None else load_articles()
+    arts = articles if articles is not None else load_constitutional_text()
     if not target.exists():
         return [f"SEALS_MISSING: لا يوجد ختم دستوري في {target}. شغّل `seal` أولًا."]
 
@@ -131,7 +182,7 @@ def verify_seals(path: Path | None = None, articles: list[Article] | None = None
 
     for aid, entry in sorted(recorded.items()):
         if aid not in live:
-            problems.append(f"ARTICLE_REMOVED: {aid} مختومة لكنها غير موجودة — حذف مادة يتطلب تعديلًا دستوريًا.")
+            problems.append(f"TEXT_REMOVED: {aid} مختوم لكنه غير موجود — حذف نص دستوري يتطلب تعديلًا دستوريًا.")
             continue
         if live[aid].sha256 != entry.get("sha256"):
             problems.append(
@@ -139,5 +190,12 @@ def verify_seals(path: Path | None = None, articles: list[Article] | None = None
                 f"مختومة {str(entry.get('sha256'))[:12]}… والحالية {live[aid].sha256[:12]}…"
             )
     for aid in sorted(set(live) - set(recorded)):
-        problems.append(f"ARTICLE_UNSEALED: {aid} ({live[aid].title}) موجودة بلا ختم — أضِفها عبر مرسوم تعديل.")
+        # نص جديد بلا ختم = تسريب إلى الدستور، ويلزمه مرسوم. أما نص قائم منذ
+        # التأسيس يُدخَل في الحراسة فليس تسريبًا (التفسير INT-002).
+        problems.append(
+            f"TEXT_UNSEALED: {aid} ({live[aid].title}) نص دستوري بلا ختم. "
+            "إن كان نصًّا جديدًا فلا يدخل الدستور إلا بمرسوم تعديل (المادة الخامسة "
+            "والعاشرة · 2 · 1). وإن كان قائمًا منذ التأسيس بحرفه فختمه توسيع حراسة "
+            "لا تعديل (التفسير INT-002) — اختمه بـ `seal`."
+        )
     return problems

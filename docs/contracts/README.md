@@ -39,3 +39,11 @@ core/meta/
 - يحتوي على `x-amos` metadata: `{domain, created, phase, status}`
 - `additionalProperties: false` للعقود الصارمة
 - مواءم مع جداول قاعدة بيانات Supabase الفعلية
+
+## تاريخ آخر تعديل
+2026-08-15
+
+## المحتويات
+- `NUCLEUS.md` — docs/contracts — العقود والمخططات (NUCLEUS)
+- `README.md` — بطاقة هوية هذا المجلد (المادة التاسعة)
+- `schemas/` — مجلد فرعي (15 عنصرًا) — انظر بطاقته

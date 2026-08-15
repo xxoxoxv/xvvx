@@ -1,5 +1,8 @@
 # P2 Schemas Creation — Findings Summary
 
+## الهدف
+تسجيل نتائج إنشاء مخططات JSON للمرحلة الثانية (العقود والمخططات) وما تبيّن خلالها.
+
 **Task:** Create JSON Schema files for Phase 2 (P2) "Contracts and Schemas" of the AMOS-Federation execution plan.
 **Date:** 2026-08-15
 **Status:** COMPLETE
