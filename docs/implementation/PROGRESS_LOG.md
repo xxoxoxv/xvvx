@@ -6,6 +6,30 @@
 
 ## 2026-08-15
 
+### [P3] 11 stub + اختبارات دخان 11/11 PASS
+- **Commit:** (هذا الـ commit)
+- **ما تم:**
+  - إنشاء `tests/smoke/run_smoke_tests.py` — مشغل اختبارات الدخان لكل المجالات
+  - `tools/stubs/registry_check.py` — 10 أدوات من قاعدة البيانات
+  - `agents/stubs/registry_check.py` — 342 وكيل من `agent_population`
+  - `institutions/stubs/registry_check.py` — 8 مؤسسات فدرالية
+  - `royal/stubs/guard_check.py` — 7 حراس ملكيين + 1 مرسوم
+  - `ops/stubs/audit_check.py` — 10 سلاسل تدقيق
+  - `federal/stubs/treasury_check.py` — 5 أدوار تنفيذية (شاغرة)
+  - `core/stubs/memory_check.py` — 2 ذاكرة + 1 خبرة
+  - `runtime/stubs/task_event_check.py` — 1 مهمة + 156 حدث
+  - `interfaces/stubs/registry_check.py` — 0 (متوقع لـ P3)
+  - `states/stubs/policy_check.py` — 0 (متوقع لـ P3)
+  - `docs/stubs/docs_check.py` — 96 NUCLEUS.md + 12 مخطط + 12 سجل
+  - كل stub يحتوي `check()` يُرجع بيانات حقيقية من قاعدة البيانات
+  - اختبارات الدخان: 11/11 PASS
+  - تحديث `EXECUTION_PLAN.md` (P3 → DONE، 4/9 مراحل)
+- **الحالة:** DONE
+
+---
+
+## 2026-08-15
+
 ### [P2] 12 مخطط JSON Schema + قالب ADR
 - **Commit:** (هذا الـ commit)
 - **ما تم:**
