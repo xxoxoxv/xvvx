@@ -5,14 +5,17 @@ AMOS-Federation Event Publisher + Hash Chain
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
 """
+
 import hashlib
 import json
 import uuid
-from datetime import datetime, timezone
+from contextlib import suppress
+from datetime import UTC, datetime
 from typing import Any
 
 try:
     import nats
+
     _NATS_AVAILABLE = True
 except ImportError:
     _NATS_AVAILABLE = False
@@ -21,13 +24,14 @@ except ImportError:
 import structlog
 
 from amos_federation.common.config import settings
+from amos_federation.common.database import db_cursor
 
 logger = structlog.get_logger()
 
-# Subject prefix for all AMOS events
+# بادئة subject لكل أحداث AMOS
 EVENT_SUBJECT_PREFIX = "amos_federation"
 
-# Genesis hash for the first event in the chain
+# البصمة التأسيسية لأول حدث في السلسلة
 GENESIS_HASH = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
 
 
@@ -45,9 +49,7 @@ def get_last_chain_hash() -> str:
     """الحصول على آخر بصمة في سلسلة التدقيق من قاعدة البيانات."""
     try:
         with db_cursor() as cur:
-            cur.execute(
-                "SELECT chain_hash FROM audit_log ORDER BY id DESC LIMIT 1"
-            )
+            cur.execute("SELECT chain_hash FROM audit_log ORDER BY id DESC LIMIT 1")
             row = cur.fetchone()
             if row:
                 return row["chain_hash"]
@@ -66,14 +68,12 @@ class EventPublisher:
         """الاتصال بـ NATS JetStream"""
         self._nc = await nats.connect(settings.nats_url)
         self._js = self._nc.jetstream()
-        try:
+        with suppress(Exception):
             await self._js.add_stream(
                 name=settings.nats_stream,
                 subjects=[f"{EVENT_SUBJECT_PREFIX}.>"],
                 max_age=settings.nats_retention_days * 86400,
             )
-        except Exception:
-            pass  # Stream already exists
         logger.info("event_publisher.connected", nats_url=settings.nats_url)
 
     async def close(self):
@@ -104,9 +104,9 @@ class EventPublisher:
             event_id المُنشأ
         """
         event_id = str(uuid.uuid4())
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
 
-        # Build event payload
+        # بناء حمولة الحدث
         event = {
             "event_id": event_id,
             "timestamp": timestamp,
@@ -115,32 +115,40 @@ class EventPublisher:
             "data": data,
         }
 
-        # Compute hash chain
+        # حساب سلسلة البصمات
         prev_hash = get_last_chain_hash()
         chain_hash = compute_chain_hash(prev_hash, event)
 
-        # Insert into audit_log (append-only)
+        # إدراج في سجل التدقيق الملحق فقط عند توفر قاعدة البيانات.
         action = f"{event_type}"
-        with db_cursor() as cur:
-            cur.execute(
-                """INSERT INTO audit_log
-                   (event_id, timestamp, event_type, actor_type, actor_id,
-                    action, chain_hash, prev_hash, metadata)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (
-                    event_id,
-                    timestamp,
-                    event_type,
-                    actor_type,
-                    actor_id,
-                    action,
-                    chain_hash,
-                    prev_hash,
-                    json.dumps(data, ensure_ascii=False),
-                ),
+        try:
+            with db_cursor() as cur:
+                cur.execute(
+                    """INSERT INTO audit_log
+                       (event_id, timestamp, event_type, actor_type, actor_id,
+                        action, chain_hash, prev_hash, metadata)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (
+                        event_id,
+                        timestamp,
+                        event_type,
+                        actor_type,
+                        actor_id,
+                        action,
+                        chain_hash,
+                        prev_hash,
+                        json.dumps(data, ensure_ascii=False),
+                    ),
+                )
+        except Exception as error:
+            logger.warning(
+                "event.audit_not_persisted",
+                event_id=event_id,
+                event_type=event_type,
+                error=str(error),
             )
 
-        # Publish to NATS
+        # نشر الحدث إلى NATS
         subject = f"{EVENT_SUBJECT_PREFIX}.{event_type}"
         event_with_hash = {**event, "chain_hash": chain_hash}
         payload = json.dumps(event_with_hash, ensure_ascii=False).encode("utf-8")
@@ -181,7 +189,9 @@ class EventPublisher:
                 prev_hash,
                 {
                     "event_id": row["event_id"],
-                    "metadata": row["metadata"] if isinstance(row["metadata"], dict) else json.loads(row["metadata"]),
+                    "metadata": row["metadata"]
+                    if isinstance(row["metadata"], dict)
+                    else json.loads(row["metadata"]),
                 },
             )
             if row["chain_hash"] != expected_hash:
@@ -198,5 +208,5 @@ class EventPublisher:
         return True
 
 
-# Singleton
+# الكائن المفرد
 event_publisher = EventPublisher()

@@ -5,4 +5,5 @@ AMOS-Federation — Digital Federal State
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
 """
+
 __version__ = "1.0.0"

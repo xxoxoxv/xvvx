@@ -5,6 +5,9 @@ AMOS-Federation Structured Logging
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
 """
+
+import logging as stdlib_logging
+
 import structlog
 
 
@@ -18,7 +21,7 @@ def setup_logging(service_name: str = "amos-federation", debug: bool = True):
             structlog.processors.JSONRenderer(ensure_ascii=False),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(
-            structlog.stdlib.DEBUG if debug else structlog.stdlib.INFO
+            stdlib_logging.DEBUG if debug else stdlib_logging.INFO
         ),
         cache_logger_on_first_use=True,
     )

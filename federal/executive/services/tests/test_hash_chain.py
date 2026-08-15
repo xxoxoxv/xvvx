@@ -5,10 +5,11 @@
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
 """
+
 import hashlib
 import json
 
-from amos_federation.common.events import compute_chain_hash, GENESIS_HASH
+from amos_federation.common.events import GENESIS_HASH, compute_chain_hash
 
 
 class TestChainHash:
@@ -56,6 +57,6 @@ class TestChainHash:
         prev = GENESIS_HASH
         data = {"event_id": "e1", "event_type": "test"}
         canonical = json.dumps(data, sort_keys=True, ensure_ascii=False)
-        expected = f"sha256:{hashlib.sha256(f'{prev}:{canonical}'.encode('utf-8')).hexdigest()}"
+        expected = f"sha256:{hashlib.sha256(f'{prev}:{canonical}'.encode()).hexdigest()}"
         actual = compute_chain_hash(prev, data)
         assert actual == expected

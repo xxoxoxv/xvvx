@@ -5,31 +5,35 @@ AMOS-Federation Database Manager
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
 """
+
 import uuid
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from typing import Any
+
+from amos_federation.common.config import settings
 
 try:
     import psycopg2
     import psycopg2.extras
     from sqlalchemy import create_engine
-    from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
-    _DB_AVAILABLE = True
+    from sqlalchemy.orm import DeclarativeBase, sessionmaker
 except ImportError:
     _DB_AVAILABLE = False
     psycopg2 = None
-
-from amos_federation.common.config import settings
+else:
+    _DB_AVAILABLE = True
 
 
 if _DB_AVAILABLE:
+
     class Base(DeclarativeBase):
-        """القاعدة لكل نماذج SQLAlchemy"""
-        pass
+        """القاعدة لكل نماذج SQLAlchemy."""
+
 else:
+
     class Base:
-        """Placeholder when SQLAlchemy not available."""
-        pass
+        """بديل خفيف حين لا تتوفر حزم قاعدة البيانات."""
 
 
 if _DB_AVAILABLE:
@@ -40,30 +44,34 @@ else:
     SessionLocal = None
 
 
-def get_db() -> Session:
-    """Dependency لـ FastAPI — يُرجع جلسة قاعدة بيانات"""
-    db = SessionLocal()
+def get_db() -> Generator[Any, None, None]:
+    """اعتماد FastAPI يولد جلسة قاعدة بيانات عندما تتوفر الحزمة والإعدادات."""
+    if SessionLocal is None:
+        raise RuntimeError("PostgreSQL/SQLAlchemy غير متاحين في هذه البيئة")
+    database_session = SessionLocal()
     try:
-        yield db
+        yield database_session
     finally:
-        db.close()
+        database_session.close()
 
 
 @contextmanager
-def db_cursor():
-    """Context manager لاستعلامات raw SQL مع dict cursor"""
-    conn = psycopg2.connect(settings.postgres_dsn)
+def db_cursor() -> Iterator[Any]:
+    """مدير سياق لاستعلامات SQL الخام باستخدام قاموس صفوف."""
+    if psycopg2 is None:
+        raise RuntimeError("psycopg2 غير متاح في هذه البيئة")
+    connection = psycopg2.connect(settings.postgres_dsn)
     try:
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         yield cursor
-        conn.commit()
+        connection.commit()
     except Exception:
-        conn.rollback()
+        connection.rollback()
         raise
     finally:
-        conn.close()
+        connection.close()
 
 
 def generate_uuid() -> uuid.UUID:
-    """توليد UUID عشوائي (gen_random_uuid معادلة)"""
+    """توليد UUID عشوائي بمعادل gen_random_uuid."""
     return uuid.uuid4()

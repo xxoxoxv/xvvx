@@ -4,11 +4,12 @@
 # المالك: federal/executive/services
 # تاريخ الإنشاء: 2026-08-15
 
-.PHONY: help up down restart ps logs migrate seed test lint format ci clean
+.PHONY: help up down restart ps logs migrate seed test lint format ci clean run
 
 PYTHON := python3
 DOCKER_COMPOSE := docker compose
 COMPOSE_FILE := docker-compose.yml
+SERVICE_MODULE := $(subst -,_,$(SERVICE))
 
 help:
 	@echo "AMOS-Federation — أوامر التطوير"
@@ -24,6 +25,7 @@ help:
 	@echo "  make format      — تنسيق الكود (ruff format)"
 	@echo "  make ci          — تشغيل CI محليًا (lint + test + identity check)"
 	@echo "  make clean       — تنظيف الملفات المؤقتة"
+	@echo "  make run SERVICE=api-gateway PORT=8000 — تشغيل خدمة واحدة"
 
 up:
 	$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) up -d
@@ -71,3 +73,7 @@ clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .ruff_cache -exec rm -rf {} + 2>/dev/null || true
+
+run:
+	@test -n "$(SERVICE)" || (echo "استخدم: make run SERVICE=api-gateway PORT=8000"; exit 1)
+	PYTHONPATH=src $(PYTHON) -m uvicorn amos_federation.services.$(SERVICE_MODULE).main:app --reload --port $(or $(PORT),8000)
