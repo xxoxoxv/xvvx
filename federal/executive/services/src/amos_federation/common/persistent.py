@@ -484,12 +484,12 @@ class PersistentAuditStore:
         self._verify_integrity()
 
     def _verify_integrity(self) -> None:
-        """التحقق من سلامة السلسلة عند الإقلاع."""
+        """التحقق من سلامة السلسلة عند الإقلاع — تحذير فقط بدون كسر النظام."""
         try:
             result = self.verify_chain()
             if not result.get("valid", True):
                 import structlog
-                structlog.get_logger().error("audit.chain_broken_on_init", message=result.get("message"))
+                structlog.get_logger().warning("audit.chain_broken_on_init", message=result.get("message"))
         except Exception:
             pass  # قد لا يكون الجدول موجودًا بعد
 
@@ -504,7 +504,9 @@ class PersistentAuditStore:
             last = session.query(AuditEntryModel).order_by(AuditEntryModel.created_at.desc()).first()
             if last:
                 prev_hash = last.hash
-            entry_data = f"{prev_hash}:{action}:{actor}:{details}"
+            # استخدام json.dumps بدلاً من str() لضمان استقرار الـ hash
+            details_str = json.dumps(details, sort_keys=True, default=str)
+            entry_data = f"{prev_hash}:{action}:{actor}:{details_str}"
             current_hash = hashlib.sha256(entry_data.encode()).hexdigest()
             entry = AuditEntryModel(
                 id=rev_id,
@@ -563,12 +565,24 @@ class PersistentAuditStore:
                 if entry.prev_hash != prev_hash:
                     return {"valid": False, "entries": len(rows), "message": f"السلسلة مكسورة عند {entry.id} — prev_hash لا يطابق"}
                 # فحص إعادة الحساب (كشف التلاعب بمحتوى السجل)
+                # استخدام json.dumps بدلاً من str() لضمان استقرار الـ hash
+                details_str = json.dumps(entry.details or {}, sort_keys=True, default=str)
                 expected_hash = hashlib.sha256(
+                    f"{entry.prev_hash}:{entry.action}:{entry.actor}:{details_str}".encode()
+                ).hexdigest()
+                # التحقق بالـ hash الجديد (json.dumps)
+                if entry.hash == expected_hash:
+                    prev_hash = entry.hash
+                    continue
+                # التحقق بالـ hash القديم (str(dict) للتوافق مع السجلات القديمة)
+                old_expected_hash = hashlib.sha256(
                     f"{entry.prev_hash}:{entry.action}:{entry.actor}:{entry.details}".encode()
                 ).hexdigest()
-                if entry.hash != expected_hash:
-                    return {"valid": False, "entries": len(rows), "message": f"تلاعب في السجل {entry.id} — hash لا يطابق المحتوى"}
-                prev_hash = entry.hash
+                if entry.hash == old_expected_hash:
+                    prev_hash = entry.hash
+                    continue
+                # لا يطابق أي صيغة — هناك تلاعب
+                return {"valid": False, "entries": len(rows), "message": f"تلاعب في السجل {entry.id} — hash لا يطابق المحتوى"}
             return {"valid": True, "entries": len(rows), "message": "السلسلة سليمة"}
         finally:
             session.close()
