@@ -25,7 +25,7 @@
 
 | المجال | مكتمل | الإجمالي | الحالة |
 |---|---:|---:|---|
-| المراحل | 6 | 9 | DOING |
+| المراحل | 7 | 9 | DOING |
 | المجالات المغطاة | 12 | 12 | DONE |
 | النوى المنشأة | 96 | 96 | DONE |
 | جداول قاعدة البيانات | 23 | 23 | DONE |
@@ -38,11 +38,11 @@
 
 | المجال | P0 | P1 | P2 | P3 | P4 | P5 | P6 | P7 | P8 | P9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| core | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| core | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | royal | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | federal | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
-| states | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
-| institutions | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
+| states | DONE | DONE | DONE | DONE | DONE | TODO | DONE | TODO | TODO | TODO |
+| institutions | DONE | DONE | DONE | DONE | DONE | TODO | DONE | TODO | TODO | TODO |
 | agents | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | tools | DONE | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO |
 | interfaces | DONE | DONE | DONE | DONE | DONE | TODO | TODO | TODO | TODO | TODO |
@@ -172,22 +172,22 @@
 
 ---
 
-## المرحلة 6 — تفعيل المؤسسات والولايات
+## المرحلة 6 — تفعيل المؤسسات والولايات (DONE)
 
 **الهدف:** جعل الدولة تشبه دولة، لا مجرد مجلدات.
 
 | المؤسسة/الولاية | التدفق | الحالة |
 |---|---|---|
-| institutions/bank | تدفق الخزانة | TODO |
-| institutions/university | تدفق تدريب الوكلاء | TODO |
-| institutions/court | تدفق المراجعة والأحكام | TODO |
-| institutions/factory | تدفق توليد الأدوات | TODO |
-| states/health | فحوصات الوكلاء | TODO |
-| states/finance | الميزانيات الولائية | TODO |
-| states/science | البحث والتقييم | TODO |
-| states/law | السياسات والعقود | TODO |
-| states/infrastructure | خارطة الخدمات | TODO |
-| states/culture | معايير الهوية | TODO |
+| institutions/bank | تدفق الخزانة | DONE |
+| institutions/university | تدفق تدريب الوكلاء | DONE |
+| institutions/court | تدفق المراجعة والأحكام | DONE |
+| institutions/factory | تدفق توليد الأدوات | DONE |
+| states/health | فحوصات الوكلاء | DONE |
+| states/finance | الميزانيات الولائية | DONE |
+| states/science | البحث والتقييم | DONE |
+| states/law | السياسات والعقود | DONE |
+| states/infrastructure | خارطة الخدمات | DONE |
+| states/culture | معايير الهوية | DONE |
 
 **تعريف الإنجاز:** كل تدفق موثق برسم بياني + خطوات + جداول مرتبطة.
 
@@ -279,3 +279,4 @@
 | 2026-08-15 | P3 | 11 stub + اختبارات دخان 11/11 PASS | (هذا الـ commit) |
 | 2026-08-15 | P4 | 11 وثيقة ربط قاعدة بيانات + ملخص | (هذا الـ commit) |
 | 2026-08-15 | P5 | حلقة التشغيل الأساسية: 5 مواصفات + مخطط + سيناريو | (هذا الـ commit) |
+| 2026-08-15 | P6 | تفعيل المؤسسات والولايات: 10 تدفقات موثقة | (هذا الـ commit) |
