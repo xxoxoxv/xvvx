@@ -1,7 +1,7 @@
 # حالة تنفيذ AMOS-Federation
 
 ## التعريف
-سجل الحالة الهندسي لخطة التسعين يومًا بعد إنجاز المراحل 0-4.
+سجل الحالة الهندسي لخطة التسعين يومًا بعد إنجاز المراحل 0-5.
 
 ## النطاق
 يوثق المنجز وما بقي في خريطة الخدمات، API، الحاويات، والاختبارات.
@@ -64,8 +64,20 @@ Federal Council
   - مقارنة حتمية: تشابه نصي (Jaccard)، فرق latency، فرق tokens، فرق تكلفة.
 - 104 اختبار: 94 من المراحل 0-3 + 10 جديد (shadow, cost tracking).
 
+### المرحلة 5: LoRA Factory (أسابيع 23-28)
+- Data Collection Pipeline: استخراج وتنظيف وتوازن بيانات التدريب من سجل الخبرات.
+  - `POST /v1/datasets` ينشئ مجموعة بيانات: استخراج → تنظيف → موازنة → Data BOM.
+  - `GET /v1/datasets` + `GET /v1/datasets/{id}` لعرض واسترجاع البيانات.
+  - deduplication بـ SHA-256، موازنة حسب النوع، Data BOM مع hash.
+- Model Registry: تسجيل النماذج مع Model Cards وحالة كاملة.
+  - `POST /v1/models/train` محاكاة حتمية لتدريب LoRA مع مقاييس (accuracy, loss).
+  - `GET /v1/models` + `GET /v1/models/{id}` لعرض واسترجاع النماذج.
+  - `PATCH /v1/models/{id}/status` لتحديث الحالة (registered → trained → evaluated → promoted).
+  - `GET /v1/models/{id}/card` لاسترجاع Model Card.
+  - knowledge injection (anti-forgetting) ممكّن في كل Model Card.
+- 119 اختبار: 104 من المراحل 0-4 + 15 جديد (data pipeline, model registry).
+
 ## المؤجل
 - الأسبوعان 11-13: Redis/Qdrant الفعليان، عزل المستأجرين على مستوى قاعدة البيانات، hardening، restore drills، واختبارات الحمل.
-- المرحلة 5: LoRA Factory — تدريب + Model Registry.
 - المرحلة 6: Governance + Canary — Policy Engine + Kill Switch.
 - واجهة control-console ليست خدمة Python ضمن هذا التنفيذ، وتبقى ضمن واجهة الويب المخطط لها.
