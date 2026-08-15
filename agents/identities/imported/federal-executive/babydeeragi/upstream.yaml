@@ -1,0 +1,14 @@
+id: imported-fedexecutive-babydeeragi
+name: BabyDeerAGI
+source_url: https://twitter.com/yoheinakajima/status/1666313838868992001
+source_type: github_repository
+original_category: وكلاء محادثة ومساعدين
+assigned_place: federal/executive
+slug: babydeeragi
+import_status: registered
+integration_status: not_integrated
+license_status: pending_review
+security_status: pending_review
+pulled_at: '2026-08-15'
+notes: Imported as a candidate employee; not active until evaluation and governance
+  approval. Source code not vendored to avoid repo bloat.
