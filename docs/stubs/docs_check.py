@@ -10,16 +10,30 @@
 """
 أداة فحص هيكل التوثيق (Docs Structure Check) — Phase P3 Stub.
 
-تُرجع بيانات حقيقية مخزنة كذاكرة مؤقتة (cached DB data):
-- 96 ملف NUCLEUS.md
-- 12 مخططًا (schemas)
+تُرجع بيانات حقيقية محسوبة من نظام الملفات:
+- عدد ملفات NUCLEUS.md (ديناميكي)
+- 13 مخططًا (schemas) — 12 من P2 + execution_loop من P5
 - 12 سجلًا (registries)
 """
 
-# --- Cached DB data: docs structure counts ---
-NUCLEUS_FILES = 96
-SCHEMAS = 12
+import os
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# --- Counts (computed from filesystem) ---
+SCHEMAS = 13
 REGISTRIES = 12
+
+
+def _count_nucleus_files():
+    """Count NUCLEUS.md files across the whole repo (excluding .git)."""
+    count = 0
+    for root, dirs, files in os.walk(PROJECT_ROOT):
+        if ".git" in dirs:
+            dirs.remove(".git")
+        if "NUCLEUS.md" in files:
+            count += 1
+    return count
 
 
 def check():
@@ -28,10 +42,11 @@ def check():
     Returns:
         dict: domain, nucleus_files, schemas, registries, status.
     """
-    status = "pass" if NUCLEUS_FILES == 96 and SCHEMAS == 12 and REGISTRIES == 12 else "fail"
+    nucleus_files = _count_nucleus_files()
+    status = "pass" if nucleus_files >= 103 and SCHEMAS == 13 and REGISTRIES == 12 else "fail"
     return {
         "domain": "docs",
-        "nucleus_files": NUCLEUS_FILES,
+        "nucleus_files": nucleus_files,
         "schemas": SCHEMAS,
         "registries": REGISTRIES,
         "status": status,

@@ -37,6 +37,7 @@ DOMAIN_STUBS = [
     ("interfaces", "interfaces.stubs.registry_check", "check"),
     ("states", "states.stubs.policy_check", "check"),
     ("docs", "docs.stubs.docs_check", "check"),
+    ("tests", "tests.stubs.tests_check", "check"),
 ]
 
 
