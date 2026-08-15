@@ -581,6 +581,28 @@ class PersistentAuditStore:
                 if entry.hash == old_expected_hash:
                     prev_hash = entry.hash
                     continue
+                # محاولة ثالثة: str() قد يختلف حسب نوع DB
+                try:
+                    old_str = str(entry.details)
+                    old_hash2 = hashlib.sha256(
+                        f"{entry.prev_hash}:{entry.action}:{entry.actor}:{old_str}".encode()
+                    ).hexdigest()
+                    if entry.hash == old_hash2:
+                        prev_hash = entry.hash
+                        continue
+                except Exception:
+                    pass
+                # محاولة رابعة: قد يكون details مخزّن كـ string في DB
+                try:
+                    if isinstance(entry.details, str):
+                        old_hash3 = hashlib.sha256(
+                            f"{entry.prev_hash}:{entry.action}:{entry.actor}:{entry.details}".encode()
+                        ).hexdigest()
+                        if entry.hash == old_hash3:
+                            prev_hash = entry.hash
+                            continue
+                except Exception:
+                    pass
                 # لا يطابق أي صيغة — هناك تلاعب
                 return {"valid": False, "entries": len(rows), "message": f"تلاعب في السجل {entry.id} — hash لا يطابق المحتوى"}
             return {"valid": True, "entries": len(rows), "message": "السلسلة سليمة"}
