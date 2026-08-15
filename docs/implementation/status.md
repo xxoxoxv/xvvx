@@ -307,5 +307,30 @@ Federal Council
 
 **تصنيف المراحل 1-11:** منفذة جزئيًا (Prototype/Sandbox-verifiable) — ليست مكتملة 100% حسب بوابة الخروج
 
+## المرحلة 1: الذاكرة الدائمة (PostgreSQL)
+
+**الحالة:** اتصال واختبارات ORM + service-level مكتملة ✅ — ربط الخدمات قيد التحقق
+
+**ما تم:**
+- اتصال Supabase PostgreSQL يعمل عبر pooler (port 6543)
+- 36 جدول موجودة وقابلة للكتابة
+- اختبار استمرارية البيانات بعد إعادة تشغيل المحرك: ناجح
+- 7 نماذج (Agent, Tool, Task, Memory, Experience, Review, AuditEntry) مختبرة CRUD
+- 7 اختبارات PostgreSQL رسمية (test_phase1_postgres.py) — كلها تنجح:
+  - 4 ORM-level: persistence across sessions, CRUD, engine restart, JSON columns
+  - 3 service-level: Tool Registry, PersistentTaskStore, API Gateway Adapter — كلها عبر إعادة تشغيل
+- API Gateway مربوط بـ PersistentTaskStoreAdapter ( بدلاً من InMemoryTaskStore)
+- conftest.py يستخدم AMOS_RUN_POSTGRES_TESTS=1 + AMOS_TEST_DATABASE_URL (opt-in صريح)
+- إجمالي الاختبارات: 598 (591 SQLite + 7 PostgreSQL)
+
+**بوابة الخروج:**
+- ✅ البيانات تبقى بعد إعادة التشغيل
+- ✅ كل النماذج تعمل في PostgreSQL
+- ✅ JSON columns تعمل
+- ✅ اختبارات service-level: Tool Registry, Task Store, API Gateway
+- ✅ API Gateway مربوط بـ PostgreSQL عبر PersistentTaskStoreAdapter
+- ⚠️ Orchestrator و Agent Runtime لا تزال تستخدم PopulationRegistry (يدعم PostgreSQL تلقائيًا) لكن لم يُختبرا عبر endpoint
+- ⚠️ Training لا يزال InMemory (حسب الخارطة، Phase 14)
+
 ## المؤجل (حسب الخارطة الجديدة v1.0)
 - Phase 12-17: الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق

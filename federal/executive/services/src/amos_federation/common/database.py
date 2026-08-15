@@ -80,6 +80,8 @@ class TaskModel(Base):
     type = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     status = Column(String, default="created")
+    priority = Column(String, default="normal")
+    domain = Column(String, default="general")
     assigned_agent = Column(String, nullable=True)
     plan = Column(JSON, default=list)
     result = Column(JSON, default=dict)

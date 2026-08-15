@@ -140,7 +140,14 @@ class PersistentTaskStore:
     """تخزين المهام الدائم."""
 
     def create(
-        self, task_id: str, task_type: str, description: str, tenant_id: str = "default"
+        self,
+        task_id: str,
+        task_type: str,
+        description: str,
+        tenant_id: str = "default",
+        status: str = "created",
+        priority: str = "normal",
+        domain: str = "general",
     ) -> dict[str, Any]:
         session_local = get_session_factory()
         session = session_local()
@@ -149,7 +156,9 @@ class PersistentTaskStore:
                 id=task_id,
                 type=task_type,
                 description=description,
-                status="created",
+                status=status,
+                priority=priority,
+                domain=domain,
                 tenant_id=tenant_id,
             )
             session.merge(task)
@@ -158,7 +167,10 @@ class PersistentTaskStore:
                 "id": task_id,
                 "type": task_type,
                 "description": description,
-                "status": "created",
+                "status": status,
+                "priority": priority,
+                "domain": domain,
+                "tenant_id": tenant_id,
             }
         finally:
             session.close()
@@ -175,9 +187,13 @@ class PersistentTaskStore:
                 "type": row.type,
                 "description": row.description,
                 "status": row.status,
+                "priority": row.priority,
+                "domain": row.domain,
                 "assigned_agent": row.assigned_agent,
                 "plan": row.plan or [],
                 "result": row.result or {},
+                "tenant_id": row.tenant_id,
+                "created_at": row.created_at,
             }
         finally:
             session.close()
