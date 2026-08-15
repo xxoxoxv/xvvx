@@ -223,10 +223,10 @@ def db_cursor():
     else:
         # PostgreSQL path for production
         import psycopg2
+        from psycopg2.extras import RealDictCursor
         conn = psycopg2.connect(db_url)
-        conn.row_factory = psycopg2.extras.RealDictCursor
         try:
-            yield conn.cursor()
+            yield conn.cursor(cursor_factory=RealDictCursor)
             conn.commit()
         finally:
             conn.close()

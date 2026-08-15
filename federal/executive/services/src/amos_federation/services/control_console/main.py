@@ -263,6 +263,105 @@ async def list_events(
     return get_event_bus().get_events(subject=subject, limit=limit)
 
 
+# === 8.4: Health System endpoints ===
+
+@router.get("/health/agents/{agent_id}", response_model=dict)
+async def get_agent_health(
+    agent_id: str,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """عرض الحالة الصحية لوكيل."""
+    from amos_federation.services.agent_runtime.health import get_health_checker, get_isolation_system
+    checker = get_health_checker()
+    history = checker.get_agent_health_history(agent_id, limit=5)
+    latest = history[0] if history else {"status": "unknown"}
+    isolated = get_isolation_system().is_isolated(agent_id)
+    return {
+        "agent_id": agent_id,
+        "latest_status": latest["status"],
+        "is_isolated": isolated,
+        "history": history,
+    }
+
+
+@router.get("/health/all", response_model=list[dict])
+async def get_all_health(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> list[dict[str, Any]]:
+    """عرض الحالة الصحية لكل الوكلاء."""
+    from amos_federation.services.agent_runtime.health import get_health_checker
+    from amos_federation.services.agent_runtime.population import get_population_registry
+    checker = get_health_checker()
+    agents = get_population_registry().list_agents()
+    results = []
+    for a in agents:
+        history = checker.get_agent_health_history(a["agent_id"], limit=1)
+        results.append({
+            "agent_id": a["agent_id"],
+            "name": a["name"],
+            "role": a["role"],
+            "health_status": history[0]["status"] if history else "unknown",
+            "performance_score": history[0]["performance_score"] if history else None,
+        })
+    return results
+
+
+@router.post("/health/check", response_model=dict)
+async def run_health_check(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    agent_id: str | None = Query(default=None),
+) -> dict[str, Any]:
+    """تشغيل فحص صحي (وكيل واحد أو الكل)."""
+    from amos_federation.services.agent_runtime.health import get_health_checker, run_health_cycle
+    if agent_id:
+        return get_health_checker().check_agent(agent_id)
+    else:
+        return run_health_cycle()
+
+
+@router.get("/health/isolations", response_model=list[dict])
+async def list_isolations(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> list[dict[str, Any]]:
+    """عرض حالات العزل النشطة."""
+    from amos_federation.services.agent_runtime.health import get_isolation_system
+    return get_isolation_system().list_active_isolations()
+
+
+@router.post("/health/isolate/{agent_id}", response_model=dict)
+async def isolate_agent(
+    agent_id: str,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    reason: str = Query(default="Manual isolation"),
+) -> dict[str, Any]:
+    """8.3: عزل وكيل من الواجهة."""
+    from amos_federation.services.agent_runtime.health import get_isolation_system
+    return get_isolation_system().isolate(agent_id, reason)
+
+
+@router.post("/health/treat/{agent_id}", response_model=dict)
+async def treat_agent(
+    agent_id: str,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    treatment_type: str = Query(default="retrain"),
+    reason: str = Query(default="Manual treatment"),
+) -> dict[str, Any]:
+    """8.2: بدء علاج وكيل من الواجهة."""
+    from amos_federation.services.agent_runtime.health import get_treatment_system
+    return get_treatment_system().start_treatment(agent_id, treatment_type, reason)
+
+
+@router.post("/health/release/{isolation_id}", response_model=dict)
+async def release_agent(
+    isolation_id: str,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    decision: str = Query(default="release"),
+) -> dict[str, Any]:
+    """8.3: إنهاء عزل وكيل."""
+    from amos_federation.services.agent_runtime.health import get_isolation_system
+    return get_isolation_system().release(isolation_id, decision)
+
+
 # === HTML Interface ===
 
 @router.get("/ui", response_class=HTMLResponse)

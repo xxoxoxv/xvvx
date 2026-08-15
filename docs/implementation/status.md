@@ -29,7 +29,7 @@ Federal Council
 | **Shadow Testing** | Mock | ألفا وبيتا محاكاة بـ functions — لا نماذج حقيقية، لا مقارنة فعلية |
 | **Control Console** | Real | واجهة HTML/JS حقيقية على المنفذ 3000، كل رقم من خدمات حية، Kill Switch + Agent Control + Audit + Cost |
 | **Event Bus** | Persistent | EventBus دائم بـ SQLAlchemy/SQLite، اشتراكات + wildcards، 12 عقد أحداث، EventPublisher يدعم NATS أو fallback محلي |
-| **PostgreSQL** | غير مفعل | SQLAlchemy مثبت، لا اتصال حقيقي، لا migrations |
+| **PostgreSQL** | Connected | Supabase pooler (ap-northeast-1)، 10 جداول، قراءة/كتابة حقيقية، db_cursor يعمل |
 | **Redis** | غير مفعل | حزمة مثبتة، لا اتصال |
 | **Qdrant** | غير مفعل | حزمة مثبتة، لا اتصال |
 | **MinIO** | غير مفعل | حزمة مثبتة، لا اتصال |
@@ -143,8 +143,43 @@ Federal Council
 - 25 اختبار تحكم (dashboard + agents + audit + kill switch + approval + cost + events + UI + real-data)
 - 271 اختبار إجمالي (245 + 25 جديد + 1 تعديل)
 
+### Phase 8: النظام الصحي المؤسسي للوكلاء
+- النظام الصحي (agent_runtime/health.py) — 3 جداول جديدة في DB:
+  - agent_health_checks: فحوصات دورية مع hash chain
+  - agent_isolations: سجلات العزل
+  - agent_treatments: سجلات العلاج
+- 8.1: فحص دوري لكل وكيل — الأداء، استهلاك الموارد، الالتزام بالسياسات:
+  - نتيجة واحدة من أربع: سليم (healthy) / مراقبة (monitor) / علاج (treatment) / عزل (isolated)
+  - مسجلة في DB مع SHA-256 hash chain
+  - بيانات حقيقية من PersistentExperienceStore و AuditStore
+  - فحص كل الوكلاء دفعة واحدة
+- 8.2: مسار العلاج — ينفذ فعليًا:
+  - retrain: استدعاء AgentSchool.run_full_curriculum (المرحلة 6)
+  - replace_model: استدعاء ModelLayer.invoke_with_cache (المرحلة 5)
+  - fix_tool: فحص أدوات الوكيل
+  - reset_context: إعادة تعيين سياق الوكيل
+- 8.3: مسار العزل — Sandbox معزول:
+  - الوكيل المعزول لا يمكنه تنفيذ أي أداة إنتاجية
+  - كل فعل أثناء العزل مُسجّل
+  - إنهاء العزل: إعادة تدريب / تقاعد / إطلاق
+- 8.4: ربط بواجهة التحكم — 7 endpoints جديدة:
+  - GET /v1/health/all — كل الحالات الصحية
+  - GET /v1/health/agents/{id} — حالة وكيل
+  - POST /v1/health/check — تشغيل فحص
+  - GET /v1/health/isolations — حالات العزل
+  - POST /v1/health/isolate/{id} — عزل
+  - POST /v1/health/treat/{id} — علاج
+  - POST /v1/health/release/{id} — إنهاء عزل
+- دورة فحص صحي كاملة (run_health_cycle) — تفحص كل الوكلاء تلقائيًا
+- PostgreSQL (Supabase) — متصل فعليًا عبر pooler (ap-northeast-1)
+  - 10 جداول في PostgreSQL: agents, tools, tasks, memories, experiences, reviews, audit_entries, agent_health_checks, agent_isolations, agent_treatments
+  - db_cursor مُصلح لدعم PostgreSQL (RealDictCursor)
+  - الاختبارات تمر على SQLite و PostgreSQL
+- 32 اختبار صحي (فحص + علاج + عزل + دورة كاملة + واجهة)
+- 303 اختبار إجمالي (271 + 32 جديد)
+
 ## الحالة الحقيقية
-البيانات دائمة. الأحداث منشورة. الحوكمة تعمل. الأدوات تنفذ فعليًا. النماذج تعمل مع caching وتكلفة. 20 وكيل حقيقي بعهود تشغيلية ومدرسة ودورة حياة. واجهة تحكم بشري حقيقية تعرض كل شيء وتسمح بالتحكم الفوري. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker/GPU) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
+البيانات دائمة. الأحداث منشورة. الحوكمة تعمل. الأدوات تنفذ فعليًا. النماذج تعمل مع caching وتكلفة. 20 وكيل حقيقي بعهود تشغيلية ومدرسة ودورة حياة. واجهة تحكم بشري حقيقية تعرض كل شيء وتسمح بالتحكم الفوري. نظام صحي مؤسسي يفحص الوكلاء دوريًا ويعالج ويعزل. PostgreSQL متصل فعليًا (Supabase). لا يزال Redis/Qdrant/NATS/MinIO/Docker/GPU غير مفعّلة.
 
 ## المؤجل (حسب الخارطة الجديدة v1.0)
-- Phase 8-17: النظام الصحي، المؤسسات، الخزانة، التوسع، الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق
+- Phase 9-17: المؤسسات، الخزانة، التوسع، الفيدرالية، المصانع، التعلم، التقييم، الإنتاج، الإطلاق
