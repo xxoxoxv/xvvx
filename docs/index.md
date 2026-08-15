@@ -13,6 +13,7 @@
 | [`audit/PHASE_E_ROADMAP.md`](audit/PHASE_E_ROADMAP.md) | **خطة السجل** — عصر التنفيذ E0–E24 |
 | [`audit/DEFINITION_OF_DONE.md`](audit/DEFINITION_OF_DONE.md) | تعريف الإنجاز ونظام الحالات |
 | [`audit/TRUTH_MATRIX.md`](audit/TRUTH_MATRIX.md) | مصفوفة الحقيقة (مولَّدة آليًا) |
+| [`../core/constitutional_engine/README.md`](../core/constitutional_engine/README.md) | **النواة الدستورية** — الدستور كمحرك تنفيذي |
 
 ## الأقسام
 

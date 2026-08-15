@@ -35,6 +35,21 @@ AMOS-Federation دولة رقمية فدرالية. ليست مجرد أكواد
 | `ops/` | العمليات: المراقبة، النسخ الاحتياطي، الأزمات | stub |
 | `tests/` | الاختبارات: دخان خفيف لكل نواة | stub |
 
+## الدستور قابل للتنفيذ
+
+الدستور في هذه الدولة ليس نصًا مرجعيًا — إنه محرك. كل فعل يُعرض على
+[`core/constitutional_engine/`](core/constitutional_engine/) قبل تنفيذه، فيصدر
+`ALLOW` أو `DENY` مُعلَّلًا برقم المادة والبند، ويُقيَّد الحكم في سلسلة تجزئة
+لا يُحذف منها قيد. نص المواد مختوم بـ SHA-256 في
+[`core/constitution/ARTICLE_SEALS.json`](core/constitution/ARTICLE_SEALS.json)،
+وأي تعديل غير مصرح به يُفشل CI.
+
+```python
+from core.constitutional_engine import ActionRequest, Branch, ConstitutionalEngine
+ConstitutionalEngine().enforce(ActionRequest(Branch.EXECUTIVE, "legislate"))
+# ConstitutionalViolation: A003 · R-003-1 — الفصل بين السلطات
+```
+
 ## قاعدة الحقيقة
 
 > `DONE = Capability Proven`

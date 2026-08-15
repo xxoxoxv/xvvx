@@ -1,0 +1,53 @@
+{
+  "$comment": "بصمات SHA-256 للمواد الدستورية (المادة الخامسة). أي اختلاف = تعديل غير مصرح به. لا يُحدَّث هذا الملف إلا بمرسوم تعديل موثق في amendments/.",
+  "schema_version": 1,
+  "algorithm": "sha256",
+  "normalization": "LF endings, trailing whitespace stripped, document stripped",
+  "seals": {
+    "A001": {
+      "file": "001-identity.md",
+      "title": "المادة الأولى — الهوية",
+      "sha256": "5a626a63d8b34c19400e756b5a6def3349b2bf006f05ab9286939a0f5b0044da"
+    },
+    "A002": {
+      "file": "002-rights-and-duties.md",
+      "title": "المادة الثانية — الحقوق والواجبات",
+      "sha256": "d42bb3eadd46f1b90f8062c24d0dbf4b56a03648d8cdb1648cb4e990625b2db6"
+    },
+    "A003": {
+      "file": "003-separation-of-powers.md",
+      "title": "المادة الثالثة — الفصل بين السلطات",
+      "sha256": "4866b22771985200c1748b9ab4fff9b18a392670994e8a0a81d62228d9257f28"
+    },
+    "A004": {
+      "file": "004-federalism.md",
+      "title": "المادة الرابعة — الفدرالية",
+      "sha256": "e9eba7a84a51aa9b9450164bf9838ef04bb83e0137c6d8571dc8552bc139f361"
+    },
+    "A005": {
+      "file": "005-amendment-process.md",
+      "title": "المادة الخامسة — عملية التعديل",
+      "sha256": "253c213f28cee1ac687db3990f19629202928c40fc493449d01132a74a16b422"
+    },
+    "A006": {
+      "file": "006-succession.md",
+      "title": "المادة السادسة — الخلافة",
+      "sha256": "84eb0c017b619365b295e2bdfdb31d2af5f9fe56a2c52d5e68943eb03615f5f1"
+    },
+    "A007": {
+      "file": "007-archival.md",
+      "title": "المادة السابعة — الأرشفة",
+      "sha256": "ac4eaef3a0327953a0e74a42362a018f31d4bda3169a35a324be7c12d06502ed"
+    },
+    "A008": {
+      "file": "008-kill-switch.md",
+      "title": "المادة الثامنة — زر التوقف الطارئ",
+      "sha256": "d62af77fe2c0b58036065d8b520d5ab4f5788048315c49e306a148449a308280"
+    },
+    "A009": {
+      "file": "009-file-identity-law.md",
+      "title": "المادة التاسعة — قانون هوية الملفات",
+      "sha256": "9daeef2acbff6693be711552a15e294dfe1dcc24489cc603710b81d7265eaa89"
+    }
+  }
+}

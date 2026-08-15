@@ -11,7 +11,6 @@ Usage: python check_repository_identity.py /path/to/amos-federation
 """
 
 import sys
-import re
 from pathlib import Path
 
 
