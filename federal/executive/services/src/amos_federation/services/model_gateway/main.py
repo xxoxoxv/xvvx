@@ -1,23 +1,45 @@
 """
 AMOS-Federation Model Gateway Service
-الهدف: توجيه طلبات النماذج إلى مزود خارجي (Claude) مع fallback محلي حتمي
+الهدف: توجيه طلبات النماذج إلى مزود خارجي (Claude) مع fallback محلي حتمي + تتبع التكلفة + Shadow Testing
 النطاق: خدمة model-gateway على المنفذ 8004
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
 """
 
 import time
+import uuid
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, status
+from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 from amos_federation.common.auth import require_auth
 from amos_federation.common.config import settings
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
+from amos_federation.services.model_gateway.shadow import (
+    InMemoryShadowStore,
+    _alpha_response,
+    _beta_response,
+    _text_similarity,
+)
 
 router = APIRouter(prefix="/v1", tags=["model-gateway"])
+
+# Cost tracking: تكلفة التقديم بالدولار لكل ألف رمز
+COST_PER_1K_TOKENS = {
+    "local-fallback": 0.0,
+    "alpha-local": 0.0,
+    "beta-candidate": 0.0,
+    "claude-sonnet-4": 0.015,
+    "claude-opus-4": 0.075,
+}
+
+# Cost log
+_cost_log: list[dict[str, Any]] = []
+_shadow_store = InMemoryShadowStore()
 
 
 class ModelInvokeRequest(BaseModel):
@@ -37,6 +59,7 @@ class ModelInvokeResponse(BaseModel):
     tokens_used: int
     latency_ms: int
     source: str  # "external" أو "local_fallback"
+    cost_usd: float = 0.0
 
 
 class ModelRouteResponse(BaseModel):
@@ -120,14 +143,94 @@ async def invoke_model(
         source = "local_fallback"
         model = "local-fallback"
     latency = int((time.monotonic() - start) * 1000)
+    cost = round(tokens * COST_PER_1K_TOKENS.get(model, 0.0) / 1000, 6)
+    _cost_log.append({
+        "invocation_id": f"inv-{uuid.uuid4()}",
+        "timestamp": datetime.now(UTC).isoformat(),
+        "model": model,
+        "tokens": tokens,
+        "cost_usd": cost,
+        "latency_ms": latency,
+        "source": source,
+    })
     return ModelInvokeResponse(
         text=text,
         model_used=model,
         tokens_used=tokens,
         latency_ms=latency,
         source=source,
+        cost_usd=cost,
     )
 
 
+class ShadowTestRequest(BaseModel):
+    """طلب اختبار shadow بين نموذجين."""
+
+    prompt: str = Field(min_length=1, max_length=50000)
+
+
+@router.post("/shadow/test", response_model=dict, status_code=status.HTTP_201_CREATED)
+async def run_shadow_test(
+    request: ShadowTestRequest,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """تشغيل اختبار shadow: توجيه الطلب لكلا النموذجين (ألفا + بيتا) ومقارنة النتائج."""
+    alpha = _alpha_response(request.prompt)
+    beta = _beta_response(request.prompt)
+    return _shadow_store.record({"prompt": request.prompt, "alpha": alpha, "beta": beta})
+
+
+@router.get("/shadow/results", response_model=list[dict])
+async def get_shadow_results(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    limit: int = Query(default=50, ge=1, le=200),
+) -> list[dict[str, Any]]:
+    """عرض نتائج اختبارات shadow."""
+    return _shadow_store.list_all(limit=limit)
+
+
+@router.get("/shadow/results/{shadow_id}", response_model=dict)
+async def get_shadow_result(
+    shadow_id: str,
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """إرجاع نتيجة shadow بالمعرّف."""
+    result = _shadow_store.get(shadow_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="نتيجة shadow غير موجودة")
+    return result
+
+
+@router.get("/shadow/stats", response_model=dict)
+async def shadow_stats(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """ملخص إحصائيات shadow testing."""
+    return _shadow_store.summary()
+
+
+@router.get("/cost/summary", response_model=dict)
+async def cost_summary(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """ملخص التكاليف لكل النماذج."""
+    total_cost = sum(r["cost_usd"] for r in _cost_log)
+    by_model: dict[str, dict[str, float]] = {}
+    for entry in _cost_log:
+        m = entry["model"]
+        if m not in by_model:
+            by_model[m] = {"invocations": 0, "total_tokens": 0, "total_cost": 0.0}
+        by_model[m]["invocations"] += 1
+        by_model[m]["total_tokens"] += entry["tokens"]
+        by_model[m]["total_cost"] += entry["cost_usd"]
+    for m in by_model:
+        by_model[m]["total_cost"] = round(by_model[m]["total_cost"], 6)
+    return {
+        "total_invocations": len(_cost_log),
+        "total_cost_usd": round(total_cost, 6),
+        "by_model": by_model,
+    }
+
+
 _service = SERVICES["model-gateway"]
-app = create_service_app(_service["name"], _service["port"], "توجيه واستدعاء النماذج", [router])
+app = create_service_app(_service["name"], _service["port"], "توجيه واستدعاء النماذج + Shadow Testing", [router])
