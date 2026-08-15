@@ -59,22 +59,33 @@ def get_last_chain_hash() -> str:
 
 
 class EventPublisher:
-    """ناشر الأحداث — يربط NATS + Audit Log + Hash Chain"""
+    """ناشر الأحداث — يربط NATS JetStream (إن توفّر) أو EventBus المحلي + Audit Log + Hash Chain"""
 
     def __init__(self):
         self._nc = None
+        self._local_bus = None
 
     async def connect(self):
-        """الاتصال بـ NATS JetStream"""
-        self._nc = await nats.connect(settings.nats_url)
-        self._js = self._nc.jetstream()
-        with suppress(Exception):
-            await self._js.add_stream(
-                name=settings.nats_stream,
-                subjects=[f"{EVENT_SUBJECT_PREFIX}.>"],
-                max_age=settings.nats_retention_days * 86400,
-            )
-        logger.info("event_publisher.connected", nats_url=settings.nats_url)
+        """الاتصال بـ NATS JetStream أو EventBus المحلي"""
+        if _NATS_AVAILABLE:
+            try:
+                self._nc = await nats.connect(settings.nats_url)
+                self._js = self._nc.jetstream()
+                with suppress(Exception):
+                    await self._js.add_stream(
+                        name=settings.nats_stream,
+                        subjects=[f"{EVENT_SUBJECT_PREFIX}.>"],
+                        max_age=settings.nats_retention_days * 86400,
+                    )
+                logger.info("event_publisher.connected", nats_url=settings.nats_url)
+                return
+            except Exception as e:
+                logger.warning("event_publisher.nats_unavailable", error=str(e))
+
+        # Fallback: EventBus محلي دائم
+        from amos_federation.common.event_bus import get_event_bus
+        self._local_bus = get_event_bus()
+        logger.info("event_publisher.using_local_bus")
 
     async def close(self):
         """إغلاق الاتصال"""
@@ -148,12 +159,12 @@ class EventPublisher:
                 error=str(error),
             )
 
-        # نشر الحدث إلى NATS
+        # نشر الحدث إلى NATS أو EventBus المحلي
         subject = f"{EVENT_SUBJECT_PREFIX}.{event_type}"
         event_with_hash = {**event, "chain_hash": chain_hash}
-        payload = json.dumps(event_with_hash, ensure_ascii=False).encode("utf-8")
 
         if self._nc:
+            payload = json.dumps(event_with_hash, ensure_ascii=False).encode("utf-8")
             await self._js.publish(subject, payload)
             logger.info(
                 "event.published",
@@ -162,8 +173,19 @@ class EventPublisher:
                 subject=subject,
                 chain_hash=chain_hash[:20] + "...",
             )
+        elif self._local_bus:
+            self._local_bus.publish(subject, event_with_hash)
+            logger.info(
+                "event.published_local",
+                event_id=event_id,
+                event_type=event_type,
+                subject=subject,
+            )
         else:
-            logger.warning("event.not_published_no_connection", event_id=event_id)
+            # محاولة استخدام EventBus بدون اتصال صريح
+            from amos_federation.common.event_bus import get_event_bus
+            get_event_bus().publish(subject, event_with_hash)
+            logger.info("event.published_fallback", event_id=event_id, subject=subject)
 
         return event_id
 

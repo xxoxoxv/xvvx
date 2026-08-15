@@ -28,7 +28,7 @@ Federal Council
 | **Training/LoRA** | Mock | محاكاة حتمية للتدريب — لا PEFT، لا transformers، لا MinIO، لا artifacts حقيقية |
 | **Shadow Testing** | Mock | ألفا وبيتا محاكاة بـ functions — لا نماذج حقيقية، لا مقارنة فعلية |
 | **Control Console** | غير موجود | لا واجهة React — لم تُبنَ بعد |
-| **Event Bus** | غير موجود | لا NATS، لا JetStream — استدعاءات مباشرة فقط |
+| **Event Bus** | Persistent | EventBus دائم بـ SQLAlchemy/SQLite، اشتراكات + wildcards، 12 عقد أحداث، EventPublisher يدعم NATS أو fallback محلي |
 | **PostgreSQL** | غير مفعل | SQLAlchemy مثبت، لا اتصال حقيقي، لا migrations |
 | **Redis** | غير مفعل | حزمة مثبتة، لا اتصال |
 | **Qdrant** | غير مفعل | حزمة مثبتة، لا اتصال |
@@ -53,13 +53,22 @@ Federal Council
 - Audit Log: دائم بـ SQLAlchemy + hash chain SHA-256
 - 8 اختبارات استمرارية تثبت بقاء البيانات بعد إنشاء نسخ جديدة
 - 154 اختبار إجمالي (146 + 8 جديد)
-- ملاحظة: PostgreSQL/Redis/Qdrant غير متوفرة في البيئة — SQLite كبديل دائم حقيقي (قابل للتبديل بتغيير connection string)
+
+### Phase 2: الجهاز العصبي (نظام الأحداث)
+- EventBus دائم بـ SQLAlchemy/SQLite (common/event_bus.py)
+- نشر/استرجاع/اشتراك الأحداث يعمل فعليًا
+- دعم wildcards (amos_federation.task.*)
+- 12 عقد أحداث معرّفة (EVENT_CONTRACTS)
+- validate_event() للتحقق من مطابقة الحدث للعقد
+- EventPublisher محدّث: NATS إن توفّر، وإلا fallback إلى EventBus المحلي
+- endpoints للتحقق من الأحداث في /v1/events و /v1/events/contracts
+- 14 اختبار أحداث + اختبار سلسلة كاملة task→experience
+- 168 اختبار إجمالي (154 + 14 جديد)
 
 ## الحالة الحقيقية
-البيانات الآن دائمة بـ SQLite عبر SQLAlchemy. تبقى بعد إعادة التشغيل. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
+البيانات دائمة بـ SQLite عبر SQLAlchemy. الأحداث منشورة ومخزَّنة فعليًا. تبقى بعد إعادة التشغيل. لا يزال البنية التحتية الخارجية (PostgreSQL/Redis/Qdrant/NATS/MinIO/Docker) غير مفعّلة. الخارطة الجديدة (v1.0) تنقل كل مكوّن من "محاكاة" إلى "حقيقي".
 
 ## المؤجل (حسب الخارطة الجديدة v1.0)
-- Phase 2: الجهاز العصبي (NATS JetStream)
 - Phase 3: الحوكمة التأسيسية (OPA/Rego + Kill Switch حقيقي)
 - Phase 4: الأدوات الحقيقية (100 أداة في Sandbox حقيقي)
 - Phase 5: النماذج الحقيقية (Claude + vLLM)

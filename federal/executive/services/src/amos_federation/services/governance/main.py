@@ -290,5 +290,37 @@ async def verify_audit_chain(
     return _audit_store.verify_chain()
 
 
+# === Event Bus endpoints ===
+
+@router.get("/events", response_model=list[dict])
+async def list_events(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    subject: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=500),
+) -> list[dict[str, Any]]:
+    """عرض الأحداث المنشورة في Event Bus."""
+    from amos_federation.common.event_bus import get_event_bus
+    return get_event_bus().get_events(subject=subject, limit=limit)
+
+
+@router.get("/events/count", response_model=dict)
+async def count_events(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+    subject: str | None = Query(default=None),
+) -> dict[str, Any]:
+    """عدد الأحداث في Event Bus."""
+    from amos_federation.common.event_bus import get_event_bus
+    return {"count": get_event_bus().count(subject=subject)}
+
+
+@router.get("/events/contracts", response_model=dict)
+async def list_event_contracts(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """عرض عقود الأحداث المعرفة."""
+    from amos_federation.common.event_bus import EVENT_CONTRACTS
+    return EVENT_CONTRACTS
+
+
 _service = SERVICES["governance"]
 app = create_service_app(_service["name"], _service["port"], "Policy Engine + Audit Log + Kill Switch + Canary", [router])
