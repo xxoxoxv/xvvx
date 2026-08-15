@@ -1,7 +1,7 @@
 # حالة تنفيذ AMOS-Federation
 
 ## التعريف
-سجل الحالة الهندسي لخطة التسعين يومًا بعد إنجاز المراحل 0-5.
+سجل الحالة الهندسي لخطة التسعين يومًا — كل المراحل مكتملة.
 
 ## النطاق
 يوثق المنجز وما بقي في خريطة الخدمات، API، الحاويات، والاختبارات.
@@ -77,7 +77,26 @@ Federal Council
   - knowledge injection (anti-forgetting) ممكّن في كل Model Card.
 - 119 اختبار: 104 من المراحل 0-4 + 15 جديد (data pipeline, model registry).
 
+### المرحلة 6: Governance + Canary (أسابيع 29-36)
+- Policy-as-Code: ثلاث سياسات قابلة للتنفيذ.
+  - `GET /v1/policies` عرض كل السياسات.
+  - `POST /v1/policies/check` فحص سياسة ضد سياق قرار.
+  - سياسة الترقية: 5 بوابات + درجة جودة ≥ 0.7 + معيار ≥ 0.8.
+  - سياسة الوصول: أدوات خطيرة تتطلب دور admin.
+  - سياسة الميزانية: حد يومي + تنبيه عند 80%.
+- Kill Switch متعدد المستويات: normal → alert → degraded → halt.
+  - `GET /v1/system/status` + `POST /v1/system/kill-switch` + `POST /v1/system/kill-switch/reset`.
+- Promotion Gates: 5 بوابات (evaluation → shadow → canary → human_approval → activation).
+  - `POST /v1/promotions` + `POST /v1/promotions/{id}/gates` + `GET /v1/promotions/{id}`.
+  - فشل بوابة يوقف الترقية، اجتياز الكل يرقى النموذج.
+- Canary Deployment: نسبة مرور + مقاييس + تراجع تلقائي.
+  - `POST /v1/canary` + `GET /v1/canary/{id}` + `PATCH /v1/canary/{id}/metrics`.
+  - تراجع تلقائي عند error_rate > 10% أو quality < 0.5.
+  - `POST /v1/canary/{id}/rollback` للتراجع اليدوي.
+- Audit Log: سجل غير قابل للتعديل بسلسلة hash (SHA-256).
+  - `GET /v1/audit` عرض السجل + `GET /v1/audit/verify` التحقق من سلامة السلسلة.
+- 146 اختبار: 119 من المراحل 0-5 + 27 جديد (policy, kill switch, promotion, canary, audit).
+
 ## المؤجل
 - الأسبوعان 11-13: Redis/Qdrant الفعليان، عزل المستأجرين على مستوى قاعدة البيانات، hardening، restore drills، واختبارات الحمل.
-- المرحلة 6: Governance + Canary — Policy Engine + Kill Switch.
 - واجهة control-console ليست خدمة Python ضمن هذا التنفيذ، وتبقى ضمن واجهة الويب المخطط لها.
