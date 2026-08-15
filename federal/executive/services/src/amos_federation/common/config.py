@@ -5,13 +5,14 @@ AMOS-Federation Configuration
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
 """
+
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """إعدادات النظام — تُقرأ من متغيرات البيئة أو .env"""
 
-    # App
+    # التطبيق
     app_name: str = "amos-federation"
     environment: str = "development"
     debug: bool = True
@@ -44,7 +45,7 @@ class Settings(BaseSettings):
     minio_bucket: str = "amos-federation"
 
     # JWT
-    jwt_secret: str = "dev_secret_change_me"
+    jwt_secret: str = "dev_secret_change_me_at_least_32_characters"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
@@ -52,7 +53,7 @@ class Settings(BaseSettings):
     otlp_endpoint: str = "http://localhost:4317"
     service_name: str = "amos-federation"
 
-    # Model Gateway
+    # بوابة النماذج
     claude_api_key: str = ""
     default_model: str = "claude-sonnet-4-20250514"
 

@@ -5,6 +5,7 @@
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
 """
+
 from amos_federation.common.config import Settings
 
 
