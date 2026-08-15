@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from amos_federation.common.auth import require_auth
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
+from amos_federation.services.evaluation.benchmark import analyze_gaps, run_benchmark
 from amos_federation.services.evaluation.store import InMemoryExperienceStore
 
 router = APIRouter(prefix="/v1", tags=["evaluation"])
@@ -71,13 +72,37 @@ async def get_experience(
 async def run_evaluation(
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
-    """تشغيل تقييم أساسي: إحصائيات الخبرات المتراكمة."""
+    """تشغيل تقييم أساسي: إحصائيات الخبرات + تشغيل المعيار."""
+    benchmark_result = run_benchmark()
     return {
         "total_experiences": experience_store.count(),
         "by_type": experience_store.by_type(),
+        "benchmark": {
+            "total": benchmark_result["total"],
+            "passed": benchmark_result["passed"],
+            "failed": benchmark_result["failed"],
+            "pass_rate": benchmark_result["pass_rate"],
+        },
         "status": "completed",
-        "message": "تم تشغيل التقييم الأساسي",
+        "message": "تم تشغيل التقييم والمعيار القياسي",
     }
+
+
+@router.post("/evaluations/benchmark", response_model=dict)
+async def run_benchmark_suite(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """تشغيل مجموعة المهام القياسية (20 مهمة)."""
+    return run_benchmark()
+
+
+@router.get("/evaluations/gaps", response_model=dict)
+async def identify_gaps(
+    _: Annotated[dict[str, object], Depends(require_auth)],
+) -> dict[str, Any]:
+    """اكتشاف الفجوات المعرفية بناءً على الخبرات المتراكمة."""
+    all_experiences = experience_store.list_all(limit=1000)
+    return analyze_gaps(all_experiences)
 
 
 @router.get("/experiences/stats/summary", response_model=dict)
