@@ -42,6 +42,15 @@
 
 ---
 
+### [P1] سجل الذاكرة والمعرفة
+- **Commit:** (هذا الـ commit)
+- **ما تم:**
+  - إنشاء `core/memory/index.md` ببيانات حقيقية من Supabase
+  - ربط السجل بجداول `memories` (2 صف)، `experiences` (1 صف)، `event_store` (156 حدث)
+  - تحديث `core/memory/NUCLEUS.md` (إضافة index.md للواجهة)
+  - تحديث `EXECUTION_PLAN.md` (core P1 → DONE، العداد 1/12)
+- **الحالة:** DONE
+
 ## قاعدة الإضافة
 
 عند إنهاء أي مهمة، أضف سجلاً جديداً هنا بالصيغة:
