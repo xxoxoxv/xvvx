@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from amos_federation.common.auth import require_auth
 from amos_federation.common.events import event_publisher
+from amos_federation.common.persistent import PersistentTaskStore
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.schemas import (
     AgentManifestModel,
@@ -26,7 +27,51 @@ from amos_federation.common.service import create_service_app
 from amos_federation.services.api_gateway.store import InMemoryTaskStore, TaskStore
 
 router = APIRouter(prefix="/v1", tags=["api-gateway"])
-task_store: TaskStore = InMemoryTaskStore()
+
+
+class PersistentTaskStoreAdapter:
+    """مهايئ PersistentTaskStore ليتوافق مع TaskStore Protocol."""
+
+    def __init__(self) -> None:
+        self._store = PersistentTaskStore()
+        self._fallback = InMemoryTaskStore()
+
+    def create(self, task: TaskDetails) -> TaskDetails:
+        try:
+            self._store.create(
+                task_id=task.task_id,
+                task_type=task.type,
+                description=task.description,
+                tenant_id=task.tenant_id or "default",
+                status=task.status,
+                priority=task.priority,
+                domain=task.domain,
+            )
+            return task
+        except Exception:
+            return self._fallback.create(task)
+
+    def get(self, task_id: str) -> TaskDetails | None:
+        try:
+            result = self._store.get(task_id)
+            if result is None:
+                return None
+            return TaskDetails(
+                task_id=result["id"],
+                type=result["type"],
+                description=result["description"],
+                priority=result.get("priority", "normal"),
+                status=result["status"],
+                domain=result.get("domain", "general"),
+                tenant_id=result.get("tenant_id", "default"),
+                result=result.get("result", {}),
+                created_at=result.get("created_at") or datetime.now(UTC),
+            )
+        except Exception:
+            return self._fallback.get(task_id)
+
+
+task_store: TaskStore = PersistentTaskStoreAdapter()
 agents: dict[str, AgentManifestModel] = {}
 tools: dict[str, ToolManifestModel] = {}
 

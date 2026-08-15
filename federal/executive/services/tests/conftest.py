@@ -15,11 +15,16 @@ import os
 import shutil
 from pathlib import Path
 
-# Force test environment — override any production env vars
+# Force test environment
 os.environ["AMOS_ENVIRONMENT"] = "test"
-os.environ["AMOS_DATABASE_URL"] = "sqlite:///amos_federation_test.db"
-os.environ["AMOS_JWT_SECRET"] = "test_secret_at_least_32_characters_long"
-os.environ["AMOS_CLAUDE_API_KEY"] = "test_key_not_real"
+# PostgreSQL tests require explicit opt-in via AMOS_RUN_POSTGRES_TESTS=1 + AMOS_TEST_DATABASE_URL
+_pg_url = os.environ.get("AMOS_TEST_DATABASE_URL", "")
+if os.environ.get("AMOS_RUN_POSTGRES_TESTS") == "1" and _pg_url.startswith("postgresql"):
+    os.environ["AMOS_DATABASE_URL"] = _pg_url
+else:
+    os.environ["AMOS_DATABASE_URL"] = "sqlite:///amos_federation_test.db"
+os.environ.setdefault("AMOS_JWT_SECRET", "test_secret_at_least_32_characters_long")
+os.environ.setdefault("AMOS_CLAUDE_API_KEY", "test_key_not_real")
 
 # Test-only database file (never touch production files)
 TEST_DB_FILE = "amos_federation_test.db"
