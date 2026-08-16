@@ -1,0 +1,166 @@
+"""الهدف: توزيع المهمّة على وكيل مؤهَّل فعلًا — من سجل الوكلاء في القاعدة.
+
+النطاق: federal/executive/services — النواة التنفيذية
+المالك: federal/executive/services
+تاريخ الإنشاء: 2026-08-16
+تاريخ آخر تعديل: 2026-08-16
+
+حقيقة مقيسة قبل هذه الوحدة: جدول `agents` مُعرَّف في `common/database.py` ولم
+يكن **أي** ملف في الخدمات يقرأ منه أو يكتب فيه (`grep AgentModel` = تعريفه
+وحده). في المقابل كان المنسّق يضع في خطته أسماء وكلاء نصيّة ثابتة
+(`worker-researcher`, `critic-001`) لا وجود لها في أي سجل. أي أن «تعيين وكيل»
+كان سلسلة نصّية، لا قرارًا مبنيًّا على قدرة مُسجَّلة.
+
+فهذه الوحدة أول مستهلك حقيقي لسجل الوكلاء:
+
+- الاختيار بالقدرة: أدوات الخطة ⊆ أدوات الوكيل المسموحة (أو `*`).
+- الاختيار بالحالة: الوكلاء المعزولون/المسحوبون لا يُختارون.
+- عند عدم وجود وكيل مؤهَّل: `NoEligibleAgentError` — والمهمّة تسقط صريحًا. لا يُخترَع
+  وكيل، ولا يُنفَّذ بوكيل وهمي، ولا تُخفَّض متطلّبات الأداة لتناسب الموجود.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
+
+from amos_federation.common.database import AgentModel, get_session_factory
+
+#: الحالات التي يُقبل معها ترشيح الوكيل للعمل.
+EMPLOYABLE_STATUSES = frozenset({"registered", "active", "promoted", "ready"})
+
+#: صلاحية شاملة — يستخدمها التاج والوكلاء العامّون في هذا المستودع.
+WILDCARD = "*"
+
+
+class NoEligibleAgentError(RuntimeError):
+    """لا وكيل مُسجَّل يملك القدرة المطلوبة — فلا توزيع ولا تنفيذ."""
+
+
+@dataclass(frozen=True)
+class AgentAssignment:
+    """قرار توزيع: من، وبأي صلاحيات، ولماذا هو مؤهَّل."""
+
+    agent_id: str
+    agent_role: str
+    permissions: tuple[str, ...]
+    allowed_tools: tuple[str, ...]
+    required_tools: tuple[str, ...]
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "agent_id": self.agent_id,
+            "agent_role": self.agent_role,
+            "permissions": list(self.permissions),
+            "allowed_tools": list(self.allowed_tools),
+            "required_tools": list(self.required_tools),
+        }
+
+
+def required_tools_of(plan: list[dict[str, Any]]) -> tuple[str, ...]:
+    """أدوات الخطة بالترتيب وبلا تكرار."""
+    seen: list[str] = []
+    for step in plan:
+        tool = str(step.get("tool", "")).strip()
+        if tool and tool not in seen:
+            seen.append(tool)
+    return tuple(seen)
+
+
+def register_agent(
+    agent_id: str,
+    name: str,
+    role: str,
+    *,
+    permissions: list[str] | None = None,
+    allowed_tools: list[str] | None = None,
+    status: str = "registered",
+    token_budget: int = 10_000,
+    tenant_id: str = "default",
+) -> dict[str, Any]:
+    """تسجيل وكيل في القاعدة — الطريق الوحيد ليصبح قابلًا للتوزيع."""
+    session = get_session_factory()()
+    try:
+        session.merge(
+            AgentModel(
+                id=agent_id,
+                name=name,
+                role=role,
+                status=status,
+                permissions=permissions or [],
+                allowed_tools=allowed_tools or [],
+                token_budget=token_budget,
+                tenant_id=tenant_id,
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+    return {
+        "agent_id": agent_id,
+        "name": name,
+        "role": role,
+        "status": status,
+        "permissions": permissions or [],
+        "allowed_tools": allowed_tools or [],
+        "tenant_id": tenant_id,
+    }
+
+
+def _covers(allowed: list[str], required: tuple[str, ...]) -> bool:
+    if WILDCARD in allowed:
+        return True
+    return set(required).issubset(set(allowed))
+
+
+class CapabilityDispatcher:
+    """يختار وكيلًا من سجل الوكلاء بناءً على أدوات الخطة."""
+
+    def __init__(self, employable_statuses: frozenset[str] = EMPLOYABLE_STATUSES) -> None:
+        self._statuses = employable_statuses
+
+    def candidates(self, tenant_id: str = "default") -> list[AgentModel]:
+        session = get_session_factory()()
+        try:
+            return (
+                session.query(AgentModel)
+                .filter(
+                    AgentModel.tenant_id == tenant_id,
+                    AgentModel.status.in_(sorted(self._statuses)),
+                )
+                .order_by(AgentModel.created_at.asc())
+                .all()
+            )
+        finally:
+            session.close()
+
+    def select(
+        self,
+        plan: list[dict[str, Any]],
+        *,
+        tenant_id: str = "default",
+        preferred_agent: str | None = None,
+    ) -> AgentAssignment:
+        """اختيار وكيل مؤهَّل، أو رفع `NoEligibleAgentError` صريحًا.
+
+        `preferred_agent` تفضيل لا أمر: إن كان الوكيل المفضَّل غير مؤهَّل للأدوات
+        المطلوبة فلا يُختار — التفضيل لا يلغي القدرة.
+        """
+        required = required_tools_of(plan)
+        rows = self.candidates(tenant_id)
+        eligible = [row for row in rows if _covers(list(row.allowed_tools or []), required)]
+        if not eligible:
+            registered = len(rows)
+            raise NoEligibleAgentError(
+                "لا وكيل مؤهَّل للأدوات المطلوبة "
+                f"({', '.join(required) or 'بلا أدوات'}) — "
+                f"وكلاء مرشَّحون في السجل: {registered}"
+            )
+        chosen = next((row for row in eligible if row.id == preferred_agent), eligible[0])
+        return AgentAssignment(
+            agent_id=chosen.id,
+            agent_role=chosen.role,
+            permissions=tuple(chosen.permissions or []),
+            allowed_tools=tuple(chosen.allowed_tools or []),
+            required_tools=required,
+        )

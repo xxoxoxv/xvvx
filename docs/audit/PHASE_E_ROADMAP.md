@@ -87,7 +87,7 @@ Constitutional Federal Monarchy
 | **E2** | Sovereignty Kernel — نواة السيادة | `PROVEN` — ثم **نُقِض نموذجه** وصُحِّح في `E2.1` | 2026-08-16 | `core/sovereignty/` + [`المادة العاشرة`](../../core/constitution/articles/010-royal-sovereignty.md) | `9cf849e` |
 | **E2.1** | Supreme Royal Authority — السلطة الملكية العليا | `PROVEN` | 2026-08-16 | `core/sovereignty/authority.py` + [`AMD-002`](../../core/constitution/amendments/AMD-002-supreme-royal-authority.md) + `tools/sovereignty/prove_supreme_authority.py` | `4e302e4` |
 | **E2.2** | Crown Protection — حماية التاج وجذر الثقة | `SECURITY_TESTED` — لا `PROVEN`: لا نشر ولا رصد | 2026-08-16 | `core/crown/` + [`CROWN_SOVEREIGNTY_PROTECTION.md`](../security/CROWN_SOVEREIGNTY_PROTECTION.md) + `tools/crown/verify_crown_root_of_trust.py` | `e3d0c8a` · `b13cd87` |
-| **E2.3** | Sovereign Consistency — اتساق المعمار السيادي | `IN_PROGRESS` | — | [`E2_2_E2_3_PROOF_REPORT.md`](E2_2_E2_3_PROOF_REPORT.md) (لم يُكتَب بعد) | — |
+| **E2.3** | Sovereign Consistency — اتساق المعمار السيادي | `IN_PROGRESS` — E2.3-A **مُنجَز**: [`E2_3_A_CROSS_SYSTEM_INTEGRATION_ASSESSMENT.md`](E2_3_A_CROSS_SYSTEM_INTEGRATION_ASSESSMENT.md) · E2.3-B `PENDING` | — | [`E2_2_E2_3_PROOF_REPORT.md`](E2_2_E2_3_PROOF_REPORT.md) (لم يُكتَب بعد) | — |
 | **E3** | Identity Kernel — نواة الهوية | `IN_PROGRESS` — الشقّ **أ** `PROVEN` والشقّ **ب** `DESIGNED` | 2026-08-16 | `tools/governance/check_repository_identity.py` + [`INT-001`](../../core/constitution/interpretations/INT-001-article-009-scope.md) · [`INT-002`](../../core/constitution/interpretations/INT-002-preamble-sealing.md) | `cdf605e` |
 | E4 | Real Database Layer | `DESIGNED` | — | — |
 | E5 | Agent Runtime | `DESIGNED` | — | — |
@@ -554,16 +554,18 @@ python -m pytest tests/ -q                            # 390 اختبارًا
 |---|---|---|---|
 | E2.2-A | توثيق نطاق التاج والنواة وحدّ البرمجية والبشر | `VERIFIED` | `cda68d5` · `fb5ce9d` |
 | E2.2-B | بوابة CI `crown-root-of-trust` — 11 فحصًا و8 خطوات | `VERIFIED` | `b13cd87` |
-| E2.2-C | خارطة المرحلة ومصفوفة الحقيقة المولَّدة | `IN_PROGRESS` | هذه الدفعة |
-| E2.2-D | مصالحة بوابات الهوية (المادة التاسعة) | `PENDING` | — |
-| E2.2-E | تحقق الأسرار وحدود الثقة | `PENDING` | — |
-| E2.2-F | إثبات الاستمرارية السيادية من الطرف إلى الطرف | `PENDING` | — |
-| E2.2-G | الحِزَم الكاملة عبر الأنظمة | `IN_PROGRESS` | `f1e69eb` · `b98d43a` · `1b341b9` |
+| E2.2-C | خارطة المرحلة ومصفوفة الحقيقة المولَّدة | `VERIFIED` — `truth_audit --ratchet` ثابت عند 100 على HEAD | `dae73f6` |
+| E2.2-D | مصالحة بوابات الهوية (المادة التاسعة) | `VERIFIED` — بوابات الهوية السبع `exit=0` على HEAD | `3fed334` · `cdf605e` |
+| E2.2-E | تحقق الأسرار وحدود الثقة | `VERIFIED` — `verify_secret_boundaries` 11/11 على HEAD | `891f6fe` · `24cae55` |
+| E2.2-F | إثبات الاستمرارية السيادية من الطرف إلى الطرف | `VERIFIED` — `prove_sovereign_continuity` + `prove_supreme_authority` `exit=0` على HEAD | `b4deb5a` |
+| E2.2-G | الحِزَم الكاملة عبر الأنظمة | `VERIFIED` محليًّا · CI `UNOBSERVED` — الحزم الثلاث 757 · 746/25 · 25 كلها PASS، والبوابة وُصلت بـCI في مَهمّة `cross-system-suites` | `f1e69eb` · `b98d43a` · `1b341b9` · هذه الدفعة |
 
-> **تناقض توثيقي غير محلول (لا يُخفى):** صفوف E2.2-C..F أعلاه تقول
-> `IN_PROGRESS`/`PENDING`، بينما `ACTIVE_EXECUTION_STATE.md:49` يقول
-> `E2.2-A..F = VERIFIED`. لم تُوحَّد الصفوف هنا لأن توحيدها يقتضي إعادة إثبات
-> C..F بنفسي، وهي ليست عمل هذه الدفعة. يُسجَّل التناقض ليُحلّ بإثبات لا بتحرير.
+> **التناقض التوثيقي السابق حُلّ بالإثبات (2026-08-16):** كانت صفوف E2.2-C..F هنا
+> تقول `IN_PROGRESS`/`PENDING` بينما `ACTIVE_EXECUTION_STATE.md` يقول `VERIFIED`.
+> لم تُوحَّد الصفوف بالتحرير بل بتشغيل بوابة كل بند على HEAD وخروجها بـ`exit=0`
+> (التفصيل والأرقام في `ACTIVE_EXECUTION_STATE.md` §14.1–14.2). وما بقي غير مُثبَت
+> يُقال صريحًا: **جولة CI نفسها غير مُلاحَظة** — المستودع خاصّ ولا وصول إلى
+> `api.github.com` من بيئة التنفيذ، فلا PASS ولا FAIL بل `UNOBSERVED`.
 
 
 ### الدليل التنفيذي (يُعاد تشغيله لا يُصدَّق)

@@ -20,6 +20,13 @@ class ServiceDefinition(TypedDict):
 
 
 SERVICES: dict[str, ServiceDefinition] = {
+    "executive-core": {
+        "name": "executive-core",
+        "port": 8008,
+        "responsibility": "دورة حياة المهمة تحت البوابة السيادية",
+        "store": "PostgreSQL",
+        "slo": "p99 < 1s لكل انتقال حالة",
+    },
     "api-gateway": {
         "name": "api-gateway",
         "port": 8000,

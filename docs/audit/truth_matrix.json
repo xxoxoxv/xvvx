@@ -19,7 +19,7 @@
       "secret_hits": 0,
       "observed_hits": 3,
       "api_routes": 0,
-      "test_refs": 120,
+      "test_refs": 171,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -74,22 +74,22 @@
     },
     "federal": {
       "domain": "federal",
-      "md_files": 51,
-      "py_files": 124,
+      "md_files": 52,
+      "py_files": 132,
       "yaml_files": 3,
-      "code_lines": 20351,
+      "code_lines": 21948,
       "nucleus_count": 7,
       "nucleus_status": {
         "unspecified": 7
       },
       "has_readme": true,
-      "real_source_hits": 126,
+      "real_source_hits": 129,
       "fake_hits": 1,
       "in_memory_hits": 60,
       "secret_hits": 0,
       "observed_hits": 114,
-      "api_routes": 132,
-      "test_refs": 55,
+      "api_routes": 140,
+      "test_refs": 56,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -124,7 +124,7 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 14,
+      "test_refs": 16,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -194,7 +194,7 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 123,
+      "test_refs": 124,
       "identity_violations": 3,
       "deployed": true,
       "columns": {
@@ -319,7 +319,7 @@
     },
     "docs": {
       "domain": "docs",
-      "md_files": 48,
+      "md_files": 49,
       "py_files": 2,
       "yaml_files": 0,
       "code_lines": 47,
@@ -424,6 +424,97 @@
     }
   },
   "findings": [
+    {
+      "kind": "SANDBOX_DISABLED",
+      "path": "tools/registry/tool-index.yaml",
+      "line": 49,
+      "detail": "أداة مسجّلة بلا عزل (sandbox=false)",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "tools/governance/truth_audit.py",
+      "line": 243,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "tools/governance/truth_audit.py",
+      "line": 271,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "tools/governance/truth_audit.py",
+      "line": 348,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "tools/stubs/registry_check.py",
+      "line": 18,
+      "detail": "`TOOLS` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "institutions/stubs/registry_check.py",
+      "line": 18,
+      "detail": "`INSTITUTIONS` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "core/stubs/memory_check.py",
+      "line": 19,
+      "detail": "`MEMORIES` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "core/stubs/memory_check.py",
+      "line": 34,
+      "detail": "`EXPERIENCES` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "runtime/stubs/task_event_check.py",
+      "line": 31,
+      "detail": "`EVENT_COUNT = 156` عدّاد ثابت يُقدَّم كحقيقة تشغيلية",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "runtime/stubs/task_event_check.py",
+      "line": 34,
+      "detail": "`EVENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "agents/registry/imported_agents_data.py",
+      "line": 15,
+      "detail": "`AGENTS` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "agents/stubs/registry_check.py",
+      "line": 18,
+      "detail": "`AGENT_COUNT = 342` عدّاد ثابت يُقدَّم كحقيقة تشغيلية",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "agents/stubs/registry_check.py",
+      "line": 21,
+      "detail": "`AGENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_edge_branches.py",
@@ -1032,97 +1123,6 @@
       "line": 102,
       "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "agents/registry/imported_agents_data.py",
-      "line": 15,
-      "detail": "`AGENTS` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "agents/stubs/registry_check.py",
-      "line": 18,
-      "detail": "`AGENT_COUNT = 342` عدّاد ثابت يُقدَّم كحقيقة تشغيلية",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "agents/stubs/registry_check.py",
-      "line": 21,
-      "detail": "`AGENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "runtime/stubs/task_event_check.py",
-      "line": 31,
-      "detail": "`EVENT_COUNT = 156` عدّاد ثابت يُقدَّم كحقيقة تشغيلية",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "runtime/stubs/task_event_check.py",
-      "line": 34,
-      "detail": "`EVENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "core/stubs/memory_check.py",
-      "line": 19,
-      "detail": "`MEMORIES` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "core/stubs/memory_check.py",
-      "line": 34,
-      "detail": "`EXPERIENCES` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "institutions/stubs/registry_check.py",
-      "line": 18,
-      "detail": "`INSTITUTIONS` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "SANDBOX_DISABLED",
-      "path": "tools/registry/tool-index.yaml",
-      "line": 49,
-      "detail": "أداة مسجّلة بلا عزل (sandbox=false)",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "tools/governance/truth_audit.py",
-      "line": 243,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "tools/governance/truth_audit.py",
-      "line": 271,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "tools/governance/truth_audit.py",
-      "line": 348,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "tools/stubs/registry_check.py",
-      "line": 18,
-      "detail": "`TOOLS` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
     }
   ],
   "summary": {
@@ -1131,15 +1131,15 @@
     "findings_total": 100,
     "identity_violations": 25,
     "by_severity": {
-      "HIGH": 64,
+      "CRITICAL": 11,
       "MEDIUM": 25,
-      "CRITICAL": 11
+      "HIGH": 64
     },
     "by_kind": {
-      "IN_MEMORY_STORE": 60,
+      "SANDBOX_DISABLED": 1,
       "SILENT_FALLBACK": 29,
       "HARDCODED_TRUTH": 10,
-      "SANDBOX_DISABLED": 1
+      "IN_MEMORY_STORE": 60
     }
   }
 }

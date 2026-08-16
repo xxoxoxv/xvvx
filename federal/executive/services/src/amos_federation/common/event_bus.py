@@ -141,6 +141,16 @@ def get_event_bus() -> EventBus:
 # === عقود الأحداث (Event Contracts) ===
 
 EVENT_CONTRACTS = {
+    # انتقال حالة في النواة التنفيذية الفدرالية — كل انتقال يُعلَن بهذا العقد.
+    "amos_federation.executive.task_transitioned": {
+        "required_fields": ["task_id", "from_state", "to_state"],
+        "optional_fields": [
+            "audit_id",
+            "authority_decision",
+            "authority_layer",
+            "detail",
+        ],
+    },
     "amos_federation.task.created": {
         "required_fields": ["task_id", "type", "description"],
         "optional_fields": ["tenant_id", "priority"],
