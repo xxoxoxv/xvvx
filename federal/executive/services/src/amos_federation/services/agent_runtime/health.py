@@ -136,12 +136,14 @@ class HealthChecker:
         النتيجة واحدة من أربع: سليم / مراقبة / علاج / عزل.
         """
         from amos_federation.common.persistent import PersistentExperienceStore
-        from amos_federation.services.agent_runtime.population import get_population_registry
+        from amos_federation.services.executive_core.agent_identity import get_identity
 
-        registry = get_population_registry()
-        agent = registry.get_agent(agent_id)
-        if not agent:
+        # R4: الهوية والقدرات تُقرآن من السجل الكانوني `agents`، لا من جدول
+        # السكّان. جدول السكّان صار إسقاطًا وملفًّا تدريبيًّا لا مصدر هوية.
+        identity = get_identity(agent_id)
+        if identity is None:
             raise ValueError(f"الوكيل {agent_id} غير موجود")
+        agent = identity.as_dict()
 
         # جمع البيانات الحقيقية
         exp_store = PersistentExperienceStore()
@@ -276,13 +278,14 @@ class HealthChecker:
 
     def check_all_agents(self, limit: int = 50) -> list[dict[str, Any]]:
         """فحص الوكلاء المسجلين (مع حد لتجنب عنق الزجاجة)."""
-        from amos_federation.services.agent_runtime.population import get_population_registry
+        from amos_federation.services.executive_core.agent_identity import list_identities
 
-        agents = get_population_registry().list_agents()
+        # R4: قائمة من يُفحَص تأتي من السجل الكانوني.
+        identities = list_identities()
         # تقييد العدد لتجنب عنق الزجاجة عند وجود مئات الوكلاء
         results = []
-        for agent in agents[:limit]:
-            results.append(self.check_agent(agent["agent_id"]))
+        for identity in identities[:limit]:
+            results.append(self.check_agent(identity.agent_id))
         return results
 
     def get_agent_health_history(self, agent_id: str, limit: int = 30) -> list[dict[str, Any]]:
@@ -362,10 +365,12 @@ class TreatmentSystem:
             session.add(record)
 
             # تحديث حالة الوكيل
-            from amos_federation.services.agent_runtime.population import get_population_registry
+            from amos_federation.services.executive_core.agent_identity import (
+                AgentLifecycleState,
+                set_lifecycle_state,
+            )
 
-            registry = get_population_registry()
-            registry.update_state(agent_id, "training")
+            set_lifecycle_state(agent_id, AgentLifecycleState.TRAINING.value)
 
             session.commit()
         finally:
@@ -390,9 +395,12 @@ class TreatmentSystem:
             session.close()
 
         # إعادة الوكيل للحالة النشطة
-        from amos_federation.services.agent_runtime.population import get_population_registry
+        from amos_federation.services.executive_core.agent_identity import (
+            AgentLifecycleState,
+            set_lifecycle_state,
+        )
 
-        get_population_registry().update_state(agent_id, "active")
+        set_lifecycle_state(agent_id, AgentLifecycleState.ACTIVE.value)
 
         # نشر حدث
         from amos_federation.common.event_bus import get_event_bus
@@ -440,17 +448,14 @@ class TreatmentSystem:
 
         elif treatment_type == "fix_tool":
             # فحص الأدوات المسموح بها وإصلاحها
-            from amos_federation.services.agent_runtime.population import get_population_registry
+            from amos_federation.services.executive_core.agent_identity import get_identity
 
-            agent = get_population_registry().get_agent(agent_id)
-            tools = agent.get("allowed_tools", []) if agent else []
+            identity = get_identity(agent_id)
+            tools = list(identity.allowed_tools) if identity else []
             return {"fixed_tools": tools, "method": "tool_audit"}
 
         elif treatment_type == "reset_context":
             # إعادة تعيين السياق — حذف ذاكرة الوكيل
-            from amos_federation.services.agent_runtime.population import get_population_registry
-
-            agent = get_population_registry().get_agent(agent_id)
             # مسح الذاكرة المرتبطة بالوكيل عبر query وإعادة التخزين بسياق فارغ
             from amos_federation.common.persistent import PersistentMemoryStore
 
@@ -501,10 +506,12 @@ class IsolationSystem:
             session.add(record)
 
             # تحديث حالة الوكيل
-            from amos_federation.services.agent_runtime.population import get_population_registry
+            from amos_federation.services.executive_core.agent_identity import (
+                AgentLifecycleState,
+                set_lifecycle_state,
+            )
 
-            registry = get_population_registry()
-            registry.update_state(agent_id, "paused")
+            set_lifecycle_state(agent_id, AgentLifecycleState.PAUSED.value)
 
             session.commit()
         finally:
@@ -574,17 +581,18 @@ class IsolationSystem:
             session.close()
 
         # تنفيذ القرار
-        from amos_federation.services.agent_runtime.population import get_population_registry
-
-        registry = get_population_registry()
+        from amos_federation.services.executive_core.agent_identity import (
+            AgentLifecycleState,
+            set_lifecycle_state,
+        )
 
         if decision == "retrain":
             treatment = TreatmentSystem()
             treatment.start_treatment(agent_id, "retrain", "إعادة تدريب بعد عزل")
         elif decision == "retire":
-            registry.update_state(agent_id, "retired")
+            set_lifecycle_state(agent_id, AgentLifecycleState.RETIRED.value)
         elif decision == "release":
-            registry.update_state(agent_id, "active")
+            set_lifecycle_state(agent_id, AgentLifecycleState.ACTIVE.value)
 
         # نشر حدث
         from amos_federation.common.event_bus import get_event_bus
@@ -687,6 +695,37 @@ def run_health_cycle(limit: int = 20) -> dict[str, Any]:
         "isolations_started": isolations_started,
         "cycle_date": datetime.now(UTC).isoformat(),
     }
+
+
+# === R4: صحّة طبقة الهوية والسكّان ===
+
+
+def population_health() -> dict[str, Any]:
+    """صحّة السكّان مبنيّة على مكوّنات حقيقية — لا على «الخدمة تعمل».
+
+    R4-F: التقرير لا يقول `healthy` لمجرّد أن العملية قائمة. يُفحَص فعليًّا:
+    السجل الكانوني، ناقل الأحداث، تناسق الإسقاط السكّاني، ونظام العزل. أي
+    مكوّن غير متوفّر يُعلَن `unavailable` والحالة الكلية تنزل معه.
+    """
+    from amos_federation.services.executive_core.agent_identity import identity_health
+
+    report = identity_health()
+    components = report["components"]
+    try:
+        isolations = get_isolation_system().list_active_isolations()
+        components["isolation_system"] = {
+            "status": "available",
+            "active_isolations": len(isolations),
+        }
+    except Exception as exc:  # noqa: BLE001 — تُعلَن كغير متوفّرة لا تُخفى
+        components["isolation_system"] = {"status": "unavailable", "error": str(exc)}
+
+    statuses = {component["status"] for component in components.values()}
+    if "unavailable" in statuses:
+        report["status"] = "unavailable"
+    elif "degraded" in statuses:
+        report["status"] = "degraded"
+    return report
 
 
 # === Singleton Accessors ===

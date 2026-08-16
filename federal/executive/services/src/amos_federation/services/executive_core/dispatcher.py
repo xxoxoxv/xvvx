@@ -27,7 +27,9 @@ from typing import Any
 from amos_federation.common.database import AgentModel, get_session_factory
 
 #: الحالات التي يُقبل معها ترشيح الوكيل للعمل.
-EMPLOYABLE_STATUSES = frozenset({"registered", "active", "promoted", "ready"})
+#: `employed` أُضيفت في R4: كانت حالة تخرّج في `agent_population` وحده، فكان
+#: الوكيل المتخرِّج يسقط من الترشيح بعد توحيد دورة الحياة في `agents.status`.
+EMPLOYABLE_STATUSES = frozenset({"registered", "active", "promoted", "ready", "employed"})
 
 #: صلاحية شاملة — يستخدمها التاج والوكلاء العامّون في هذا المستودع.
 WILDCARD = "*"

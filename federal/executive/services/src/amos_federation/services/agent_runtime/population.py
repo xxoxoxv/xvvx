@@ -1,12 +1,30 @@
 """
-AMOS-Federation Population Registry + School
-الهدف: سجل سكاني حقيقي + مدرسة بتدريب من ست خطوات + دورة حياة الوكيل
+AMOS-Federation Population Projection + Agent School
+الهدف: إسقاط سكّاني وملفّ تدريبي فوق الهوية الكانونية — لا سجل هوية ثانٍ
 النطاق: services/agent_runtime/population
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
+تاريخ آخر تعديل: 2026-08-16
+
+R4: كان هذا الملفّ قبل اليوم سجل هوية مستقلًّا: يولّد `agent_id` بنفسه، ويحفظ
+الاسم والدور والصلاحيات والأدوات والحالة في `agent_population`، بمعزل عن جدول
+`agents` الذي يقرأه مسار التنفيذ (Dispatcher → Runtime Gateway). فكان لوكيل
+واحد هويّتان ودورتا حياة وعدّادان.
+
+بعد R4: الهوية تُنشأ وتُقرأ من `executive_core.agent_identity` (جدول `agents`)
+وحده. وهذا الجدول صار:
+
+- **ملفًّا تدريبيًّا**: category، school_score، specialization، tokens_used،
+  graduated_at — بيانات لا مكان لها في الهوية الكانونية.
+- **إسقاط قراءة**: `list_agents` و`population_stats` يبنيان على الهوية
+  الكانونية، ويُعلِنان صراحةً أي صفّ سكّاني بلا هوية كانونية
+  (`canonical=False`, `reconciliation_required=True`) بدل حذفه أو إخفائه.
+
+الأعمدة المكرّرة (name، role، permissions، allowed_tools، state) تبقى مكتوبة
+كمرآة توافُقية **مهجورة** لقرّاء خارج المستودع، ولا يُقرأ منها هنا شيء.
 """
 
-import uuid
+import json
 from datetime import UTC, datetime
 from typing import Any
 
@@ -14,6 +32,18 @@ from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from amos_federation.common.database import get_database_url
+from amos_federation.services.executive_core.agent_identity import (
+    CANONICAL_IDENTITY_TABLE,
+    PROJECTION_TABLE,
+    UNKNOWN,
+    AgentIdentity,
+    get_identity,
+    list_identities,
+    new_agent_id,
+    population_projection,
+    register_identity,
+    set_lifecycle_state,
+)
 
 
 class PopulationBase(DeclarativeBase):
@@ -132,6 +162,8 @@ class PopulationRegistry:
         PopulationBase.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
 
+    # === R4: الهوية كانونية في `agents`؛ هذا الجدول ملفّ تدريبي وإسقاط قراءة ===
+
     def register_agent(
         self,
         name: str,
@@ -140,27 +172,41 @@ class PopulationRegistry:
         permissions: list[str] | None = None,
         allowed_tools: list[str] | None = None,
         token_budget: int = 10000,
+        agent_id: str | None = None,
     ) -> dict[str, Any]:
-        """تسجيل وكيل جديد في السجل السكاني."""
-        import json
+        """تسجيل وكيل: الهوية تُنشأ في السجل الكانوني، والملفّ التدريبي هنا.
 
-        agent_id = f"agent-{uuid.uuid4().hex[:8]}"
+        قبل R4 كانت هذه الدالة تولّد `agent_id` وتحفظ هوية كاملة في
+        `agent_population` وحده، فينشأ وكيل لا يعرفه مسار التنفيذ. الآن
+        المعرّف والهوية يُنشآن مرّة واحدة في `agents`، ثم يُكتب هنا صفّ ملفّ
+        بنفس المعرّف (مع مرآة توافُقية مهجورة للأعمدة المكرّرة).
+        """
+        identity = register_identity(
+            agent_id or new_agent_id(),
+            name=name,
+            role=role,
+            permissions=permissions or [],
+            allowed_tools=allowed_tools or [],
+            token_budget=token_budget,
+        )
         session = self._Session()
         try:
-            agent = AgentPopulationModel(
-                agent_id=agent_id,
-                name=name,
-                role=role,
-                category=category,
-                permissions=json.dumps(permissions or []),
-                allowed_tools=json.dumps(allowed_tools or []),
-                token_budget=token_budget,
+            session.add(
+                AgentPopulationModel(
+                    agent_id=identity.agent_id,
+                    name=name,
+                    role=role,
+                    category=category,
+                    state=identity.lifecycle_state,
+                    permissions=json.dumps(permissions or []),
+                    allowed_tools=json.dumps(allowed_tools or []),
+                    token_budget=token_budget,
+                )
             )
-            session.add(agent)
             session.commit()
-            return self._agent_to_dict(agent)
         finally:
             session.close()
+        return self.get_agent(identity.agent_id) or identity.as_dict()
 
     def seed_initial_population(self) -> list[dict[str, Any]]:
         """بذر السكان الأوائل (20 وكيل)."""
@@ -178,33 +224,50 @@ class PopulationRegistry:
                 agents.append(agent)
         return agents
 
-    def get_agent(self, agent_id: str) -> dict[str, Any] | None:
+    def _profile(self, agent_id: str) -> AgentPopulationModel | None:
         session = self._Session()
         try:
-            agent = (
+            return (
                 session.query(AgentPopulationModel)
                 .filter(AgentPopulationModel.agent_id == agent_id)
                 .first()
             )
-            return self._agent_to_dict(agent) if agent else None
         finally:
             session.close()
+
+    def get_agent(self, agent_id: str) -> dict[str, Any] | None:
+        """قراءة الوكيل: الهوية من السجل الكانوني، والملفّ من جدول السكّان."""
+        identity = get_identity(agent_id)
+        profile = self._profile(agent_id)
+        if identity is None:
+            return self._unmigrated_dict(profile) if profile is not None else None
+        return self._merge(identity, profile)
 
     def list_agents(
         self, state: str | None = None, category: str | None = None
     ) -> list[dict[str, Any]]:
+        """قائمة السكّان = إسقاط السجل الكانوني + صفوف ملفّ بلا هوية (تُعلَن)."""
+        rows: list[dict[str, Any]] = []
+        for identity in list_identities():
+            rows.append(self._merge(identity, self._profile(identity.agent_id)))
         session = self._Session()
         try:
-            q = session.query(AgentPopulationModel)
-            if state:
-                q = q.filter(AgentPopulationModel.state == state)
-            if category:
-                q = q.filter(AgentPopulationModel.category == category)
-            return [self._agent_to_dict(a) for a in q.all()]
+            profiles = session.query(AgentPopulationModel).all()
         finally:
             session.close()
+        known = {row["agent_id"] for row in rows}
+        rows.extend(
+            self._unmigrated_dict(profile) for profile in profiles if profile.agent_id not in known
+        )
+        if state:
+            rows = [row for row in rows if row["state"] == state]
+        if category:
+            rows = [row for row in rows if row["category"] == category]
+        return rows
 
     def update_state(self, agent_id: str, new_state: str, **extra) -> bool:
+        """تغيير دورة الحياة في الحقل الكانوني، مع مرآة توافُقية في جدول السكّان."""
+        canonical_updated = set_lifecycle_state(agent_id, new_state)
         session = self._Session()
         try:
             agent = (
@@ -212,39 +275,61 @@ class PopulationRegistry:
                 .filter(AgentPopulationModel.agent_id == agent_id)
                 .first()
             )
-            if not agent:
-                return False
-            agent.state = new_state
-            if new_state == "employed" and not agent.graduated_at:
-                agent.graduated_at = datetime.now(UTC)
-            for k, v in extra.items():
-                if hasattr(agent, k):
-                    setattr(agent, k, v)
-            session.commit()
-            return True
+            if agent is not None:
+                agent.state = new_state
+                if new_state == "employed" and not agent.graduated_at:
+                    agent.graduated_at = datetime.now(UTC)
+                for k, v in extra.items():
+                    if hasattr(agent, k):
+                        setattr(agent, k, v)
+                session.commit()
+            return canonical_updated or agent is not None
         finally:
             session.close()
 
     def population_stats(self) -> dict[str, Any]:
-        session = self._Session()
-        try:
-            agents = session.query(AgentPopulationModel).all()
-            by_state: dict[str, int] = {}
-            by_category: dict[str, int] = {}
-            for a in agents:
-                by_state[a.state] = by_state.get(a.state, 0) + 1
-                by_category[a.category] = by_category.get(a.category, 0) + 1
-            return {
-                "total": len(agents),
-                "by_state": by_state,
-                "by_category": by_category,
-            }
-        finally:
-            session.close()
+        """إحصاءات السكّان مشتقّة من السجل الكانوني — لا عدّاد ثانٍ."""
+        agents = self.list_agents()
+        by_state: dict[str, int] = {}
+        by_category: dict[str, int] = {}
+        for a in agents:
+            by_state[a["state"]] = by_state.get(a["state"], 0) + 1
+            by_category[a["category"]] = by_category.get(a["category"], 0) + 1
+        return {
+            "total": len(agents),
+            "by_state": by_state,
+            "by_category": by_category,
+            "canonical": population_projection(),
+        }
 
-    def _agent_to_dict(self, agent: AgentPopulationModel) -> dict[str, Any]:
-        import json
+    def _merge(
+        self, identity: AgentIdentity, profile: AgentPopulationModel | None
+    ) -> dict[str, Any]:
+        """الشكل القديم للقاموس محفوظ (طبقة توافُق)، لكن الهوية كانونية."""
+        return {
+            "agent_id": identity.agent_id,
+            "name": identity.name,
+            "role": identity.role,
+            "category": profile.category if profile is not None else UNKNOWN,
+            "state": identity.lifecycle_state,
+            "permissions": list(identity.permissions),
+            "allowed_tools": list(identity.allowed_tools),
+            "token_budget": identity.token_budget,
+            "tokens_used": profile.tokens_used if profile is not None else 0,
+            "school_score": profile.school_score if profile is not None else "",
+            "specialization": profile.specialization if profile is not None else "",
+            "created_at": identity.created_at,
+            "graduated_at": (
+                profile.graduated_at.isoformat()
+                if profile is not None and profile.graduated_at
+                else None
+            ),
+            "identity_source": CANONICAL_IDENTITY_TABLE,
+            "canonical": True,
+        }
 
+    def _unmigrated_dict(self, agent: AgentPopulationModel) -> dict[str, Any]:
+        """صفّ سكّاني بلا هوية كانونية — يُعلَن أنه يحتاج توفيقًا، ولا يُحذَف."""
         return {
             "agent_id": agent.agent_id,
             "name": agent.name,
@@ -259,7 +344,21 @@ class PopulationRegistry:
             "specialization": agent.specialization,
             "created_at": agent.created_at.isoformat() if agent.created_at else None,
             "graduated_at": agent.graduated_at.isoformat() if agent.graduated_at else None,
+            "identity_source": PROJECTION_TABLE,
+            "canonical": False,
+            "reconciliation_required": True,
         }
+
+
+def unmigrated_profiles() -> list[str]:
+    """معرّفات صفوف `agent_population` التي لا هوية كانونية لها (دَين توفيق)."""
+    registry = get_population_registry()
+    session = registry._Session()  # noqa: SLF001 — نفس الوحدة
+    try:
+        ids = [row.agent_id for row in session.query(AgentPopulationModel).all()]
+    finally:
+        session.close()
+    return [agent_id for agent_id in ids if get_identity(agent_id) is None]
 
 
 # === المدرسة — منهج ست خطوات ===
