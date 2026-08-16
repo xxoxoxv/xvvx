@@ -1176,7 +1176,35 @@ R2) · PostgreSQL 25 ناجحاً · التغطية 91% · `truth_audit --ratche
 تنفيذ الأدوات ما زال `SIMULATION`، وتلف السجل الدستوري عند التشغيل المتوازي دَيْن
 موثَّق لم يُعالَج.
 
+## 17. R3 — بيئة تشغيل الوكلاء داخل مسار التنفيذ القانوني (2026-08-16)
+
+القدرة صارت تُتحقَّق بعد أن كانت تُمنَح. قبل R3 كان `_execute_step` يُلقي تعيين
+التوزيع الحقيقي ويُلفّق تعييناً من أدوات الخطة نفسها
+(`allowed_tools = أدوات الخطة`، `agent_role="worker"` ثابتاً، `permissions=()`)،
+فيصير فحص `can_use_tool` صحيحاً بحكم البناء وجدول `agents` لا يُقرأ لحظة التنفيذ
+إطلاقاً. أُدخل حدّ واحد (`executive_core/agent_runtime_gateway.py`) تعبره النواة
+إلى `WorkerAgent` و`ToolSandbox` القائمين — بلا بيئة تشغيل جديدة وبلا مسار تنفيذ
+ثانٍ — و`dispatcher.assignment_for()` يُعيد قراءة صلاحيات الوكيل وأدواته من
+القاعدة لحظة التنفيذ: نقص أداة أو خروج الوكيل من حالات التشغيل يُسقط المهمّة
+fail-closed بسبب مُسمّى، لا تنفيذاً جزئياً. أُضيف `ExecutionContext`
+(`task_id/agent_id/execution_id/correlation_id` + سياق الإذن، بلا أسرار) ودورة
+حياة وكيل مُعلَنة (resolved→started→executing→completed/failed→idle) تُنشَر على
+`amos_federation.executive.agent_lifecycle` بحقل `task_state_effect: False` —
+منفصلة عن آلة حالات المهمّة ولا تكتب في `tasks`. والنتيجة صارت مُسندة بالكامل:
+`tools_invoked` من خطوات مكتملة فقط، والدور الغائب يُعلَن `UNKNOWN` لا يُملأ
+بقيمة مُلفَّقة، والحالة تُحسَب من الخطوات لا تُنقل عن الوكيل — فوكيل يُعلن
+`completed` وقد تخطّى خطواته كلَّها تسقط مهمّته. وصدق البيئة (`REAL`) مفصول عن
+صدق الأداة (`SIMULATION` بسبب مُسمّى).
+
+مُلاحَظ: الجذر 757 ناجحاً (بلا انحدار) · الخدمات 812 ناجحاً و25 مُتخطّى (+13
+اختبار R3) · PostgreSQL 25 ناجحاً · `truth_audit --ratchet` ثابت عند 100 ·
+`ruff` وهوية المستودع وحِزَم النظام المتقاطعة (POSTGRES + SQLITE) كلها خضراء.
+**CI غير مُلاحَظ.** لم يُدمَج سجلّا الوكلاء (`agents` مقابل `agent_population`)،
+ولم يُربَط `health.py` ولا `population.py` بدورة حياة الوكيل — دَيْن موثَّق لا
+إصلاح مُدَّعى.
+
 ## المراجع
+- تقرير R3: [`R3_AGENT_RUNTIME_INTEGRATION.md`](R3_AGENT_RUNTIME_INTEGRATION.md)
 - تقرير R2: [`R2_TASK_EXECUTION_INTEGRATION.md`](R2_TASK_EXECUTION_INTEGRATION.md)
 - تقرير R1: [`R1_CANONICAL_EXECUTION_PATH.md`](R1_CANONICAL_EXECUTION_PATH.md)
 - خارطة المرحلة: [`PHASE_E_ROADMAP.md`](PHASE_E_ROADMAP.md)

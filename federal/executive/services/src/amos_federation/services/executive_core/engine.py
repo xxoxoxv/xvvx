@@ -34,7 +34,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -42,8 +41,15 @@ from typing import Any
 
 from amos_federation.common.durable_event_bus import get_durable_event_bus
 from amos_federation.common.persistent import PersistentAuditStore
+from amos_federation.services.executive_core.agent_runtime_gateway import (
+    UNKNOWN as UNKNOWN_VALUE,
+)
+from amos_federation.services.executive_core.agent_runtime_gateway import (
+    AgentRuntimeGateway,
+    CapabilityDeniedError,
+    RuntimeDispatchError,
+)
 from amos_federation.services.executive_core.dispatcher import (
-    AgentAssignment,
     CapabilityDispatcher,
     NoEligibleAgentError,
 )
@@ -114,6 +120,7 @@ class ExecutiveCore:
         event_bus: Any | None = None,
         planner: Any | None = None,
         agent_factory: Any | None = None,
+        runtime: AgentRuntimeGateway | None = None,
     ) -> None:
         self._authorizer = authorizer or ConstitutionalAuthorizer()
         self._repo = repository or ExecutiveTaskRepository()
@@ -122,6 +129,13 @@ class ExecutiveCore:
         self._bus = event_bus or get_durable_event_bus()
         self._planner = planner
         self._agent_factory = agent_factory
+        # حدّ واحد إلى بيئة تشغيل الوكلاء القائمة. `agent_factory` يُمرَّر إليه كما
+        # هو كي يبقى الحقن للاختبار عابرًا بالمسار القانوني لا مُتجاوزًا له.
+        self._runtime = runtime or AgentRuntimeGateway(
+            agent_factory=agent_factory,
+            audit_store=self._audit,
+            event_bus=self._bus,
+        )
 
     # ── أدوات داخلية ─────────────────────────────────────────────────────
     def _plan_for(self, task: dict[str, Any]) -> list[dict[str, Any]]:
@@ -138,17 +152,6 @@ class ExecutiveCore:
         task_type = task["type"] if task["type"] in known else "generic"
         return build_plan(
             PlanRequest(type=task_type, description=task["description"], task_id=task["id"])
-        )
-
-    def _agent_for(self, assignment: AgentAssignment) -> Any:
-        """وكيل قابل للتنفيذ من التعيين — `WorkerAgent` الحقيقي افتراضًا."""
-        if self._agent_factory is not None:
-            return self._agent_factory(assignment)
-        from amos_federation.services.agent_runtime.worker import WorkerAgent
-
-        return WorkerAgent(
-            agent_id=assignment.agent_id,
-            permissions=list(assignment.allowed_tools),
         )
 
     def _record(
@@ -354,7 +357,12 @@ class ExecutiveCore:
             TaskState.PLANNED,
             TaskState.DISPATCHED,
             "task.dispatch",
-            fields={"assigned_agent": assignment.agent_id},
+            fields={
+                "assigned_agent": assignment.agent_id,
+                # لقطة تعيين التوزيع تُحفَظ في القاعدة، لا تُلقى كما كان قبل R3.
+                # وهي أثر نسب لا مصدر صلاحية: التنفيذ يُعيد قراءة السجل الحيّ.
+                "result": {"dispatch": assignment.as_dict()},
+            },
             detail={"assignment": assignment.as_dict()},
         )
 
@@ -373,6 +381,11 @@ class ExecutiveCore:
         )
 
     def _execute_step(self, task: dict[str, Any]) -> TransitionOutcome:
+        """التنفيذ الفعلي عبر حدّ بيئة التشغيل — لا مسار تنفيذ ثانٍ.
+
+        النواة تبقى صاحبة القرار وحاملة القلم: هي من تقرأ التعيين من السجل، وهي
+        من تنقل الحالة وتكتب النتيجة. الحدّ ينفّذ ولا يقرّر، ولا يكتب في `tasks`.
+        """
         task_id = task["id"]
         agent_id = task["assigned_agent"]
         if not agent_id:
@@ -384,17 +397,14 @@ class ExecutiveCore:
                 fields={"result": {"error": "missing_agent"}},
                 detail={"reason": "missing_agent"},
             )
-        assignment = AgentAssignment(
-            agent_id=agent_id,
-            agent_role="worker",
-            permissions=(),
-            allowed_tools=tuple(str(step.get("tool", "")) for step in task["plan"]),
-            required_tools=tuple(str(step.get("tool", "")) for step in task["plan"]),
-        )
-        agent = self._agent_for(assignment)
+        plan = list(task["plan"] or [])
         try:
-            result = asyncio.run(agent.execute(task, task["plan"]))
-        except Exception as exc:  # فشل تنفيذ حقيقي — يُسجَّل ويُنقل للحالة FAILED
+            # تعيين مُعاد قراءته من سجل الوكلاء لحظة التنفيذ — لا تعيين مُلفَّق
+            # من أدوات الخطة نفسها كما كان قبل R3.
+            assignment = self._dispatcher.assignment_for(
+                agent_id, plan, tenant_id=task["tenant_id"]
+            )
+        except NoEligibleAgentError as exc:
             return self._guarded_transition(
                 task_id,
                 TaskState.EXECUTING,
@@ -402,16 +412,78 @@ class ExecutiveCore:
                 "task.fail",
                 fields={
                     "result": {
-                        "error": type(exc).__name__,
+                        "error": "agent_not_employable",
                         "message": str(exc),
                         "execution_fidelity": EXECUTION_FIDELITY,
                     }
                 },
-                detail={"reason": "agent_exception", "error": type(exc).__name__},
+                detail={"reason": "agent_not_employable", "agent_id": agent_id},
             )
-        payload = dict(result)
+        try:
+            outcome = self._runtime.dispatch(
+                task,
+                assignment,
+                authorization={
+                    "authorized_action": f"task.authorize.{task['type']}",
+                    "authorized_by": AUDIT_ACTOR,
+                },
+            )
+        except CapabilityDeniedError as exc:
+            # fail-closed: قدرة غير ممنوحة ⇒ لا تنفيذ جزئي ولا بديل صامت.
+            return self._guarded_transition(
+                task_id,
+                TaskState.EXECUTING,
+                TaskState.FAILED,
+                "task.fail",
+                fields={
+                    "result": {
+                        "error": "capability_denied",
+                        "message": str(exc),
+                        "agent_id": agent_id,
+                        "agent_role": assignment.agent_role,
+                        "capabilities_granted": list(assignment.allowed_tools),
+                        "capabilities_required": list(assignment.required_tools),
+                        "execution_fidelity": EXECUTION_FIDELITY,
+                    }
+                },
+                detail={"reason": "capability_denied", "message": str(exc)},
+            )
+        except RuntimeDispatchError as exc:
+            error, _, message = str(exc).partition(": ")
+            return self._guarded_transition(
+                task_id,
+                TaskState.EXECUTING,
+                TaskState.FAILED,
+                "task.fail",
+                fields={
+                    "result": {
+                        "error": error,
+                        "message": message,
+                        "execution_fidelity": EXECUTION_FIDELITY,
+                    }
+                },
+                detail={"reason": "agent_exception", "error": error},
+            )
+        payload = outcome.as_dict()
         payload["execution_fidelity"] = EXECUTION_FIDELITY
         payload["completed_at"] = _now()
+        # نسب كامل: تعيين لحظة التوزيع كما حُفظ، وتعيين لحظة التنفيذ كما قُرئ.
+        # اختلافهما ليس خطأً يُخفى بل حقيقة تُقرأ (ضاقت صلاحية الوكيل مثلًا).
+        payload["dispatch_assignment"] = (task["result"] or {}).get("dispatch") or UNKNOWN_VALUE
+        payload["execution_assignment"] = assignment.as_dict()
+        if payload["status"] in {"failed", "empty"}:
+            return self._guarded_transition(
+                task_id,
+                TaskState.EXECUTING,
+                TaskState.FAILED,
+                "task.fail",
+                fields={"result": {**payload, "error": f"agent_execution_{payload['status']}"}},
+                detail={
+                    "reason": f"agent_execution_{payload['status']}",
+                    "agent_id": agent_id,
+                    "execution_id": payload["execution_id"],
+                },
+            )
         return self._guarded_transition(
             task_id,
             TaskState.EXECUTING,
@@ -420,8 +492,13 @@ class ExecutiveCore:
             fields={"result": payload},
             detail={
                 "agent_id": agent_id,
+                "agent_role": payload["agent_role"],
+                "execution_id": payload["execution_id"],
+                "agent_status": payload["status"],
                 "steps": len(payload.get("steps", []) or []),
                 "execution_fidelity": EXECUTION_FIDELITY,
+                "runtime_fidelity": payload["runtime_fidelity"],
+                "tool_execution_fidelity": payload["tool_execution_fidelity"],
             },
         )
 

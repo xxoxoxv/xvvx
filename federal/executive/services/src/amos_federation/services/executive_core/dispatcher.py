@@ -150,6 +150,49 @@ class CapabilityDispatcher:
             for row in self.candidates(tenant_id)
         ]
 
+    def assignment_for(
+        self,
+        agent_id: str,
+        plan: list[dict[str, Any]],
+        *,
+        tenant_id: str = "default",
+    ) -> AgentAssignment:
+        """إعادة قراءة تعيين وكيل **مُسمّى** من السجل لحظة التنفيذ.
+
+        أُضيفت في R3 لأن مسار التنفيذ كان يُلفّق تعيينًا من أدوات الخطة نفسها بعد
+        أن يُلقي تعيين التوزيع الحقيقي. هنا تُقرأ صلاحيات الوكيل وأدواته المسموحة
+        **كما هي في القاعدة الآن**، لا كما كانت لحظة التوزيع ولا كما تشتهي الخطة.
+
+        لا يُخفَّض المتطلَّب ولا يُستبدَل الوكيل: هذه الدالة لا تختار بديلًا. إن لم
+        يكن الوكيل مُسجَّلًا أو خرج من حالات التشغيل (عزل، تقاعد) فالتنفيذ يسقط.
+
+        Raises:
+            NoEligibleAgentError: الوكيل غير موجود في السجل أو حالته غير قابلة
+                للتشغيل. تغطية الأدوات تُفحَص عند حدّ بيئة التشغيل fail-closed.
+        """
+        session = get_session_factory()()
+        try:
+            row = (
+                session.query(AgentModel)
+                .filter(AgentModel.id == agent_id, AgentModel.tenant_id == tenant_id)
+                .first()
+            )
+        finally:
+            session.close()
+        if row is None:
+            raise NoEligibleAgentError(f"الوكيل غير مُسجَّل في السجل: {agent_id}")
+        if row.status not in self._statuses:
+            raise NoEligibleAgentError(
+                f"حالة الوكيل {agent_id} غير قابلة للتشغيل: {row.status}"
+            )
+        return AgentAssignment(
+            agent_id=row.id,
+            agent_role=row.role,
+            permissions=tuple(row.permissions or []),
+            allowed_tools=tuple(row.allowed_tools or []),
+            required_tools=required_tools_of(plan),
+        )
+
     def select(
         self,
         plan: list[dict[str, Any]],

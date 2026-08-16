@@ -19,7 +19,7 @@
       "secret_hits": 0,
       "observed_hits": 3,
       "api_routes": 0,
-      "test_refs": 172,
+      "test_refs": 182,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -75,21 +75,21 @@
     "federal": {
       "domain": "federal",
       "md_files": 52,
-      "py_files": 137,
+      "py_files": 139,
       "yaml_files": 3,
-      "code_lines": 23373,
+      "code_lines": 24174,
       "nucleus_count": 7,
       "nucleus_status": {
         "unspecified": 7
       },
       "has_readme": true,
-      "real_source_hits": 135,
+      "real_source_hits": 139,
       "fake_hits": 1,
       "in_memory_hits": 60,
       "secret_hits": 0,
       "observed_hits": 114,
       "api_routes": 141,
-      "test_refs": 59,
+      "test_refs": 60,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -124,7 +124,7 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 18,
+      "test_refs": 19,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -194,7 +194,7 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 133,
+      "test_refs": 136,
       "identity_violations": 3,
       "deployed": true,
       "columns": {
@@ -229,7 +229,7 @@
       "secret_hits": 0,
       "observed_hits": 7,
       "api_routes": 0,
-      "test_refs": 31,
+      "test_refs": 33,
       "identity_violations": 3,
       "deployed": true,
       "columns": {
@@ -299,7 +299,7 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 48,
+      "test_refs": 51,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -319,7 +319,7 @@
     },
     "docs": {
       "domain": "docs",
-      "md_files": 51,
+      "md_files": 52,
       "py_files": 2,
       "yaml_files": 0,
       "code_lines": 47,
