@@ -318,10 +318,11 @@ async def get_all_health(
 ) -> list[dict[str, Any]]:
     """عرض الحالة الصحية لكل الوكلاء."""
     from amos_federation.services.agent_runtime.health import get_health_checker
-    from amos_federation.services.agent_runtime.population import get_population_registry
+    from amos_federation.services.executive_core.agent_identity import list_identities
 
     checker = get_health_checker()
-    agents = get_population_registry().list_agents()
+    # R4: الهوية من السجل الكانوني لا من جدول السكّان.
+    agents = [identity.as_dict() for identity in list_identities()]
     results = []
     for a in agents:
         history = checker.get_agent_health_history(a["agent_id"], limit=1)

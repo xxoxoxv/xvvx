@@ -141,7 +141,8 @@ async def royal_dashboard(
     engine = _get_pg_engine()
     with engine.connect() as conn:
         # إحصائيات عامة
-        agents_count = conn.execute(text("SELECT COUNT(*) FROM agent_population")).scalar()
+        # R4: العدّ من السجل الكانوني `agents` لا من إسقاط السكّان.
+        agents_count = conn.execute(text("SELECT COUNT(*) FROM agents")).scalar()
         events_count = conn.execute(text("SELECT COUNT(*) FROM event_store")).scalar()
         experiences_count = conn.execute(text("SELECT COUNT(*) FROM experiences")).scalar()
         memories_count = conn.execute(text("SELECT COUNT(*) FROM memories")).scalar()
@@ -159,16 +160,12 @@ async def royal_dashboard(
 
         # توزيع الوكلاء حسب الحالة
         state_dist = conn.execute(
-            text(
-                "SELECT state, COUNT(*) as cnt FROM agent_population GROUP BY state ORDER BY cnt DESC"
-            )
+            text("SELECT status, COUNT(*) as cnt FROM agents GROUP BY status ORDER BY cnt DESC")
         ).fetchall()
 
         # توزيع الوكلاء حسب الدور
         role_dist = conn.execute(
-            text(
-                "SELECT role, COUNT(*) as cnt FROM agent_population GROUP BY role ORDER BY cnt DESC"
-            )
+            text("SELECT role, COUNT(*) as cnt FROM agents GROUP BY role ORDER BY cnt DESC")
         ).fetchall()
 
         # آخر الأحداث
@@ -567,7 +564,7 @@ async def dismiss_agent(
     with engine.begin() as conn:
         result = conn.execute(
             text(
-                "UPDATE agent_population SET state='retired' WHERE agent_id=:id AND state != 'retired'"
+                "UPDATE agents SET status='retired' WHERE id=:id AND status != 'retired'"
             ),
             {"id": agent_id},
         )
@@ -586,7 +583,7 @@ async def restore_agent(
     with engine.begin() as conn:
         result = conn.execute(
             text(
-                "UPDATE agent_population SET state='active' WHERE agent_id=:id AND state='retired'"
+                "UPDATE agents SET status='active' WHERE id=:id AND status='retired'"
             ),
             {"id": agent_id},
         )
@@ -648,18 +645,25 @@ async def list_population(
 ) -> list[dict[str, Any]]:
     """قائمة السكان — مع فلترة."""
     engine = _get_pg_engine()
-    query = "SELECT agent_id, name, role, category, state, permissions, allowed_tools, token_budget, specialization, graduated_at FROM agent_population"
+    # R4: الهوية من `agents`؛ الملفّ التدريبي (category/specialization/graduated_at)
+    # من إسقاط السكّان عبر LEFT JOIN — بلا سجل هوية ثانٍ وبلا تغيير شكل الرد.
+    query = (
+        "SELECT a.id, a.name, a.role, COALESCE(p.category, '') AS category, a.status, "
+        "a.permissions, a.allowed_tools, a.token_budget, COALESCE(p.specialization, '') "
+        "AS specialization, p.graduated_at FROM agents a "
+        "LEFT JOIN agent_population p ON p.agent_id = a.id"
+    )
     conditions = []
     params: dict[str, Any] = {"lim": limit}
     if state:
-        conditions.append("state = :state")
+        conditions.append("a.status = :state")
         params["state"] = state
     if role:
-        conditions.append("role = :role")
+        conditions.append("a.role = :role")
         params["role"] = role
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
-    query += " ORDER BY created_at DESC LIMIT :lim"
+    query += " ORDER BY a.created_at DESC LIMIT :lim"
 
     with engine.connect() as conn:
         rows = conn.execute(text(query), params).fetchall()
