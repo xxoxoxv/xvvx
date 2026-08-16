@@ -107,14 +107,8 @@ pillow==12.3.0
 pillow_heif==1.5.0
 pluggy==1.6.0
 portalocker==3.2.0
-pplx-python-sdks-llm-api==2026.8.14.1786680186+0de2f44
-pplx_sdk @ file:///tmp/asi-template-build/local-wheels/pplx-sdk/pplx_sdk-0.0.0%2Blocal-cp312-abi3-manylinux2014_x86_64.whl#sha256=ac0d1167d49151c37f89747aad62e11bfb3e24bc1323088e18b2a769128fa920
 propcache==0.5.2
 protobuf==7.35.1
-protobuf-perplexity-pb-llm-api-common-llm-api-common-pyproto==2026.8.14.1786680186+0de2f44
-protobuf-perplexity-pb-llm-api-llm-api-py==2026.3.27.1774569839+5395d6e
-protobuf-perplexity-pb-llm-api-llm-api-pygrpc==2026.8.14.1786680186+0de2f44
-protobuf-perplexity-pb-llm-api-llm-api-pyproto==2026.8.14.1786680186+0de2f44
 psycopg2-binary==2.9.12
 pycairo==1.29.1
 pycparser==3.0

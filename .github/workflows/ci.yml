@@ -402,3 +402,50 @@ jobs:
         with:
           name: coverage-report
           path: federal/executive/services/coverage.xml
+
+  cross-system-suites:
+    name: Cross-System Suites (E2.2-G — SQLite + PostgreSQL)
+    runs-on: ubuntu-latest
+    needs: test
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: amos_ci
+          POSTGRES_DB: amos_federation_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # لا يُستخدَم requirements.lock هنا: قيس أنه غير قابل للتركيب
+      # (تعارض protobuf/googleapis-common-protos/modal — انظر
+      # docs/audit/E2_3_A_CROSS_SYSTEM_INTEGRATION_ASSESSMENT.md بند B3).
+      # فبوابة تعتمده كانت ستسقط لسبب لا علاقة له بصحّة الحزم.
+      - run: pip install -e "federal/executive/services[dev]"
+      # matplotlib تعتمدها اختبارات أداة الرسم ولم تُعلَن في pyproject — دَين مرصود.
+      - run: pip install matplotlib
+      # الحزم الثلاث تُشغَّل بالتسلسل داخل الأداة نفسها — التوازي يفسد ملف
+      # قاعدة SQLite المشترك، وقد قيس ذلك فعلًا لا افتراضًا.
+      - name: تشغيل الحزم الثلاث وتوليد المصفوفة
+        env:
+          AMOS_RUN_POSTGRES_TESTS: "1"
+          AMOS_TEST_DATABASE_URL: postgresql://postgres:amos_ci@localhost:5432/amos_federation_ci
+        run: python tools/governance/verify_cross_system_suites.py
+      - name: التحقق من أن المصفوفة المدفوعة مطابقة للواقع المقيس
+        run: |
+          git diff --exit-code docs/audit/CROSS_SYSTEM_SUITE_MATRIX.md \
+            || (echo "::error::مصفوفة الحزم قديمة أو مخالفة للقياس. شغّل verify_cross_system_suites.py وادفع النتيجة." && exit 1)
+      - name: رفع مصفوفة الحزم
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-system-suite-matrix
+          path: docs/audit/CROSS_SYSTEM_SUITE_MATRIX.md
