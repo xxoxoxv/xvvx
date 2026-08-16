@@ -282,6 +282,9 @@ jobs:
       - name: بوابة 4 — وثيقة نموذج التهديد مولَّدة من التنفيذ لا مكتوبة بيد
         run: python tools/governance/generate_crown_threat_doc.py --check
 
+      - name: بوابة 4ب — مصفوفة حقيقة التاج مطابقة للدليل المقيس
+        run: python tools/crown/generate_crown_truth_matrix.py --check
+
       - name: بوابة 5 — لا مادة مفتاح خاص ولا حصة استرداد في المستودع
         run: |
           set +e

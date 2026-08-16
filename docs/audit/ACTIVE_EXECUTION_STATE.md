@@ -40,9 +40,9 @@
 | الحقل | القيمة |
 |---|---|
 | Current Phase | E2.2 — Crown Root of Trust & Protection |
-| Current Subphase | E2.2-C — Audit / roadmap / truth-matrix integration |
-| Current Objective | تحديث خارطة المرحلة ومصفوفة الحقيقة بحالات دقيقة (DESIGNED..PROVEN) بلا كلمة COMPLETE بلا دليل |
-| Status | E2.2-A/B = VERIFIED · E2.2-C = IN_PROGRESS |
+| Current Subphase | E2.2-D — Identity gates reconciliation |
+| Current Objective | تشغيل بوابات الهوية السبع ومصالحة كل مخالفة بتصنيفها (جديدة/قائمة/ارتداد/مولَّدة متوقَّعة/عيب حقيقي) |
+| Status | E2.2-A/B/C = VERIFIED · E2.2-D = IN_PROGRESS |
 | Current Commit SHA | `cda68d57eaf3faaa0f8344fc90a05c71dd0a0cf7` |
 | Last Verified Commit | `cda68d57eaf3faaa0f8344fc90a05c71dd0a0cf7` — مؤكَّد على `origin/main` بـ`git ls-remote` |
 | Previous Checkpoint SHA | `e3d0c8a` (أساس التنفيذ) · قبلها `098beb3` (ما قبل التاج) |
@@ -102,6 +102,34 @@ Next Action:    خارطة المرحلة ومصفوفة الحقيقة
 Status:         VERIFIED محليًّا · CI لم تُشغَّل بعد على GitHub
 ```
 
+### نقطة تفتيش E2.2-C (مغلقة)
+
+```
+CHECKPOINT E2.2-C
+-----------------
+Objective:      حالة المرحلة في الخارطة ومصفوفة حقيقة للنطاق بلا كلمة COMPLETE
+Completed:      tools/crown/generate_crown_truth_matrix.py (مولِّد يمتحن الادّعاء) ·
+                docs/audit/CROWN_TRUTH_MATRIX.md (مولَّدة) ·
+                قسم E2.2 وصفّان في لوحة التقدم وسجل التحديثات في PHASE_E_ROADMAP.md ·
+                خطوة CI «بوابة 4ب» · tests/crown/test_crown_truth_matrix.py (12 اختبارًا)
+Tests:          311 اختبار تاج ناجح · تغطية فروع 94.39% · 390 اختبار أساس ناجح
+Security:       جذر الثقة 11/11 · crown-check 9/9 · هوية المستودع: صفر مخالفة
+Truth audit:    ثابت عند 110 — صفر مخالفة جديدة (كانت 122 قبل الإصلاح)
+Real defects:   (1) اسمان يُقرآن سرًّا مضمَّنًا → أُعيدت تسميتهما إلى ..._ACCESS_GRANT
+                (2) 10 استثناءات مبتلعة في cli.py و guard.py وأداة التحقق → صار سبب
+                    الرفض يُنقَل إلى المخرَج، و audit_chain_error معلَن في التقرير
+                (3) اختبار المولِّد كان يُشغِّل pytest داخل pytest فتوالد التشغيل →
+                    أُضيف حارس CROWN_TRUTH_MATRIX_MEASURING وبيانات ثابتة في الاختبار
+Known gap:      command.py و continuity.py لا تستوردهما وحدة أخرى → المصفوفة تُسقِطهما
+                إلى TESTED؛ الدمج شرطٌ في E2.2-F ولم يُدَّعَ إنجازه
+Documentation:  CROWN_TRUTH_MATRIX.md + قسم E2.2 في الخارطة
+Commit:         (يُثبَت بعد الالتزام)
+Remote:         (يُثبَت بعد الدفع)
+Remaining:      E2.2-D .. E2.3-B
+Next Action:    بوابات الهوية — تشغيل السبع ومصالحة المخالفات بالتصنيف
+Status:         VERIFIED محليًّا
+```
+
 ### عيوب حقيقية وُجدت في التنفيذ وأُصلحت (لا تُعَد إلى ما كانت)
 
 1. `identity.py::assert_not_key_material` — مدخلات مركَّبة كانت غير قابلة للوصول؛
@@ -128,6 +156,10 @@ Status:         VERIFIED محليًّا · CI لم تُشغَّل بعد على 
 | `python -m core.sovereignty.cli sovereignty-check` | 9/9 (خط الأساس) | 2026-08-16 |
 
 | `python tools/crown/verify_crown_root_of_trust.py` | 11/11 — رمز خروج 0 · وحالات الفشل الأربع تُخرِج 1 | 2026-08-16 |
+
+| `python tools/crown/generate_crown_truth_matrix.py --check` | مطابقة للدليل — رمز 0 | 2026-08-16 |
+| `python tools/governance/check_repository_identity.py` | صفر مخالفة هوية | 2026-08-16 |
+| `python tools/governance/truth_audit.py . --ratchet` | ثابت عند 110 — لا ارتداد | 2026-08-16 |
 
 **لم يُشغَّل بعد:** بوابات الهوية (`stamp_readme_identity`,
 `check_repository_identity`, `generate_identity_cards`, `write_domain_readmes`)،
@@ -162,8 +194,8 @@ E2.1 باقية كما هي.
 |---|---|---|
 | E2.2-A | توثيق نطاق التاج ونواته | **VERIFIED** (`cda68d5`، البعيد مؤكَّد) |
 | E2.2-B | بوابة CI `crown-root-of-trust` | **VERIFIED** (11 فحصًا + 8 خطوات CI، وحالات الفشل مُجرَّبة) |
-| E2.2-C | خارطة المرحلة ومصفوفة الحقيقة | IN_PROGRESS |
-| E2.2-D | بوابات الهوية | PENDING |
+| E2.2-C | خارطة المرحلة ومصفوفة الحقيقة | **VERIFIED** (مصفوفة مولَّدة تُسقِط الادّعاء إلى دليله) |
+| E2.2-D | بوابات الهوية | IN_PROGRESS |
 | E2.2-E | تحقق الأسرار وحدود الثقة | PENDING |
 | E2.2-F | إثبات الاستمرارية السيادية من الطرف إلى الطرف | PENDING |
 | E2.2-G | الحِزَم الكاملة عبر الأنظمة | PENDING |

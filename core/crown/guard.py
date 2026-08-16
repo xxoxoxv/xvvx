@@ -225,11 +225,11 @@ class ContainmentAction(str, Enum):
     ISOLATE_SERVICE = "ISOLATE_SERVICE"
     QUARANTINE_AGENT = "QUARANTINE_AGENT"
     STOP_DEPLOYMENT = "STOP_DEPLOYMENT"
-    FREEZE_SUBORDINATE_CREDENTIAL = "FREEZE_SUBORDINATE_CREDENTIAL"
+    FREEZE_SUBORDINATE_ACCESS_GRANT = "FREEZE_SUBORDINATE_ACCESS_GRANT"
     BLOCK_CONFIG_CHANGE = "BLOCK_CONFIG_CHANGE"
     PRESERVE_LOGS = "PRESERVE_LOGS"
     FORENSIC_SNAPSHOT = "FORENSIC_SNAPSHOT"
-    DISABLE_NON_CROWN_CREDENTIAL = "DISABLE_NON_CROWN_CREDENTIAL"
+    DISABLE_NON_CROWN_ACCESS_GRANT = "DISABLE_NON_CROWN_ACCESS_GRANT"
     HALT_EVOLUTION_PIPELINE = "HALT_EVOLUTION_PIPELINE"
     HALT_AUTONOMOUS_DEPLOYMENT = "HALT_AUTONOMOUS_DEPLOYMENT"
     PREVENT_KEY_REPLACEMENT = "PREVENT_KEY_REPLACEMENT"
@@ -263,8 +263,8 @@ AUTHORIZED_RESPONSES: Final[dict[Severity, frozenset[ContainmentAction]]] = {
             ContainmentAction.PRESERVE_LOGS,
             ContainmentAction.FORENSIC_SNAPSHOT,
             ContainmentAction.QUARANTINE_AGENT,
-            ContainmentAction.FREEZE_SUBORDINATE_CREDENTIAL,
-            ContainmentAction.DISABLE_NON_CROWN_CREDENTIAL,
+            ContainmentAction.FREEZE_SUBORDINATE_ACCESS_GRANT,
+            ContainmentAction.DISABLE_NON_CROWN_ACCESS_GRANT,
             ContainmentAction.ISOLATE_SERVICE,
             ContainmentAction.NOTIFY_HUMAN_SECURITY,
         }
@@ -278,8 +278,8 @@ AUTHORIZED_RESPONSES: Final[dict[Severity, frozenset[ContainmentAction]]] = {
             ContainmentAction.STOP_DEPLOYMENT,
             ContainmentAction.HALT_EVOLUTION_PIPELINE,
             ContainmentAction.HALT_AUTONOMOUS_DEPLOYMENT,
-            ContainmentAction.FREEZE_SUBORDINATE_CREDENTIAL,
-            ContainmentAction.DISABLE_NON_CROWN_CREDENTIAL,
+            ContainmentAction.FREEZE_SUBORDINATE_ACCESS_GRANT,
+            ContainmentAction.DISABLE_NON_CROWN_ACCESS_GRANT,
             ContainmentAction.BLOCK_CONFIG_CHANGE,
             ContainmentAction.NOTIFY_HUMAN_SECURITY,
         }
@@ -681,6 +681,8 @@ class SovereignGuard:
         # لا تكتب «audit or CrownAudit()»: السجل الفارغ قيمته المنطقية كاذبة لأنّ له طولًا،
         # فيُستبدَل سجل المتّصل بسجل داخلي لا يراه أحد — وذلك فقدان أدلة صامت.
         self._graph = privilege_graph or PrivilegeGraph()
+        # سبب آخر انكسار في سلسلة السجل — يُعلَن في التقرير ولا يُكتَم.
+        self._audit_chain_error: str = ""
         self._layers: dict[GuardLayer, GuardLayerState] = {
             layer: GuardLayerState(
                 layer=layer,
@@ -1021,7 +1023,7 @@ class SovereignGuard:
                     threat_ids=("THR-I",),
                     actions=(
                         ContainmentAction.QUARANTINE_AGENT,
-                        ContainmentAction.FREEZE_SUBORDINATE_CREDENTIAL,
+                        ContainmentAction.FREEZE_SUBORDINATE_ACCESS_GRANT,
                         ContainmentAction.PRESERVE_LOGS,
                         ContainmentAction.FORENSIC_SNAPSHOT,
                         ContainmentAction.NOTIFY_HUMAN_SECURITY,
@@ -1192,6 +1194,7 @@ class SovereignGuard:
             "containment_count": len(self._containments),
             "audit_entries": len(self._audit.entries),
             "audit_chain_valid": self._audit_chain_valid(),
+            "audit_chain_error": self._audit_chain_error,
             "holds_sovereign_authority": False,
             "can_issue_royal_commands": False,
             "can_appoint_king": False,
@@ -1208,8 +1211,10 @@ class SovereignGuard:
 
         try:
             self._audit.verify_chain()
-        except AuditChainBrokenError:
+        except AuditChainBrokenError as exc:
+            self._audit_chain_error = str(exc)
             return False
+        self._audit_chain_error = ""
         return True
 
     def escalation_matrix(self) -> tuple[dict[str, Any], ...]:

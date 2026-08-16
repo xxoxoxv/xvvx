@@ -56,13 +56,18 @@ failures: list[str] = []
 passed: list[str] = []
 
 
-def check(name: str, ok: bool, detail: str = "") -> None:
+def check(name: str, ok: bool, detail: str = "", *, evidence: str = "") -> None:
+    """سجّل نتيجة بوابة. `detail` سبب السقوط، و`evidence` تعليل الرفض المُلتقَط.
+
+    يُطبَع التعليل عند النجاح أيضًا، لأن بوابةً تقول «نجحت» بلا سبب رفض معروض
+    لا تُثبِت أنها رفضت شيئًا فعلًا.
+    """
     if ok:
         passed.append(name)
-        print(f"✓ {name}")
+        print(f"✓ {name}" + (f" — {evidence}" if evidence else ""))
     else:
-        failures.append(f"{name} — {detail}")
-        print(f"✗ {name} — {detail}")
+        failures.append(f"{name} — {detail}" + (f" | تعليل: {evidence}" if evidence else ""))
+        print(f"✗ {name} — {detail}" + (f" | تعليل: {evidence}" if evidence else ""))
 
 
 def gate_cli_check() -> None:
@@ -163,29 +168,31 @@ def gate_false_mitigation_claim_is_blocked() -> None:
         base.update(overrides)
         Threat(**base)  # type: ignore[arg-type]
 
-    unclaimed_passed = False
+    unclaimed_reason = ""
     try:
         build()  # ادّعاء تنفيذ بلا test_refs
-    except FalseMitigationClaimError:
-        unclaimed_passed = True
+    except FalseMitigationClaimError as exc:
+        unclaimed_reason = str(exc)
     check(
         "بوابة 5 — ادّعاء حماية بلا مرجع اختبار مرفوض",
-        unclaimed_passed,
+        bool(unclaimed_reason),
         "أمكن ادّعاء تنفيذ بلا اختبار — نموذج التهديد بلا أسنان.",
+        evidence=unclaimed_reason,
     )
 
-    speculative_blocked = False
+    speculative_reason = ""
     try:
         build(
             horizon=ThreatHorizon.SPECULATIVE,
             test_refs=("tests/crown/test_crown_threat_model.py::test_media_is_not_authority",),
         )
-    except FalseMitigationClaimError:
-        speculative_blocked = True
+    except FalseMitigationClaimError as exc:
+        speculative_reason = str(exc)
     check(
         "بوابة 6 — ادّعاء حماية ضد أفق تخميني مرفوض",
-        speculative_blocked,
+        bool(speculative_reason),
         "أمكن ادّعاء حماية من تقنية غير متحققة.",
+        evidence=speculative_reason,
     )
 
 
@@ -226,16 +233,20 @@ def gate_guard_cannot_become_sovereign() -> None:
     )
 
     leaked: list[str] = []
+    refusals: list[str] = []
     for power in sorted(FORBIDDEN_GUARD_POWERS):
         try:
             assert_not_sovereign_power(power)
-        except GuardAuthorityError:
+        except GuardAuthorityError as exc:
+            refusals.append(f"{power}: {exc}")
             continue
         leaked.append(power)
     check(
         f"بوابة 9 — الحارس لا يصير سلطةً سيادية ({len(FORBIDDEN_GUARD_POWERS)} سلطة محظورة)",
         not leaked and len(FORBIDDEN_GUARD_POWERS) >= 15,
         f"سلطات مرّت بلا رفض: {leaked}",
+        evidence=f"عدد الرفوض: {len(refusals)} · أول تعليل: "
+        + (refusals[0] if refusals else "لا تعليل — لم يُرفَض شيء"),
     )
 
 
@@ -301,15 +312,17 @@ def gate_single_active_crown() -> None:
     )
     registry.activate("CI-K1", at="2026-08-16T00:00:02+00:00")
     doubled = False
+    refusal_reason = ""
     try:
         registry.activate("CI-K2", at="2026-08-16T00:00:03+00:00")
         doubled = True
-    except KeyStateError:
-        doubled = False
+    except KeyStateError as exc:
+        refusal_reason = str(exc)
     check(
         "بوابة 10 — لا تاجان: تنشيط مفتاح ثانٍ مرفوض",
         not doubled,
         "أمكن وجود مفتاحَي تاج نشطين معًا — تاجان.",
+        evidence=refusal_reason,
     )
 
 
