@@ -137,31 +137,35 @@ def _cmd_crown_check(args: argparse.Namespace) -> int:
     # ١) الحارس لا يملك سلطة سيادية.
     from core.crown.guard import GuardAuthorityError, assert_not_sovereign_power
 
-    blocked = 0
+    reasons: list[str] = []
     for power in sorted(FORBIDDEN_GUARD_POWERS):
         try:
             assert_not_sovereign_power(power)
-        except GuardAuthorityError:
-            blocked += 1
+        except GuardAuthorityError as exc:
+            reasons.append(f"{power}: {exc}")
+    blocked = len(reasons)
     record(
         "guard-holds-no-sovereign-power",
         blocked == len(FORBIDDEN_GUARD_POWERS),
-        f"مُنعت {blocked} من {len(FORBIDDEN_GUARD_POWERS)} سلطة محظورة.",
+        f"مُنعت {blocked} من {len(FORBIDDEN_GUARD_POWERS)} سلطة محظورة."
+        f" أول تعليل: {reasons[0] if reasons else 'لا تعليل — لم يُرفَض شيء'}",
     )
 
     # ٢) لا خليفة يقرره نظام أو حارس أو وكيل.
     from core.crown.succession import SuccessionAuthorityError, assert_eligible_decider
 
-    blocked = 0
+    reasons = []
     for decider in sorted(FORBIDDEN_SUCCESSION_DECIDERS):
         try:
             assert_eligible_decider(decider)
-        except SuccessionAuthorityError:
-            blocked += 1
+        except SuccessionAuthorityError as exc:
+            reasons.append(f"{decider}: {exc}")
+    blocked = len(reasons)
     record(
         "no-autonomous-successor",
         blocked == len(FORBIDDEN_SUCCESSION_DECIDERS),
-        f"مُنع {blocked} من {len(FORBIDDEN_SUCCESSION_DECIDERS)} مقرِّر محظور.",
+        f"مُنع {blocked} من {len(FORBIDDEN_SUCCESSION_DECIDERS)} مقرِّر محظور."
+        f" أول تعليل: {reasons[0] if reasons else 'لا تعليل — لم يُرفَض شيء'}",
     )
 
     # ٣) لا كلمة طوارئ ولا باب خلفي للاسترداد.
@@ -170,32 +174,35 @@ def _cmd_crown_check(args: argparse.Namespace) -> int:
         assert_no_emergency_backdoor,
     )
 
-    blocked = 0
+    reasons = []
     for mechanism in sorted(FORBIDDEN_RECOVERY_MECHANISMS):
         try:
             assert_no_emergency_backdoor(mechanism)
-        except EmergencyBackdoorError:
-            blocked += 1
+        except EmergencyBackdoorError as exc:
+            reasons.append(f"{mechanism}: {exc}")
+    blocked = len(reasons)
     record(
         "no-emergency-backdoor",
         blocked == len(FORBIDDEN_RECOVERY_MECHANISMS),
-        f"مُنعت {blocked} من {len(FORBIDDEN_RECOVERY_MECHANISMS)} آلية محظورة.",
+        f"مُنعت {blocked} من {len(FORBIDDEN_RECOVERY_MECHANISMS)} آلية محظورة."
+        f" أول تعليل: {reasons[0] if reasons else 'لا تعليل — لم يُرفَض شيء'}",
     )
 
     # ٤) لا حيوية تُقبل مفتاحًا خاصًّا.
     from core.crown.identity import BiometricAsKeyError, assert_not_key_material
 
     biometric_blocked = True
+    biometric_reason = ""
     try:
         assert_not_key_material("fingerprint_template")
-    except BiometricAsKeyError:
-        pass
+    except BiometricAsKeyError as exc:
+        biometric_reason = str(exc)
     else:
         biometric_blocked = False
     record(
         "biometric-is-not-a-private-key",
         biometric_blocked,
-        "القياس الحيوي دليل حضور لا مادة مفتاح.",
+        f"القياس الحيوي دليل حضور لا مادة مفتاح. التعليل: {biometric_reason or 'لم يُرفَض'}",
     )
 
     # ٥) هويات التاج منفصلة ولا تُخلط.
@@ -250,14 +257,17 @@ def _cmd_crown_check(args: argparse.Namespace) -> int:
         summary="فحص سلسلة السجل.",
     )
     chain_ok = True
+    chain_error = ""
     try:
         audit.verify_chain()
-    except AuditChainBrokenError:
+    except AuditChainBrokenError as exc:
         chain_ok = False
+        chain_error = str(exc)
     record(
         "audit-chain-verifiable",
         chain_ok,
-        f"مدخلات: {len(audit.entries)}، بصمة السجل {audit.integrity_digest()[:16]}.",
+        f"مدخلات: {len(audit.entries)}، بصمة السجل {audit.integrity_digest()[:16]}."
+        + (f" انكسار: {chain_error}" if chain_error else ""),
     )
 
     payload = {
