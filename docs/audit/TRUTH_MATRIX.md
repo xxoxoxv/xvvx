@@ -19,9 +19,9 @@
 |---|---:|
 | الأقاليم المفحوصة | 12 |
 | الأقاليم بحالة PROVEN | 0 |
-| إجمالي المخالفات | 110 |
+| إجمالي المخالفات | 106 |
 | ملفات بلا ترويسة هوية (المادة 009) | 25 |
-| منها CRITICAL | 15 |
+| منها CRITICAL | 11 |
 | منها HIGH | 68 |
 | منها MEDIUM | 27 |
 
@@ -32,7 +32,6 @@
 | IN_MEMORY_STORE | 64 | مخزن ذاكرة يُستخدم بديلًا عن تخزين دائم |
 | SILENT_FALLBACK | 31 | استثناء يُبتلع بلا تسجيل ولا رفع |
 | HARDCODED_TRUTH | 10 | قيمة ثابتة تُقدَّم كحقيقة تشغيلية بدل قاعدة البيانات |
-| HARDCODED_SECRET | 4 | سر/كلمة مرور مكتوبة داخل الكود أو الإعداد |
 | SANDBOX_DISABLED | 1 | أداة خطرة مسجّلة بلا عزل |
 
 ---
@@ -43,7 +42,7 @@
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|---|
 | `core/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | **❌** | `DEPLOYED` |
 | `royal/` | ✅ | ✅ | ✅ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
-| `federal/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ❌ | ✅ | ✅ | **❌** | `UNIT_TESTED` |
+| `federal/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | **❌** | `DEPLOYED` |
 | `states/` | ✅ | ❌ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
 | `institutions/` | ✅ | ✅ | ✅ | ⚠️ | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `UNIT_TESTED` |
 | `agents/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
@@ -62,24 +61,24 @@
 
 | الإقليم | md | py | yaml | أسطر كود | نوى | بلا ترويسة هوية | حالات النوى |
 |---|---:|---:|---:|---:|---:|---:|---|
-| `core/` | 65 | 31 | 0 | 8915 | 14 | 2 | unspecified=14 |
+| `core/` | 65 | 31 | 0 | 8932 | 14 | 2 | unspecified=14 |
 | `royal/` | 51 | 2 | 1 | 92 | 14 | 3 | unspecified=14 |
-| `federal/` | 51 | 121 | 3 | 19370 | 7 | 2 | unspecified=7 |
+| `federal/` | 51 | 122 | 3 | 19575 | 7 | 2 | unspecified=7 |
 | `states/` | 47 | 2 | 0 | 32 | 7 | 2 | unspecified=7 |
 | `institutions/` | 19 | 2 | 0 | 89 | 6 | 2 | unspecified=6 |
 | `agents/` | 601 | 4 | 283 | 549 | 11 | 3 | unspecified=11 |
-| `tools/` | 38 | 11 | 2 | 2581 | 12 | 3 | unspecified=12 |
+| `tools/` | 38 | 12 | 2 | 2885 | 12 | 3 | unspecified=12 |
 | `interfaces/` | 14 | 2 | 0 | 30 | 4 | 2 | unspecified=4 |
 | `runtime/` | 20 | 2 | 0 | 71 | 7 | 2 | unspecified=7 |
-| `docs/` | 46 | 2 | 0 | 47 | 7 | 2 | unspecified=7 |
+| `docs/` | 47 | 2 | 0 | 47 | 7 | 2 | unspecified=7 |
 | `ops/` | 38 | 2 | 0 | 93 | 12 | 1 | unspecified=12 |
-| `tests/` | 14 | 21 | 0 | 6027 | 5 | 1 | unspecified=5 |
+| `tests/` | 14 | 21 | 0 | 6056 | 5 | 1 | unspecified=5 |
 
 ---
 
 ## 4. سجل المخالفات بالأدلة
 
-### CRITICAL (15)
+### CRITICAL (11)
 
 | الموقع | النوع | الخطورة | التفصيل |
 |---|---|---|---|
@@ -88,11 +87,7 @@
 | `agents/stubs/registry_check.py:21` | HARDCODED_TRUTH | CRITICAL | `AGENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات |
 | `core/stubs/memory_check.py:19` | HARDCODED_TRUTH | CRITICAL | `MEMORIES` بيانات ثابتة بديلة عن قاعدة البيانات |
 | `core/stubs/memory_check.py:34` | HARDCODED_TRUTH | CRITICAL | `EXPERIENCES` بيانات ثابتة بديلة عن قاعدة البيانات |
-| `federal/executive/services/src/amos_federation/common/config.py:25` | HARDCODED_SECRET | CRITICAL | `postgres_password` قيمة سرية افتراضية مكتوبة داخل الكود |
-| `federal/executive/services/src/amos_federation/common/config.py:44` | HARDCODED_SECRET | CRITICAL | `minio_secret_key` قيمة سرية افتراضية مكتوبة داخل الكود |
-| `federal/executive/services/src/amos_federation/common/config.py:48` | HARDCODED_SECRET | CRITICAL | `jwt_secret` قيمة سرية افتراضية مكتوبة داخل الكود |
 | `federal/executive/services/src/amos_federation/services/governance/expansion.py:108` | HARDCODED_TRUTH | CRITICAL | `FULL_POPULATION_CATEGORIES` بيانات ثابتة بديلة عن قاعدة البيانات |
-| `federal/executive/services/src/amos_federation/services/royal/main.py:97` | HARDCODED_SECRET | CRITICAL | مصادقة بمقارنة `password` مع قيمة ثابتة في الكود |
 | `institutions/stubs/registry_check.py:18` | HARDCODED_TRUTH | CRITICAL | `INSTITUTIONS` بيانات ثابتة بديلة عن قاعدة البيانات |
 | `runtime/stubs/task_event_check.py:31` | HARDCODED_TRUTH | CRITICAL | `EVENT_COUNT = 156` عدّاد ثابت يُقدَّم كحقيقة تشغيلية |
 | `runtime/stubs/task_event_check.py:34` | HARDCODED_TRUTH | CRITICAL | `EVENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات |

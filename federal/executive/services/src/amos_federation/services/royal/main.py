@@ -6,6 +6,7 @@ AMOS-Federation Royal Service
 تاريخ الإنشاء: 2026-08-15
 """
 
+import hmac
 import json
 import uuid
 from datetime import UTC, datetime
@@ -21,10 +22,14 @@ from amos_federation.common.auth import (
     require_auth,
     require_king,
 )
+from amos_federation.common.config import PLACEHOLDER_SECRETS, settings
 from amos_federation.common.database import get_database_url
 from amos_federation.common.service import create_service_app
 
 router = APIRouter(prefix="/v1", tags=["royal"])
+
+#: اسم الدخول ليس سرًّا؛ السرّ وحده يأتي من البيئة.
+KING_USERNAME = "king"
 
 
 def _get_pg_engine():
@@ -94,7 +99,13 @@ class LoginRequest(BaseModel):
 @router.post("/auth/login", response_model=dict)
 async def login(req: LoginRequest) -> dict[str, Any]:
     """تسجيل الدخول — المالك يحصل على صلاحيات مطلقة."""
-    if req.username == "king" and req.password == "amos-king-2026":
+    expected = settings.king_login_secret
+    if not expected or expected in PLACEHOLDER_SECRETS:
+        raise HTTPException(
+            status_code=503,
+            detail="بيانات دخول الملك غير مهيّأة — تُقرأ من البيئة ولا تُكتب في الكود",
+        )
+    if req.username == KING_USERNAME and hmac.compare_digest(req.password, expected):
         token = create_king_token()
         return {
             "access_token": token,
