@@ -15,6 +15,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from amos_federation.common.principal import AuthorizationContext, policy_role
+
 
 class ToolSandbox:
     """صندوق رملي حقيقي لتنفيذ الأدوات مع قيود موارد."""
@@ -313,28 +315,45 @@ def execute_tool_with_governance(
     tool_id: str,
     params: dict[str, Any],
     role: str = "user",
+    *,
+    principal: AuthorizationContext | None = None,
 ) -> dict[str, Any]:
-    """نفِّذ أداة بعد التخويل — ولا يُنشأ صندوق قبله بحال."""
+    """نفِّذ أداة بعد التخويل — ولا يُنشأ صندوق قبله بحال.
+
+    Args:
+        role: **مسار ما قبل R6، مُهمَل.** دورٌ يقوله المُستدعي عن نفسه بلا أي
+            إثبات. يُلَفّ في سياق `UNVERIFIED` صريح، ويُرفَض في بيئة إنتاجية.
+            يُقبل هنا في التطوير والاختبار وحدهما، وكل نتيجة تُعلِن
+            `principal_verification = "UNVERIFIED"` فلا يُقرأ كتخويل.
+        principal: سياق التخويل الكانوني. إن وُجد فهو المصدر، ويُهمَل `role`
+            إهمالًا تامًّا — لا دمج ولا «الأوسع يفوز».
+    """
     from amos_federation.common.event_bus import get_event_bus
-    from amos_federation.services.governance.canary import enforce_kill_switch, get_system_status
-    from amos_federation.services.governance.policy_engine import get_policy_engine
+    from amos_federation.common.principal import unverified_context
+    from amos_federation.services.tool_registry.authorized_execution import (
+        AuthorizationDenied,
+        authorize,
+    )
 
     agent_id = params.get("agent_id")
     scope = "AGENT_CHAIN" if agent_id else "ROLE_ONLY"
 
+    # المبدأ: إمّا سياق مُتحقَّق منه مُمرَّر صراحةً، أو دورٌ مُدّعىً يُوسَم كذلك.
+    # `unverified_context` ترفع في الإنتاج، فلا يمرّ الادّعاء هناك بحال.
+    context = principal or unverified_context(
+        f"دور مُدّعىً من المُستدعي عبر معامل role='{role}' — لا جلسة ولا رمز",
+        claimed_role=role,
+    )
+    effective_role = context.role or role
+
     if agent_id:
         # السلسلة الكاملة. الرفض يُرجَع قاموسًا للتوافُق مع النداءات القائمة،
         # لكنه رفض حقيقي: لا صندوق يُنشأ بعده.
-        from amos_federation.services.tool_registry.authorized_execution import (
-            AuthorizationDenied,
-            authorize,
-        )
-
         try:
             decision = authorize(
                 agent_id=str(agent_id),
                 tool_id=tool_id,
-                actor_role=role,
+                principal=context,
             )
         except AuthorizationDenied as denial:
             return {
@@ -344,37 +363,57 @@ def execute_tool_with_governance(
                 "tool": tool_id,
                 "agent_id": agent_id,
                 "authorization_scope": scope,
+                "principal_verification": context.verification.value,
+                "principal_id": context.principal_id,
             }
         stages = list(decision.stages_passed)
+        effective_role = decision.actor_role or effective_role
     else:
+        # لا وكيل: الفحص على الدور وحده. وهذا **أضعف**، ويُقال في النتيجة.
+        # وإن كان المبدأ غير مُتحقَّق منه فالبيئة الإنتاجية رفضته قبل هنا.
+        from amos_federation.services.governance.canary import (
+            enforce_kill_switch,
+            get_system_status,
+        )
+        from amos_federation.services.governance.policy_engine import get_policy_engine
+
         # 1. Kill Switch — يرفع استثناءً كما كان.
-        enforce_kill_switch(tool_id, role)
+        # الترجمة للموثوق وحده: ادّعاء `role="king"` لا يُترجَم إلى `admin`.
+        evaluated_role = policy_role(effective_role) if context.is_trusted else effective_role
+        enforce_kill_switch(tool_id, evaluated_role)
 
         # 2. محرِّك السياسة على الدور.
         engine = get_policy_engine()
         state = get_system_status()["level"]
-        policy_result = engine.evaluate_tool_access(tool_id, role, state)
+        policy_result = engine.evaluate_tool_access(tool_id, evaluated_role, state)
         if not policy_result["allowed"]:
             return {
                 "error": "policy_denied",
                 "denied_by": policy_result["denied_by"],
                 "tool": tool_id,
                 "authorization_scope": scope,
+                "principal_verification": context.verification.value,
+                "principal_id": context.principal_id,
             }
-        stages = ["role", "tool"]
+        stages = ["principal", "role", "tool"]
 
     # 3. التنفيذ — الآن فقط يُنشأ صندوق.
     if tool_id in PROVIDER_BACKED_TOOLS:
         result = _execute_via_provider(tool_id, params, agent_id=agent_id)
     else:
         result = _execute_locally(tool_id, params)
-        if "error" in result and result["error"] == "unknown_tool":
+        if result.get("error") == "unknown_tool":
             return {**result, "authorization_scope": scope}
 
     result["authorization_scope"] = scope
     result["authorization_stages"] = stages
+    result["principal_verification"] = context.verification.value
+    result["principal_id"] = context.principal_id
+    result["principal_kind"] = context.principal_kind.value
+    if context.session_id:
+        result["session_id"] = context.session_id
 
-    # 4. نشر حدث بنَسَب التنفيذ وصدقه.
+    # 4. نشر حدث بنَسَب التنفيذ وصدقه وهوية طالبه.
     get_event_bus().publish(
         "amos_federation.tool.executed",
         {
@@ -385,11 +424,33 @@ def execute_tool_with_governance(
             "provider": result.get("provider"),
             "execution_fidelity": result.get("execution_fidelity"),
             "execution_id": result.get("execution_id"),
-            "correlation_id": result.get("correlation_id"),
+            "correlation_id": result.get("correlation_id") or context.correlation_id,
             "authorization_scope": scope,
+            "principal_id": context.principal_id,
+            "principal_verification": context.verification.value,
         },
     )
     return result
+
+
+def execute_tool_for_principal(
+    tool_id: str,
+    params: dict[str, Any],
+    context: AuthorizationContext,
+) -> dict[str, Any]:
+    """المدخل الكانوني لتنفيذ أداة نيابةً عن مبدأ مُتحقَّق منه.
+
+    يفرق عن `execute_tool_with_governance` في أمر واحد حاسم: **يرفض المبدأ غير
+    المُتحقَّق منه في كل بيئة**، لا في الإنتاج وحده. فلا يوجد فيه معامل `role`
+    يُمرِّر ادّعاءً، ولا فرع يقبل مجهولًا.
+
+    وهذا هو ما يُفترض أن تستدعيه الخدمات والنقاط الطرفية الجديدة.
+
+    Raises:
+        PrincipalUnverifiedError: المبدأ لم تثبت هويته — fail closed.
+    """
+    context.assert_authorizable()
+    return execute_tool_with_governance(tool_id, params, principal=context)
 
 
 def _execute_via_provider(

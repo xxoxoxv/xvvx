@@ -204,6 +204,8 @@ class ExecutionResult:
     fallback_from: str | None = None
     fallback_reason: str | None = None
     network_policy: str = "DENY"
+    #: كيف فُرِضت سياسة الشبكة فعلًا — لا يُزعم فرضٌ غير حاصل.
+    network_enforcement: str = "UNKNOWN"
     secrets_injected: tuple[str, ...] = ()
     error: str | None = None
 
@@ -228,6 +230,7 @@ class ExecutionResult:
             "duration_ms": self.duration_ms,
             "timed_out": self.timed_out,
             "network_policy": self.network_policy,
+            "network_enforcement": self.network_enforcement,
             "secrets_injected": list(self.secrets_injected),
             "succeeded": self.succeeded,
         }
@@ -343,6 +346,7 @@ class SandboxProvider(ABC):
         timed_out: bool = False,
         secrets_injected: tuple[str, ...] = (),
         error: str | None = None,
+        network_enforcement: str | None = None,
     ) -> ExecutionResult:
         """ابنِ نتيجة موحَّدة — المسار الوحيد لبناء `ExecutionResult` في المُنفِّذات.
 
@@ -369,6 +373,7 @@ class SandboxProvider(ABC):
             timed_out=timed_out,
             fidelity_reason=fidelity_reason,
             network_policy=handle.spec.network_policy,
+            network_enforcement=network_enforcement or "UNKNOWN",
             secrets_injected=secrets_injected,
             error=error,
         )
