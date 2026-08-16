@@ -40,13 +40,13 @@
 | الحقل | القيمة |
 |---|---|
 | Current Phase | E2.2 — Crown Root of Trust & Protection |
-| Current Subphase | E2.2-F — End-to-end sovereign continuity proof |
-| Current Objective | إثبات الاستمرارية السيادية من الطرف إلى الطرف: K1 نشط ← مرساة محقَّقة ← أمر D1 ← لا نقض من تابع ← تنفيذ ← سجل ← إبطال K1 ← بقاء D1 التاريخي قابلًا للتحقق ← تفعيل K2 ← تنفيذ D2 ← رفض أمر K1 جديد ← حدث أمني ← لا تاج زائف |
-| Status | E2.2-A/B/C/D/E = VERIFIED ومدفوعة · E2.2-F = NOT_STARTED |
-| Current Commit SHA | `891f6fe` (E2.2-E — مدفوع ومؤكَّد) |
-| Last Verified Commit | `891f6fe` — مؤكَّد على `origin/main` بـ`git ls-remote` |
-| Previous Checkpoint SHA | `891f6fe` (E2.2-E) · `3fed334` (E2.2-D) · `dae73f6` (E2.2-C) · `b13cd87` (E2.2-B) · `fb5ce9d` (E2.2-A) · `098beb3` (ما قبل التاج) |
-| Remote Confirmed | نعم — `origin/main = 891f6fe` وقت كتابة هذه النقطة |
+| Current Subphase | E2.2-G — Full relevant suite across systems |
+| Current Objective | تشغيل الحِزَم الكاملة عبر الأنظمة (تاج + سيادة + دستور + حكامة + خدمات فدرالية) مع ruff والفحوص الساكنة ومسح الأسرار، وأي ارتداد = BLOCK |
+| Status | E2.2-A..F = VERIFIED محليًّا · E2.2-F مدفوعة · E2.2-G = NOT_STARTED |
+| Current Commit SHA | E2.2-F — يُثبَت بعد الدفع في هذه النقطة |
+| Last Verified Commit | `24cae55` — مؤكَّد على `origin/main` بـ`git ls-remote` |
+| Previous Checkpoint SHA | `24cae55` (تثبيت حالة E2.2-E) · `891f6fe` (E2.2-E) · `3fed334` (E2.2-D) · `dae73f6` (E2.2-C) · `b13cd87` (E2.2-B) · `fb5ce9d` (E2.2-A) · `098beb3` (ما قبل التاج) |
+| Remote Confirmed | `origin/main = 24cae55` قبل هذه النقطة · التزام E2.2-F يُؤكَّد بعد دفعه |
 | Last Updated | 2026-08-16 |
 
 ## 2. ما أُنجز (مثبَت تنفيذيًّا)
@@ -233,6 +233,47 @@ Next Action:    E2.2-F — إثبات الاستمرارية السيادية م
 Status:         VERIFIED محليًّا · CI لم تُشغَّل بعد على GitHub
 ```
 
+### نقطة تفتيش E2.2-F (مغلقة)
+
+```
+CHECKPOINT E2.2-F
+-----------------
+Objective:      إثبات الاستمرارية السيادية من الطرف إلى الطرف عبر مسار **منفَّذ**،
+                لا عبر سلسلة يُركّبها الاختبار
+Completed:      core/crown/sovereign_session.py (بوابات متسلسلة بلا سلطة) ·
+                tests/crown/test_sovereign_continuity_e2e.py (11 اختبارًا) ·
+                tools/crown/prove_sovereign_continuity.py (إثبات تنفيذي خارج pytest) ·
+                خطوة CI «بوابة 6ب» · مدخل sovereign_session.py في مولِّد المصفوفة
+Tests:          332 اختبار تاج ناجح · تغطية فروع 94.48% · sovereign_session.py 95.0%
+                729 ناجحًا في (crown + sovereignty + constitutional + governance)
+Security:       أداة الإثبات 18 ادّعاءً برمز 0 · ثلاثة حقن فشل أخرجت BLOCKED برمز 1:
+                (1) حذف بوابة المرساة (2) حارس يقبل النقض (3) قبول الأوامر في كل حال
+Real defect:    test_grand_crown_lifecycle_end_to_end كان **يدّعي** بقاء D1 قابلًا
+                للتحقق بعد الاختراق، والاستدعاء لم يفحص النتيجة أصلًا. والقاعدة
+                المنفَّذة في was_valid_at عكس ذلك عمدًا: الاختراق يُبطل الماضي
+                والإحالة لا تُبطله. صُحِّح الاختبار والوثيقة إلى القاعدة المنفَّذة،
+                وأُضيف اختبار للفرق بين التدوير والاختراق.
+Truth audit:    ارتفع إلى 108 من عمل هذه الوحدة (استثناءان يُبتلعان) ثم أُصلح في
+                مصدره وعاد إلى 106 — لا تخفيف عتبة ولا استثناء في الماسح
+Documentation:  مصفوفة الحقيقة مولَّدة من جديد · sovereign_session.py مُسقَط إلى
+                TESTED لأن لا وحدة إنتاج تستوردها — والإسقاط أُبقي ولم يُزيَّف
+Commit:         (يُثبَت بعد الالتزام في هذه النقطة)
+Remote:         (يُثبَت بعد الدفع)
+Remaining:      E2.2-G · E2.3-A · E2.3-B
+Next Action:    E2.2-G — الحِزَم الكاملة عبر الأنظمة
+Status:         VERIFIED محليًّا · CI لم تُشغَّل بعد على GitHub
+```
+
+**ما لا يُدَّعى في E2.2-F:** السلسلة K1→K2 كانت مُختبَرة قبل هذه الوحدة في
+`test_crown_grand_tests.py`، فليست جديدة. الجديد ثلاثة: أن السلسلة صارت **مسارًا
+منفَّذًا** يسقط إن حُذفت منه بوابة (وقد أُثبت بالحقن)، وأن الإثبات صار يُشغَّل خارج
+pytest برمز خروج، وأن حالات لم تكن مغطّاة صارت مغطّاة (الأمر قبل المرساة، ونقض خفيّ،
+ومفتاح نشط ثانٍ، واستئناف الأوامر بلا إعلان حضور، والتدوير مقابل الاختراق).
+
+**ولا يُدَّعى الاندماج:** `sovereign_session.py` لا تستوردها وحدة إنتاج بعد، ولذلك
+حالتها `TESTED` لا `INTEGRATED` في المصفوفة. ولم تُلفَّق لها استيرادة من `cli.py`
+لترقية الحالة، لأن ترقية بلا استعمال حقيقي كذبٌ على المصفوفة نفسها.
+
 ### تصنيف مخالفات الأسرار في E2.2-E
 
 | المخالفة | العدد | التصنيف | التصرّف |
@@ -283,6 +324,17 @@ Status:         VERIFIED محليًّا · CI لم تُشغَّل بعد على 
 **لم يُشغَّل بعد:** CI على GitHub (لا يملك الوكيل تشغيلها)، وإثبات الاستمرارية
 السيادية من الطرف إلى الطرف (E2.2-F)، والتحقق العابر للأنظمة (E2.3-A).
 
+### جولة E2.2-F (2026-08-16)
+
+| الأمر | النتيجة |
+|---|---|
+| `python tools/crown/prove_sovereign_continuity.py` | PASS — 18 ادّعاءً، رمز 0 · وثلاثة حقن أخرجت BLOCKED برمز 1 |
+| `python -m pytest tests/crown -q --cov=core.crown --cov-branch --cov-fail-under=90` | 332 passed · تغطية فروع 94.48% |
+| `python -m pytest tests/crown tests/sovereignty tests/constitutional tests/governance -q` | 729 passed |
+| `python -m ruff check .` | All checks passed |
+| `python tools/governance/truth_audit.py . --ratchet` | 108 ← 106 بعد الإصلاح في المصدر · ثابت عند 106 |
+| `crown-check` · `verify_crown_root_of_trust` · `verify_secret_boundaries` · `--check` للمصفوفة والوثيقة · بوابات الهوية | كلها رمز 0 |
+
 ## 4. الملفات
 
 **مُضافة:** `core/crown/` (12 وحدة + `README.md` + `NUCLEUS.md`)، `tests/crown/`
@@ -314,30 +366,23 @@ E2.1 باقية كما هي.
 | E2.2-C | خارطة المرحلة ومصفوفة الحقيقة | **VERIFIED** (مصفوفة مولَّدة تُسقِط الادّعاء إلى دليله) |
 | E2.2-D | بوابات الهوية | **VERIFIED** (`3fed334`، البعيد مؤكَّد) — عيبان حقيقيان في الحُرّاس أنفسهم |
 | E2.2-E | تحقق الأسرار وحدود الثقة | **VERIFIED** (`891f6fe`، البعيد مؤكَّد) — 11 بوابة، وثلاثة حقن، وسرّ الملك خرج من الكود |
-| E2.2-F | إثبات الاستمرارية السيادية من الطرف إلى الطرف | PENDING |
+| E2.2-F | إثبات الاستمرارية السيادية من الطرف إلى الطرف | **VERIFIED محليًّا** — مسار منفَّذ + إثبات تنفيذي + ثلاثة حقن · وعيب ادّعاء في اختبار قائم صُحِّح |
 | E2.2-G | الحِزَم الكاملة عبر الأنظمة | PENDING |
 | E2.3-A | التحقق النهائي العابر للأنظمة | PENDING |
 | E2.3-B | تقرير الإثبات وإغلاق المرحلة | PENDING |
 
 ## 7. الأمر التالي حرفيًّا
 
-E2.2-F: اكتب `tests/crown/test_sovereign_continuity_e2e.py` يُثبت السلسلة كاملةً في
-اختبار واحد متصل، لا في اختبارات متفرقة:
-
-```
-K1 ACTIVE ← مرساة محقَّقة خارج القناة ← أمر D1 موقَّع ← لا نقض من تابع ←
-تنفيذ ← قيد في السجل ← إعلان اختراق K1 وإبطاله ← D1 التاريخي ما يزال قابلًا
-للتحقق ← تفعيل K2 ← تنفيذ D2 ← رفض أمر جديد بـK1 ← حدث أمني مسجَّل ←
-لا تاج زائف ولا خلافة ذاتية
-```
-
-ثم قائمة الخصم: استبدال مرساة، وإرجاع نسخة، وتخفيض إصدار، وحارس يدّعي سيادة،
-وخليفة يُفعِّل نفسه. ثم:
+E2.2-G — شغّل الحِزَم الكاملة عبر الأنظمة، وأي ارتداد = BLOCK يُصلَح في مصدره:
 
 ```bash
-python -m pytest tests/crown -q --cov=core.crown --cov-branch --cov-fail-under=90
-python tools/crown/verify_secret_boundaries.py && python tools/crown/verify_crown_root_of_trust.py
-git commit -m "test(crown): prove sovereign continuity and adversarial resilience"
+python -m pytest tests/crown tests/sovereignty tests/constitutional tests/governance -q
+cd federal/executive/services && PYTHONPATH=src python -m pytest tests -q && cd -
+python -m ruff check .
+python tools/crown/verify_crown_root_of_trust.py && python tools/crown/verify_secret_boundaries.py
+python tools/crown/prove_sovereign_continuity.py
+python tools/governance/truth_audit.py . --ratchet
+git commit -m "test(crown): verify cross-system sovereignty integrity"
 git push origin main && git ls-remote origin main   # وتحقق من التطابق
 ```
 
@@ -358,7 +403,8 @@ git push origin main && git ls-remote origin main   # وتحقق من التطا
 | E2.2-B | بوابة CI `crown-root-of-trust` (وكشف بوابة زائفة) | `b13cd87` | مؤكَّد بـ`ls-remote` | VERIFIED |
 | E2.2-C | خارطة المرحلة ومصفوفة الحقيقة المولَّدة | `dae73f6` | مؤكَّد بـ`ls-remote` | VERIFIED |
 | E2.2-D | بوابات الهوية (وعيبان في الحُرّاس أنفسهم) | `3fed334` | مؤكَّد بـ`ls-remote` | VERIFIED |
-| E2.2-E | حدود الأسرار والثقة | `891f6fe` | مؤكَّد بـ`ls-remote` | VERIFIED |
+| E2.2-E | حدود الأسرار والثقة | `891f6fe` ثم `24cae55` | مؤكَّد بـ`ls-remote` | VERIFIED |
+| E2.2-F | الاستمرارية السيادية عبر مسار منفَّذ (وتصحيح ادّعاء في اختبار قائم) | يُثبَت بعد الدفع | يُثبَت بعد الدفع | VERIFIED محليًّا |
 
 ## المراجع
 - خارطة المرحلة: [`PHASE_E_ROADMAP.md`](PHASE_E_ROADMAP.md)

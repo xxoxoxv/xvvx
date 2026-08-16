@@ -174,6 +174,17 @@ CLAIMS: tuple[UnitClaim, ...] = (
         "ادّعاء الحماية بلا مرجع اختبار يُرفَض في وقت البناء.",
     ),
     UnitClaim(
+        "sovereign_session.py",
+        "المسار السيادي المنفَّذ — بوابات متسلسلة بلا سلطة",
+        "SECURITY_TESTED",
+        (
+            "tests/crown/test_sovereign_continuity_e2e.py::test_command_before_anchor_verification_is_refused",
+            "tests/crown/test_sovereign_continuity_e2e.py::test_hidden_veto_path_is_treated_as_false_crown",
+            "tests/crown/test_sovereign_continuity_e2e.py::test_second_active_key_is_a_false_crown",
+        ),
+        "تقودها أداة إثبات تنفيذية (tools/crown/prove_sovereign_continuity.py) في CI.",
+    ),
+    UnitClaim(
         "cli.py",
         "واجهة الأوامر — بوابة الحدود المطلقة (9 فحوص)",
         "INTEGRATED",

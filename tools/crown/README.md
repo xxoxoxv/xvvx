@@ -28,6 +28,7 @@
 |---|---|
 | `verify_crown_root_of_trust.py` | 11 فحصًا تنفيذيًّا لسلامة جذر الثقة — يخرج بـ1 عند أول مخالفة |
 | `verify_secret_boundaries.py` | 11 فحصًا لحدود الأسرار والثقة: لا مفتاح خاص في الشجرة ولا في التاريخ، ولا سرّ إنتاج في الكود، ولا سلطة فوق الملك |
+| `prove_sovereign_continuity.py` | إثبات تنفيذي للاستمرارية السيادية من الطرف إلى الطرف: يقود `core.crown.sovereign_session` نفسها بمفاتيح عابرة، ويطبع 18 ادّعاءً، ويُرجع 1 عند أول ادّعاء لم يتحقق |
 | `generate_crown_truth_matrix.py` | يولّد `docs/audit/CROWN_TRUTH_MATRIX.md` من الدليل المقيس ويتحقق بـ`--check` |
 
 ## التشغيل
@@ -35,6 +36,7 @@
 ```bash
 python tools/crown/verify_crown_root_of_trust.py   # 0 = سليم، 1 = مخالفة
 python tools/crown/verify_secret_boundaries.py     # 0 = لا سرّ مكشوف، 1 = BLOCKED
+python tools/crown/prove_sovereign_continuity.py   # 0 = السلسلة السيادية مُثبتة، 1 = BLOCKED
 ```
 
 ## حالات الفشل المُختبَرة
@@ -66,3 +68,14 @@ python tools/crown/verify_secret_boundaries.py     # 0 = لا سرّ مكشوف�
 - التنفيذ: [`core/crown/`](../../core/crown/README.md)
 - البوابة في CI: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — وظيفة `crown-root-of-trust`
 - المعمار: [`docs/security/CROWN_SOVEREIGNTY_PROTECTION.md`](../../docs/security/CROWN_SOVEREIGNTY_PROTECTION.md)
+
+## حالات الفشل المُجرَّبة في `prove_sovereign_continuity.py`
+
+الأداة لا تُوثَق بادّعاء نجاحها، بل بما أسقطها. جُرِّبت ثلاث حقن، وأُعيد المستودع
+إلى حاله بعد كل واحدة:
+
+| الحقن | النتيجة |
+|---|---|
+| تعطيل شرط التحقق من المرساة في `SovereignSession.execute` | `BLOCKED — نُفِّذ أمر قبل التحقق من المرساة` · رمز 1 |
+| جعل `SovereignGuard.assert_cannot_veto` يعود بلا رفض | `BLOCKED — الحارس نقض الأمر D1 بلا رفض — مسار نقض خفيّ` · رمز 1 |
+| جعل `permits_new_royal_commands` تُرجع `True` دائمًا | `BLOCKED — الاستمرارية لا تقبل أوامر جديدة الآن` · رمز 1 |

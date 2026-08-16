@@ -197,9 +197,11 @@ def test_grand_crown_lifecycle_end_to_end(
 ) -> None:
     """K1 → مرساة → أمر D1 → تنفيذ → اختراق → خلافة K2 → D2 → رد محاولة K1.
 
-    وأهم ما يُثبته هذا الاختبار أمران متعارضان في الظاهر: أن اختراق المفتاح يمنع
-    **الأوامر الجديدة**، وأن D1 الموقَّع قبل الاختراق يبقى **قابلًا للتحقق تاريخيًّا**.
-    فإبطال المفتاح ليس محوًا للتاريخ.
+    **تصحيح ادّعاء (E2.2-F):** كانت هذه الوثيقة تقول إن D1 يبقى قابلًا للتحقق بعد
+    الاختراق، والاستدعاء في الخطوة 7 لم يكن يتحقق من النتيجة أصلًا. والقاعدة
+    المنفَّذة في ``was_valid_at`` عكس ذلك عمدًا: **الاختراق يُبطل الماضي** لأن معناه
+    أن الصفة لم تكن حقيقية، بينما **الإحالة بعد التدوير لا تُبطله**. فصار الاختبار
+    يتحقق من القاعدة كما هي منفَّذة، لا كما وُصفت.
     """
     audit = CrownAudit()
     guard = running_guard(audit)
@@ -256,8 +258,11 @@ def test_grand_crown_lifecycle_end_to_end(
     with pytest.raises(SignatureError):
         verifier.verify(blocked)
 
-    # 7) لكن D1 التاريخي يبقى قابلًا للتحقق في زمن توقيعه.
-    verifier.verify_historical(d1, signed_at=d1.envelope.issued_at)
+    # 7) والاختراق يُبطل الماضي أيضًا — ويُعلَن السبب، ولا يُبتلع صامتًا.
+    historical = verifier.verify_historical(d1, signed_at=d1.envelope.issued_at)
+    assert historical.accepted is False
+    assert historical.historical is True
+    assert "COMPROMISED" in historical.reason
 
     # 8) خلافة رسمية إلى K2 بإشهاد بشري.
     full_succession(
@@ -710,7 +715,8 @@ def test_suspicious_authentication_does_not_invalidate_prior_valid_commands(
         issued_at=utc_now() - timedelta(minutes=5),
     )
     verifier.verify_and_commit(earlier)
-    verifier.verify_historical(earlier, signed_at=earlier.envelope.issued_at)
+    outcome = verifier.verify_historical(earlier, signed_at=earlier.envelope.issued_at)
+    assert outcome.accepted is True
 
 
 def test_audit_tamper_during_incident_is_detected() -> None:
