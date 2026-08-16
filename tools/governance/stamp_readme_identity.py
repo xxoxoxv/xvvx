@@ -68,6 +68,66 @@ def git_last_modified(path: Path) -> str:
     return date.today().isoformat()
 
 
+def _is_dirty(path: Path) -> bool:
+    """هل للملف تعديل غير مُلتزَم؟ فحينئذ تاريخ git أقدم من الواقع."""
+    try:
+        out = subprocess.run(
+            ["git", "status", "--porcelain", "--", str(path)],
+            cwd=REPO_ROOT, capture_output=True, text=True, timeout=20, check=False,
+        )
+        return bool(out.stdout.strip())
+    except (OSError, subprocess.SubprocessError) as exc:  # لا يُبتلع
+        print(f"  [تنبيه] تعذّر قراءة حالة git لـ {path}: {exc}", file=sys.stderr)
+        return False
+
+
+def expected_last_modified(readme: Path) -> str:
+    """التاريخ الذي **يجب** أن تحمله البطاقة: اليوم إن كانت مُعدَّلة، وإلا سجل git."""
+    if _is_dirty(readme):
+        return date.today().isoformat()
+    return git_last_modified(readme)
+
+
+DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def declared_last_modified(text: str) -> str | None:
+    """التاريخ المُعلَن في البطاقة، أو None إن لم يُعلَن."""
+    body = _section_body(text, MTIME_HEADS)
+    if body is None:
+        return None
+    m = DATE_RE.search(strip_boilerplate(body))
+    return m.group(0) if m else None
+
+
+def date_drift(readme: Path, text: str | None = None) -> tuple[str, str] | None:
+    """(المُعلَن، الواقع) إذا كذب التاريخ المُعلَن، وإلا None.
+
+    وجود الحقل لا يكفي: تاريخٌ يناقض سجل git **كذبٌ موثَّق**، وكان الفحص يقبله
+    لأنه كان يسأل «أموجود؟» لا «أصادق؟».
+
+    والكذب هنا نوعان لا ثالث لهما:
+
+    * **متقادم:** المُعلَن أقدم من آخر تعديل فعلي — البطاقة تدّعي جمودًا كاذبًا.
+    * **مستقبلي:** المُعلَن بعد اليوم — تاريخ لم يأتِ بعد.
+
+    أما بطاقة تُعلن اليوم وسجلّها أمس فليست كذبًا: الملف عُدِّل في شجرة العمل أو
+    خُتِم اليوم ثم لم يُلتزَم بعد. اشتراط المطابقة الحرفية هناك يُنتج تذبذبًا لا
+    ينتهي: كل تصحيح يجعل الملف مُعدَّلًا فيغيّر ما يُتوقَّع منه.
+    """
+    text = readme.read_text(encoding="utf-8") if text is None else text
+    declared = declared_last_modified(text)
+    if declared is None:
+        return None
+    actual = expected_last_modified(readme)
+    today = date.today().isoformat()
+    if declared < actual:
+        return (declared, actual)
+    if declared > today:
+        return (declared, today)
+    return None
+
+
 def describe(path: Path) -> str:
     """وصف مختصر لملف، مأخوذ من ترويسة الملف نفسه."""
     if path.is_dir():
@@ -127,17 +187,30 @@ def _section_body(text: str, heads: tuple[str, ...]) -> str | None:
     return None
 
 
-def _has(text: str, heads: tuple[str, ...]) -> bool:
-    """الحقل موجود **ومملوء**. ترويسة فوق فراغ أو فوق نائب ليست حقلًا.
+_HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
+_HORIZONTAL_RULE = re.compile(r"^\s*-{3,}\s*$", re.M)
+# حاشية البطاقة المائلة في الذيل — ليست مضمونًا لأي حقل.
+_CARD_FOOTER = re.compile(r"^\s*\*[^*][\s\S]*?\*\s*$", re.M)
 
-    كان الفحص وجودَ العنوان فحسب، فكان `## المحتويات` فوق تعليق نائب يُحتسب
-    حقلًا مكتملًا — امتثالٌ شكلي. صار الفحص على المضمون.
+
+def strip_boilerplate(body: str) -> str:
+    """جرّد النائب والفاصل وحاشية البطاقة قبل الحكم على الامتلاء.
+
+    مطابقة لِما في `check_repository_identity.py`: القسم الأخير في البطاقة كانت
+    تقع تحته الحاشية فتُحتسب مضمونًا له، فيمرّ حقلٌ فارغ.
     """
+    cleaned = _HTML_COMMENT.sub("", body)
+    cleaned = _CARD_FOOTER.sub("", cleaned)
+    cleaned = _HORIZONTAL_RULE.sub("", cleaned)
+    return cleaned.strip()
+
+
+def _has(text: str, heads: tuple[str, ...]) -> bool:
+    """الحقل موجود **ومملوء**. ترويسة فوق فراغ أو فوق نائب أو فوق حاشية ليست حقلًا."""
     body = _section_body(text, heads)
     if body is None:
         return False
-    stripped = body.replace(PLACEHOLDER, "").strip()
-    return bool(stripped)
+    return bool(strip_boilerplate(body))
 
 
 def _fill(text: str, heads: tuple[str, ...], value: str) -> str:
@@ -159,10 +232,15 @@ def stamp(readme: Path) -> bool:
     directory = readme.parent
 
     if not _has(text, MTIME_HEADS):
-        stamp_date = git_last_modified(readme)
+        stamp_date = expected_last_modified(readme)
         filled = _fill(text, MTIME_HEADS, stamp_date)
         text = (filled if filled != text
                 else text.rstrip("\n") + f"\n\n## تاريخ آخر تعديل\n{stamp_date}\n")
+    else:
+        drift = date_drift(readme, text)
+        if drift is not None:
+            # التصحيح يكتب تاريخ اليوم: الملف يُعدَّل الآن بهذا التصحيح نفسه.
+            text = _fill(text, MTIME_HEADS, date.today().isoformat())
 
     if not _has(text, CONTENTS_HEADS):
         contents = build_contents(directory)
@@ -195,21 +273,31 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     pending = []
+    stale = []
     for readme in iter_readmes(Path(args.root)):
         text = readme.read_text(encoding="utf-8")
         if not (_has(text, MTIME_HEADS) and _has(text, CONTENTS_HEADS)):
             pending.append(readme)
+            continue
+        drift = date_drift(readme, text)
+        if drift is not None:
+            stale.append((readme, *drift))
 
     if args.check:
-        if pending:
-            print(f"[README STAMP] ✗ {len(pending)} بطاقة ينقصها حقل مشتقّ.")
-            for p in pending[:20]:
-                print(f"  - {p}")
+        if pending or stale:
+            if pending:
+                print(f"[README STAMP] ✗ {len(pending)} بطاقة ينقصها حقل مشتقّ.")
+                for p in pending[:20]:
+                    print(f"  - {p}")
+            if stale:
+                print(f"[README STAMP] ✗ {len(stale)} بطاقة تُعلن تاريخًا يناقض سجل git.")
+                for readme, declared, expected in stale[:20]:
+                    print(f"  - {readme}: مُعلَن {declared} · الواقع {expected}")
             return 1
-        print("[README STAMP] ✓ كل البطاقات تحمل حقليها المشتقّين.")
+        print("[README STAMP] ✓ كل البطاقات تحمل حقليها المشتقّين مطابقين للواقع.")
         return 0
 
-    changed = sum(1 for readme in pending if stamp(readme))
+    changed = sum(1 for readme in [*pending, *(r for r, _, _ in stale)] if stamp(readme))
     print(f"[README STAMP] ✓ خُتمت {changed} بطاقة بحقليها المشتقّين من git والجرد.")
     return 0
 

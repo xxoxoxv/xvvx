@@ -15,14 +15,16 @@ docs/
 2026-08-16
 
 ## تاريخ آخر تعديل
-2026-08-15
+2026-08-16
 
 ## الحالة
 **قائم.** الحالة المُعلَنة في النواة: نشط — معايير P9 مكتملة.
 
 ## المحتويات
-<!-- يُملأ آليًا بـ stamp_readme_identity.py -->
+- `NUCLEUS.md` — Maturity — النواة
+- `README.md` — بطاقة هوية هذا المجلد (المادة التاسعة)
+- `ci_maturity.md` — نضج CI والاختبارات — CI & Test Maturity
+- `extraction_criteria.md` — معايير جاهزية الاستخراج — Extraction Readiness Criteria
+- `long_term_governance.md` — نموذج الحوكمة طويل الأمد — Long-Term Governance Model
+- `versioning_policy.md` — سياسة الإصدار — Versioning Policy
 
----
-*بطاقة هوية إقليم — المادة التاسعة (قانون هوية الملفات). اسم `maturity` ثابت؛ ولا
-يُضاف إلى هذا الإقليم ما يخرج عن نطاقه أعلاه.*
