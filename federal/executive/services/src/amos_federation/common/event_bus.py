@@ -164,6 +164,19 @@ EVENT_CONTRACTS = {
             "payload",
         ],
     },
+    # مرحلة من دورة حياة وكيل داخل تنفيذ واحد — منفصلة عن حالة المهمّة بقصد.
+    "amos_federation.executive.agent_lifecycle": {
+        "required_fields": ["phase", "agent_id", "execution_id"],
+        "optional_fields": [
+            "task_id",
+            "agent_role",
+            "audit_id",
+            "runtime_fidelity",
+            "tool_execution_fidelity",
+            "task_state_effect",
+            "detail",
+        ],
+    },
     "amos_federation.task.created": {
         "required_fields": ["task_id", "type", "description"],
         "optional_fields": ["tenant_id", "priority"],
