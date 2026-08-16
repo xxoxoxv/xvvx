@@ -24,8 +24,10 @@ class Branch(str, Enum):
     LEGISLATIVE = "legislative"
     JUDICIAL = "judicial"
     TREASURY = "treasury"
-    ROYAL = "royal"          # التاج — خارج الفروع، خاضع للدستور
+    ROYAL = "royal"          # التاج — خارج الفروع وفوقها (المادة العاشرة · 5 · 2)
     HUMAN = "human"          # السلطة العليا (المادة الأولى)
+    STATE = "state"          # ولاية — تابعة للتاج وللنظام الدستوري (المادة الرابعة)
+    INSTITUTION = "institution"  # مؤسسة — تابعة للتاج وللنظام الدستوري
     AGENT = "agent"          # مواطن رقمي (المادة الثانية)
     SYSTEM = "system"        # النظام نفسه — أضيق الأطراف صلاحية (العزل الدستوري)
 
@@ -33,6 +35,24 @@ class Branch(str, Enum):
 class Decision(str, Enum):
     ALLOW = "ALLOW"
     DENY = "DENY"
+
+
+class CrownEffect(str, Enum):
+    """أثر القاعدة الدستورية على قرار سيادي ملكي ثابت (E2.1).
+
+    كل قاعدة **مُلزِمة** للطبقات التابعة بلا استثناء — هذا لا يتغيّر. وهذا التعداد
+    يجيب سؤالًا آخر: ماذا تفعل القاعدة أمام قرار سيادي أثبت أصالته؟
+
+    - `ADVISORY`: تُقيَّم، ويُسجَّل رأيها في السجل، **ولا تمنع**. وهذا هو الأصل
+      لكل قاعدة تجاه التاج (المادة العاشرة · 7).
+    - `AUTHENTICITY`: لا تسأل «هل يُسمح للملك؟» بل «هل هذا هو الملك؟» — وهي وحدها
+      تُوقِف، لأن ما لم تثبت أصالته ليس قرارًا سياديًّا أصلًا.
+
+    ولا قيمة ثالثة. القيمة الثالثة هي النقض، والنقض على التاج ممنوع معماريًّا.
+    """
+
+    ADVISORY = "ADVISORY"
+    AUTHENTICITY = "AUTHENTICITY"
 
 
 class Severity(str, Enum):
@@ -96,17 +116,41 @@ class RuleViolation:
 
 @dataclass(frozen=True)
 class Verdict:
-    """حكم الدستور على طلب فعل. يُسجَّل دائمًا في السجل — سُمح أم رُفض."""
+    """حكم الدستور على طلب فعل. يُسجَّل دائمًا في السجل — سُمح أم رُفض.
+
+    وفيه حقلان لا يُخلطان (E2.1):
+
+    - `violations`: مخالفات **مانعة** — تجعل الحكم `DENY`.
+    - `advisory_violations`: ملاحظات **مُسجَّلة لا مانعة** — رأي الدستور على
+      قرار سيادي، يُحفَظ للتدقيق ولا يُوقِف التنفيذ.
+
+    والفرق بينهما هو كل E2.1: التحليل الدستوري خبر، والخبر ليس نقضًا.
+    """
 
     decision: Decision
     request_fingerprint: str
     rules_evaluated: int
     violations: tuple[RuleViolation, ...] = ()
     ledger_entry_hash: str | None = None
+    advisory_violations: tuple[RuleViolation, ...] = ()
+    decision_kind: str = ""
+    authority_layer: str = ""
 
     @property
     def allowed(self) -> bool:
         return self.decision is Decision.ALLOW
+
+    @property
+    def is_sovereign(self) -> bool:
+        return self.decision_kind == "SOVEREIGN_ROYAL"
+
+    @property
+    def advisory_articles(self) -> tuple[str, ...]:
+        """مواد أبدت ملاحظة ولم تمنع — للقرار السيادي خاصةً."""
+        seen: dict[str, None] = {}
+        for v in self.advisory_violations:
+            seen.setdefault(v.article_id, None)
+        return tuple(seen)
 
     @property
     def blocking_articles(self) -> tuple[str, ...]:
@@ -119,7 +163,20 @@ class Verdict:
     def explain(self) -> str:
         """سبب الحكم بصيغة يقرأها إنسان — مع رقم المادة دائمًا."""
         if self.allowed:
-            return f"ALLOW — لا مخالفة بين {self.rules_evaluated} قاعدة دستورية مُقيَّمة."
+            head = f"ALLOW — لا مخالفة مانعة بين {self.rules_evaluated} قاعدة دستورية مُقيَّمة."
+            if not self.advisory_violations:
+                return head
+            lines = [
+                head,
+                f"  ومعه {len(self.advisory_violations)} ملاحظة دستورية مُسجَّلة لا مانعة "
+                "(قرار سيادي — التحليل الدستوري خبر لا نقض):",
+            ]
+            for v in self.advisory_violations:
+                lines.append(
+                    f"    • [ملاحظة · {v.severity.value}] {v.article_id} "
+                    f"({v.article_title}) · القاعدة {v.rule_id}\n        {v.reason}"
+                )
+            return "\n".join(lines)
         lines = [f"DENY — {len(self.violations)} مخالفة دستورية:"]
         for v in self.violations:
             lines.append(
@@ -135,4 +192,7 @@ class Verdict:
             "rules_evaluated": self.rules_evaluated,
             "violations": [v.as_dict() for v in self.violations],
             "ledger_entry_hash": self.ledger_entry_hash,
+            "advisory_violations": [v.as_dict() for v in self.advisory_violations],
+            "decision_kind": self.decision_kind,
+            "authority_layer": self.authority_layer,
         }

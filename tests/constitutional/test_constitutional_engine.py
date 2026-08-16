@@ -465,21 +465,29 @@ class TestEngineIntegrity:
 
     def test_broken_rule_denies_rather_than_permits(self, tmp_path: Path):
         """الافتراض الأصلي هو المنع: قاعدة تنفجر = رفض، لا تجاوز."""
+        from core.constitutional_engine.model import CrownEffect
         from core.constitutional_engine.rules import ConstitutionalRule
 
         def explode(_req):
             raise RuntimeError("قاعدة معطوبة")
 
-        bad = ConstitutionalRule("R-BAD", "A001", "بند اختبار", Severity.CRITICAL, "تنفجر", explode)
+        bad = ConstitutionalRule(
+            "R-BAD", "A001", "بند اختبار", Severity.CRITICAL, "تنفجر", explode,
+            CrownEffect.ADVISORY,
+        )
         eng = ConstitutionalEngine(rules=(bad,), ledger_path=tmp_path / "l.jsonl")
         v = eng.evaluate(ActionRequest(Branch.HUMAN, "noop"))
         assert v.decision is Decision.DENY
         assert "الافتراض الأصلي هو المنع" in v.violations[0].reason
 
     def test_orphan_rule_is_rejected_at_construction(self, tmp_path: Path):
+        from core.constitutional_engine.model import CrownEffect
         from core.constitutional_engine.rules import ConstitutionalRule
 
-        orphan = ConstitutionalRule("R-X", "A999", "لا مادة", Severity.HIGH, "يتيمة", lambda r: None)
+        orphan = ConstitutionalRule(
+            "R-X", "A999", "لا مادة", Severity.HIGH, "يتيمة", lambda r: None,
+            CrownEffect.ADVISORY,
+        )
         with pytest.raises(ValueError, match="A999"):
             ConstitutionalEngine(rules=(orphan,), ledger_path=tmp_path / "l.jsonl")
 

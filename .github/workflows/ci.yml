@@ -232,6 +232,24 @@ jobs:
           fi
           echo "✓ البوابة السيادية بلا مسار تجاوز."
 
+      - name: بوابة 6ج — لا نقض للسلطة العليا (E2.1 · AMD-002)
+        run: |
+          python -m core.sovereignty.cli sovereignty-check
+          if grep -rnE "if .*(is_king|== *.king.|actor *== *Branch\\.ROYAL).*:\\s*$" \\
+               core/sovereignty/gateway.py core/constitutional_engine/engine.py; then
+            echo "::error::شرط ملكي مدسوس بدل طبقة سلطة صريحة (AMD-002 · 4)."
+            exit 1
+          fi
+          echo "✓ لا شرط ملكي مدسوس، ولا سلطة فوق التاج."
+
+      - name: بوابة 6د — إثبات تشغيلي للسلطة الملكية العليا
+        run: |
+          python tools/sovereignty/prove_supreme_authority.py
+
+      - name: بوابة 6هـ — اختبارات معايير السلطة العليا الخمسة والعشرين
+        run: |
+          python -m pytest tests/sovereignty/test_supreme_authority.py -q
+
       - name: بوابة 7 — اختبارات السيادة بتغطية فروع لا تقل عن 90%
         run: |
           python -m pytest tests/sovereignty/ -q \

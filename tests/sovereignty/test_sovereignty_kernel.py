@@ -31,13 +31,13 @@ from core.sovereignty.crown import (
     provision_crown,
 )
 from core.sovereignty.decree import (
-    DecreeImmuneClauseError,
     DecreeRegistry,
     DecreeReplayError,
     DecreeSignatureError,
     RoyalDecree,
     sign_decree,
 )
+from core.sovereignty.security_events import SecurityEventKind
 from core.sovereignty.gateway import (
     FORBIDDEN_BYPASS_PARAMS,
     SovereignGateway,
@@ -293,16 +293,55 @@ class TestRoyalAuthorityImmunity:
             "federalism_non_bypass",
         } <= IMMUNE_CLAUSES
 
-    def test_immunity_cannot_be_removed_in_two_steps(
-        self, royal_keypair: tuple[ed25519.Ed25519PrivateKey, Crown]
+    def test_immunity_removal_is_blocked_for_subordinates(
+        self, engine: ConstitutionalEngine
     ) -> None:
-        """هجوم بخطوتين: ألغِ الحصانة أولًا ثم السيادة. الخطوة الأولى تفشل."""
-        private, crown = royal_keypair
-        decree = make_decree(
-            private, "amend_constitution", targets=("royal_authority_immunity",)
+        """هجوم بخطوتين من طرف تابع: ألغِ الحصانة أولًا. الخطوة الأولى تفشل.
+
+        نُقِض هذا الاختبار جزئيًّا في E2.1 (AMD-002). كان يفترض أن مرسومًا ملكيًّا
+        صحيح التوقيع يُرفض إن مسّ بند حصانة — وذلك كان سلطةً فوق الملك. الحصانة
+        صارت مانعًا للتابعين وحدهم، وهذا ما يُثبته الاختبار الآن.
+        """
+        explanation = deny_reasons(
+            engine,
+            ActionRequest(
+                actor=Branch.EXECUTIVE,
+                action="amend_constitution",
+                target="royal_authority_immunity",
+            ),
         )
-        with pytest.raises(DecreeImmuneClauseError):
-            decree.verify(crown)
+        assert "R-010" in explanation or "R-005" in explanation
+
+    def test_immunity_touching_decree_by_the_crown_executes_and_is_flagged(
+        self, enthroned, engine: ConstitutionalEngine
+    ) -> None:
+        """التاج يمسّ حصانته: يُنفَّذ لأنه قرار السيادة، ويُشهَر بحدث حرج.
+
+        هذا هو عكس السلوك القديم عكسًا تامًّا، وهو مقصود: الحماية انتقلت من
+        نقضٍ برمجي إلى أصالة المفتاح + حدث أمني حرج + سجل لا يُعبَث به.
+        """
+        private, crown = enthroned
+        gateway = SovereignGateway(engine)
+        decree = make_decree(
+            private,
+            "amend_constitution",
+            targets=("royal_authority_immunity",),
+            key_id=crown.key_id,
+        )
+        executed: list[str] = []
+        result = gateway.execute(
+            ActionRequest(
+                actor=Branch.ROYAL, action="amend_constitution", royal_decree=decree
+            ),
+            lambda: executed.append("مُعدَّل") or "مُعدَّل",
+        )
+        kinds = [event.kind for event in gateway.security_log.events]
+        assert result == "مُعدَّل" and executed == ["مُعدَّل"], (
+            "لم يُنفَّذ مرسوم التاج — عاد نقضٌ فوق السيادة."
+        )
+        assert SecurityEventKind.SOVEREIGNTY_ALTERING_DECREE in kinds, (
+            "مُسّت السيادة بلا حدث أمني حرج."
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -392,14 +431,31 @@ class TestImpersonation:
         with pytest.raises(DecreeSignatureError, match="المفتاح النشط"):
             decree.verify(crown)
 
-    def test_immune_clause_is_checked_before_signature(
+    def test_verification_is_authenticity_only_not_authorization(
         self, royal_keypair: tuple[ed25519.Ed25519PrivateKey, Crown]
     ) -> None:
-        """ترتيب مقصود: توقيع صحيح لا يُجيز ما لا يجوز."""
+        """`verify` تُثبت الأصالة ولا تُجيز ولا تمنع (AMD-002).
+
+        نُقِض هذا الاختبار في E2.1. كان يفترض أن `verify` تحمل نقضًا مضمرًا
+        لمضمون المرسوم — وهو سلطةٌ ثانية خفية فوق التاج. صارت `verify` تجيب
+        على سؤال واحد: أهذا توقيع الملك؟ ومضمون المرسوم يُشهَر ولا يُمنع.
+        """
         private, crown = royal_keypair
         decree = make_decree(private, "amend_constitution", targets=("human_supremacy",))
-        with pytest.raises(DecreeImmuneClauseError):
-            decree.verify(crown)
+        decree.verify(crown)  # لا ترفع = ثبتت الأصالة
+        assert decree.sovereignty_alterations() == (), (
+            "بند غير مُنشئ للسيادة عُدَّ ماسًّا بها."
+        )
+        سيادي = make_decree(
+            private,
+            "amend_constitution",
+            targets=("royal_sovereignty",),
+            decree_id="DEC-TEST-SOV",
+        )
+        سيادي.verify(crown)  # الأصالة لا تتعطل لأجل مضمون المرسوم
+        assert سيادي.sovereignty_alterations() == ("royal_sovereignty",), (
+            "مسّ السيادة لم يُشهَر للتدقيق."
+        )
 
     def test_decree_cannot_be_redirected_to_another_action(
         self, royal_keypair: tuple[ed25519.Ed25519PrivateKey, Crown], engine: ConstitutionalEngine
@@ -825,20 +881,39 @@ class TestTheKingActuallyRules:
         )
         assert "R-010-3" in explanation and "مرسوم غير صحيح" in explanation
 
-    def test_royal_decree_touching_an_immune_clause_is_denied_when_enthroned(
+    def test_royal_decree_touching_sovereignty_executes_and_is_recorded(
         self, enthroned, engine: ConstitutionalEngine
     ) -> None:
-        """أخطر حالة: تاج مُنصَّب ومرسوم موقَّع صحيحًا — ويبقى الرفض."""
+        """أخطر حالة: تاج مُنصَّب ومرسوم صحيح يمسّ السيادة — فيُنفَّذ ويُسجَّل.
+
+        كان هذا الاختبار يؤكد الرفض، وكان الرفض هو العيب بعينه: بوابةٌ برمجية
+        تنقض قرار الملك (E2.1 · AMD-002). الملاحظة الدستورية تُسجَّل ولا تمنع،
+        والحدث الأمني الحرج يُسجَّل قبل التنفيذ.
+        """
         private, crown = enthroned
+        gateway = SovereignGateway(engine)
         decree = make_decree(
             private, "amend_constitution", targets=("royal_sovereignty",),
             key_id=crown.key_id,
         )
-        explanation = deny_reasons(
-            engine,
-            ActionRequest(actor=Branch.ROYAL, action="amend_constitution", royal_decree=decree),
+        executed: list[str] = []
+        result = gateway.execute(
+            ActionRequest(
+                actor=Branch.ROYAL, action="amend_constitution", royal_decree=decree
+            ),
+            lambda: executed.append("نُفِّذ") or "نُفِّذ",
         )
-        assert "R-010-3" in explanation
+        record = gateway.records[-1]
+        kinds = [event.kind for event in gateway.security_log.events]
+        assert result == "نُفِّذ" and executed == ["نُفِّذ"], "نُقض قرار التاج."
+        assert record.sovereign and record.executed, "لم يُسجَّل القرار سياديًّا منفذًا."
+        assert record.advisory_articles, "لم تُسجَّل الملاحظة الدستورية للتدقيق."
+        assert kinds[-1] is SecurityEventKind.SOVEREIGN_INTERVENTION, (
+            "غاب حدث التدخل السيادي."
+        )
+        assert SecurityEventKind.SOVEREIGNTY_ALTERING_DECREE in kinds, (
+            "غاب الحدث الحرج لمسّ السيادة."
+        )
 
     def test_king_amends_a_non_immune_article_successfully(
         self, enthroned, engine: ConstitutionalEngine
