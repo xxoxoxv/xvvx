@@ -49,7 +49,7 @@ def get_last_chain_hash() -> str:
     """الحصول على آخر بصمة في سلسلة التدقيق من قاعدة البيانات."""
     try:
         with db_cursor() as cur:
-            cur.execute("SELECT chain_hash FROM audit_log ORDER BY id DESC LIMIT 1")
+            cur.execute("SELECT chain_hash FROM audit_log ORDER BY seq DESC LIMIT 1")
             row = cur.fetchone()
             if row:
                 return row["chain_hash"]
@@ -139,7 +139,7 @@ class EventPublisher:
                     """INSERT INTO audit_log
                        (event_id, timestamp, event_type, actor_type, actor_id,
                         action, chain_hash, prev_hash, metadata)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         event_id,
                         timestamp,
@@ -200,7 +200,7 @@ class EventPublisher:
             with db_cursor() as cur:
                 cur.execute(
                     "SELECT event_id, chain_hash, prev_hash, metadata "
-                    "FROM audit_log ORDER BY id ASC"
+                    "FROM audit_log ORDER BY seq ASC"
                 )
                 rows = cur.fetchall()
         except Exception as e:

@@ -15,12 +15,18 @@ from fastapi.security import HTTPAuthorizationCredentials
 
 from amos_federation.common import auth, events
 from amos_federation.common.database import (
+    DIALECT_POSTGRES,
+    DIALECT_SQLITE,
     _is_postgres,
     _pg_connect_args,
+    audit_log_ddl,
     db_cursor,
+    drop_audit_log_table,
+    ensure_audit_log_table,
     get_database_url,
     get_engine,
     reset_engine,
+    translate_placeholders,
 )
 from amos_federation.common.event_schemas import (
     _has_required_fields,
@@ -33,30 +39,10 @@ from amos_federation.services.api_gateway.store import (
     PostgresTaskStore,
 )
 
-
-def _ensure_audit_log_table() -> None:
-    """إنشاء جدول audit_log في قاعدة بيانات الاختبار لتغطية مسار النجاح."""
-    with db_cursor() as cur:
-        cur.execute(
-            """CREATE TABLE IF NOT EXISTS audit_log (
-                   id INTEGER PRIMARY KEY AUTOINCREMENT,
-                   event_id TEXT,
-                   timestamp TEXT,
-                   event_type TEXT,
-                   actor_type TEXT,
-                   actor_id TEXT,
-                   action TEXT,
-                   chain_hash TEXT,
-                   prev_hash TEXT,
-                   metadata TEXT
-               )"""
-        )
-
-
-def _drop_audit_log_table() -> None:
-    """إزالة جدول audit_log لإعادة الحالة الافتراضية للاختبارات الأخرى."""
-    with db_cursor() as cur:
-        cur.execute("DROP TABLE IF EXISTS audit_log")
+# تعريف جدول audit_log لم يعد مكررًا هنا بلهجة SQLite: الاختبارات تستخدم
+# نفس الدالتين المستخدمتين في مسار الإنتاج من common.database.
+_ensure_audit_log_table = ensure_audit_log_table
+_drop_audit_log_table = drop_audit_log_table
 
 
 # =============================================================================
@@ -76,12 +62,15 @@ class TestEventChainHash:
 
 
 class TestEventPublisher:
-    def test_get_last_chain_hash_falls_back_to_genesis(self) -> None:
+    """مسار الأحداث على SQLite — يطلب اللهجة صراحةً لا من البيئة المحيطة."""
+
+    def test_get_last_chain_hash_falls_back_to_genesis(self, sqlite_url: str) -> None:
         # No audit_log table in test DB -> except branch -> GENESIS_HASH
+        _drop_audit_log_table()
         assert events.get_last_chain_hash() == events.GENESIS_HASH
 
     @pytest.mark.asyncio
-    async def test_publish_uses_fallback_bus_and_skips_audit(self) -> None:
+    async def test_publish_uses_fallback_bus_and_skips_audit(self, sqlite_url: str) -> None:
         publisher = events.EventPublisher()
         event_id = await publisher.publish(
             event_type="task.created",
@@ -94,13 +83,14 @@ class TestEventPublisher:
         # publisher never connected -> _nc None, _local_bus None -> fallback path
 
     @pytest.mark.asyncio
-    async def test_verify_chain_returns_false_without_audit_table(self) -> None:
+    async def test_verify_chain_returns_false_without_audit_table(self, sqlite_url: str) -> None:
         publisher = events.EventPublisher()
         # No audit_log table -> except -> False
+        _drop_audit_log_table()
         assert await publisher.verify_chain() is False
 
     @pytest.mark.asyncio
-    async def test_verify_chain_success_with_valid_chain(self) -> None:
+    async def test_verify_chain_success_with_valid_chain(self, sqlite_url: str) -> None:
         _ensure_audit_log_table()
         try:
             publisher = events.EventPublisher()
@@ -120,7 +110,7 @@ class TestEventPublisher:
             _drop_audit_log_table()
 
     @pytest.mark.asyncio
-    async def test_verify_chain_detects_broken_chain(self) -> None:
+    async def test_verify_chain_detects_broken_chain(self, sqlite_url: str) -> None:
         _ensure_audit_log_table()
         try:
             publisher = events.EventPublisher()
@@ -135,7 +125,7 @@ class TestEventPublisher:
         finally:
             _drop_audit_log_table()
 
-    def test_get_last_chain_hash_returns_existing_row(self) -> None:
+    def test_get_last_chain_hash_returns_existing_row(self, sqlite_url: str) -> None:
         _ensure_audit_log_table()
         try:
             with db_cursor() as cur:
@@ -154,7 +144,10 @@ class TestEventPublisher:
 # database.py
 # =============================================================================
 class TestDatabaseHelpers:
-    def test_get_database_url_uses_env(self) -> None:
+    """اختبارات دلالات SQLite — تطلب اللهجة صراحةً ولا تعتمد على البيئة."""
+
+    def test_get_database_url_uses_env(self, sqlite_url: str) -> None:
+        assert get_database_url() == sqlite_url
         assert get_database_url().startswith("sqlite")
 
     def test_get_database_url_default_when_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -162,15 +155,24 @@ class TestDatabaseHelpers:
         url = get_database_url()
         assert url.startswith("sqlite:///")
 
-    def test_is_postgres_false_for_sqlite(self) -> None:
+    def test_is_postgres_false_for_sqlite(self, sqlite_url: str) -> None:
         assert _is_postgres() is False
 
-    def test_pg_connect_args_sqlite_branch(self) -> None:
+    def test_is_postgres_true_for_postgres_url(self) -> None:
+        # الفرع المقابل يُقاس بتمرير الرابط مباشرة، بلا اتصال شبكي
+        assert _is_postgres("postgresql://user:pw@host:5432/db") is True
+
+    def test_pg_connect_args_sqlite_branch(self, sqlite_url: str) -> None:
         # sqlite branch returns check_same_thread=False
         args = _pg_connect_args()
         assert args == {"check_same_thread": False}
 
-    def test_get_engine_returns_sqlite_engine(self) -> None:
+    def test_pg_connect_args_postgres_branch(self) -> None:
+        args = _pg_connect_args("postgresql://user:pw@host:5432/db")
+        assert args["sslmode"] == "require"
+        assert args["connect_timeout"] == 15
+
+    def test_get_engine_returns_sqlite_engine(self, sqlite_url: str) -> None:
         try:
             engine = get_engine()
             assert engine is not None
@@ -178,11 +180,48 @@ class TestDatabaseHelpers:
         finally:
             reset_engine()
 
-    def test_db_cursor_sqlite_path(self) -> None:
+    def test_db_cursor_sqlite_path(self, sqlite_url: str) -> None:
         with db_cursor() as cur:
+            assert cur.dialect == "sqlite"
             cur.execute("CREATE TABLE IF NOT EXISTS _t (id INTEGER)")
             cur.execute("INSERT INTO _t VALUES (1)")
         # context manager commits and closes without error
+
+
+class TestPlaceholderTranslation:
+    """طبقة المحاجيز القانونية — تُختبر بمعزل عن أي اتصال."""
+
+    def test_sqlite_is_untouched(self) -> None:
+        sql = "INSERT INTO t (a, b) VALUES (?, ?)"
+        assert translate_placeholders(sql, DIALECT_SQLITE) == sql
+
+    def test_postgres_uses_percent_s(self) -> None:
+        sql = "INSERT INTO t (a, b) VALUES (?, ?)"
+        assert (
+            translate_placeholders(sql, DIALECT_POSTGRES)
+            == "INSERT INTO t (a, b) VALUES (%s, %s)"
+        )
+
+    def test_postgres_escapes_literal_percent(self) -> None:
+        sql = "SELECT * FROM t WHERE a LIKE '%x%' AND b = ?"
+        assert (
+            translate_placeholders(sql, DIALECT_POSTGRES)
+            == "SELECT * FROM t WHERE a LIKE '%x%' AND b = %s"
+        )
+
+    def test_postgres_leaves_question_mark_inside_string(self) -> None:
+        sql = "SELECT * FROM t WHERE a = 'why?' AND b = ?"
+        assert (
+            translate_placeholders(sql, DIALECT_POSTGRES)
+            == "SELECT * FROM t WHERE a = 'why?' AND b = %s"
+        )
+
+    def test_audit_log_ddl_defined_for_both_dialects(self) -> None:
+        assert "AUTOINCREMENT" in audit_log_ddl(DIALECT_SQLITE)
+        assert "IDENTITY" in audit_log_ddl(DIALECT_POSTGRES)
+        # العمود الرتيب موجود في اللهجتين لأن السلسلة ترتّب عليه
+        assert "seq" in audit_log_ddl(DIALECT_SQLITE)
+        assert "seq" in audit_log_ddl(DIALECT_POSTGRES)
 
 
 # =============================================================================

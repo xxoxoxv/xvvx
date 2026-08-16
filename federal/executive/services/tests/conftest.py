@@ -15,19 +15,66 @@ import os
 import shutil
 from pathlib import Path
 
+import pytest
+
 # Force test environment
 os.environ["AMOS_ENVIRONMENT"] = "test"
-# PostgreSQL tests require explicit opt-in via AMOS_RUN_POSTGRES_TESTS=1 + AMOS_TEST_DATABASE_URL
-_pg_url = os.environ.get("AMOS_TEST_DATABASE_URL", "")
-if os.environ.get("AMOS_RUN_POSTGRES_TESTS") == "1" and _pg_url.startswith("postgresql"):
-    os.environ["AMOS_DATABASE_URL"] = _pg_url
-else:
-    os.environ["AMOS_DATABASE_URL"] = "sqlite:///amos_federation_test.db"
+
+# قرار معماري (E2.2-G):
+# قاعدة الاختبار الافتراضية هي SQLite دائمًا، للحزمة كلها، بلا استثناء.
+# AMOS_RUN_POSTGRES_TESTS=1 لم يعد يحوّل كل الاختبارات إلى PostgreSQL: الاختبارات
+# المكتوبة لدلالات SQLite لا تقبل هذا التحويل، وتحويلها قسرًا كان يُنتج فشلًا
+# زائفًا وإرهاقًا لتجمّع اتصالات المزوّد. من يريد PostgreSQL يطلبه صراحةً عبر
+# التجهيزة postgres_url أدناه.
+SQLITE_TEST_URL = "sqlite:///amos_federation_test.db"
+os.environ["AMOS_DATABASE_URL"] = SQLITE_TEST_URL
+
 os.environ.setdefault("AMOS_JWT_SECRET", "test_secret_at_least_32_characters_long")
 os.environ.setdefault("AMOS_CLAUDE_API_KEY", "test_key_not_real")
 
 # Test-only database file (never touch production files)
 TEST_DB_FILE = "amos_federation_test.db"
+
+
+def postgres_tests_enabled() -> bool:
+    """اختبارات PostgreSQL مفعّلة صراحةً فقط عند توفر العَلَم والرابط معًا."""
+    return os.environ.get("AMOS_RUN_POSTGRES_TESTS") == "1" and os.environ.get(
+        "AMOS_TEST_DATABASE_URL", ""
+    ).startswith("postgresql")
+
+
+@pytest.fixture
+def sqlite_url(monkeypatch: pytest.MonkeyPatch) -> str:
+    """تثبيت لهجة SQLite صراحةً لهذا الاختبار.
+
+    الاختبارات التي تؤكّد دلالات SQLite تستخدم هذه التجهيزة بدلًا من الاعتماد على
+    البيئة المحيطة، فتصبح نتيجتها مستقلة عن أي متغيّر خارجي.
+    """
+    from amos_federation.common import database
+
+    monkeypatch.setenv("AMOS_DATABASE_URL", SQLITE_TEST_URL)
+    database.reset_engine()
+    yield SQLITE_TEST_URL
+    database.reset_engine()
+
+
+@pytest.fixture
+def postgres_url(monkeypatch: pytest.MonkeyPatch) -> str:
+    """تحويل هذا الاختبار وحده إلى PostgreSQL الحقيقي، ثم إعادة البيئة كما كانت.
+
+    يتخطّى الاختبار إن لم تكن اختبارات PostgreSQL مفعّلة صراحةً.
+    """
+    if not postgres_tests_enabled():
+        pytest.skip(
+            "Set AMOS_RUN_POSTGRES_TESTS=1 and AMOS_TEST_DATABASE_URL=postgresql://... to run"
+        )
+    from amos_federation.common import database
+
+    url = os.environ["AMOS_TEST_DATABASE_URL"]
+    monkeypatch.setenv("AMOS_DATABASE_URL", url)
+    database.reset_engine()
+    yield url
+    database.reset_engine()
 
 
 def _cleanup_test_db(workspace: Path) -> None:

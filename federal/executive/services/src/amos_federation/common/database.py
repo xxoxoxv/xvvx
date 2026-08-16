@@ -161,17 +161,51 @@ def get_database_url() -> str:
     )
 
 
-def _is_postgres() -> bool:
-    return get_database_url().startswith("postgresql")
+# === لهجة قاعدة البيانات ===
+
+DIALECT_POSTGRES = "postgresql"
+DIALECT_SQLITE = "sqlite"
 
 
-def _pg_connect_args() -> dict:
-    """معاملات اتصال إضافية لـ PostgreSQL (Supabase يتطلب SSL)."""
-    if not _is_postgres():  # pragma: no branch - requires PostgreSQL (production-only)
+def db_dialect(url: str | None = None) -> str:
+    """المصدر الوحيد لتحديد لهجة قاعدة البيانات الحالية.
+
+    يعيد DIALECT_POSTGRES أو DIALECT_SQLITE. كل قرار يعتمد على اللهجة
+    في هذه الطبقة يجب أن يمرّ من هنا، لا من مقارنات نصية متفرقة.
+    """
+    effective = url if url is not None else get_database_url()
+    if effective.startswith("postgresql"):
+        return DIALECT_POSTGRES
+    return DIALECT_SQLITE
+
+
+def _is_postgres(url: str | None = None) -> bool:
+    return db_dialect(url) == DIALECT_POSTGRES
+
+
+def _pg_connect_args(url: str | None = None) -> dict:
+    """معاملات الاتصال المعتمدة على اللهجة (Supabase يتطلب SSL).
+
+    هذه الدالة هي المصدر الوحيد لمعاملات الاتصال؛ get_engine() يستدعيها
+    ولا يكرّر المنطق.
+    """
+    if not _is_postgres(url):
         return {"check_same_thread": False}
     return {
-        "sslmode": "require",
-        "connect_timeout": 15,
+        "sslmode": os.environ.get("AMOS_DB_SSLMODE", "require"),
+        "connect_timeout": int(os.environ.get("AMOS_DB_CONNECT_TIMEOUT", "15")),
+    }
+
+
+def _pool_settings() -> dict:
+    """حدود تجمّع الاتصالات — قابلة للضبط لأن الوسطاء المُجمّعين محدودون.
+
+    Supabase session-mode pooler يرفض ما يزيد على 15 عميلًا، فلا يجوز تثبيت
+    حجم التجمّع في الكود.
+    """
+    return {
+        "pool_size": int(os.environ.get("AMOS_DB_POOL_SIZE", "5")),
+        "max_overflow": int(os.environ.get("AMOS_DB_MAX_OVERFLOW", "10")),
     }
 
 
@@ -184,16 +218,12 @@ def get_engine():
     global _engine
     if _engine is None:
         url = get_database_url()
-        connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-        if url.startswith("postgresql"):  # pragma: no branch - requires PostgreSQL (production-only)
-            connect_args = {"sslmode": "require", "connect_timeout": 15}
         _engine = create_engine(
             url,
-            connect_args=connect_args,
+            connect_args=_pg_connect_args(url),
             echo=False,
             pool_pre_ping=True,
-            pool_size=5,
-            max_overflow=10,
+            **_pool_settings(),
         )
     return _engine
 
@@ -255,29 +285,161 @@ def generate_uuid() -> uuid.UUID:
     return uuid.uuid4()
 
 
+# === طبقة SQL محايدة اللهجة ===
+#
+# قاعدة واحدة لكل الكود الذي يستخدم db_cursor():
+#   اكتب المحاجيز بالشكل القانوني "?" فقط.
+# المغلّف أدناه يترجمها إلى "%s" عند استخدام psycopg2. لا يجوز كتابة
+# SQL خاص بلهجة واحدة داخل مسار الإنتاج.
+
+PARAM_PLACEHOLDER = "?"
+
+
+def translate_placeholders(sql: str, dialect: str) -> str:
+    """تحويل المحاجيز القانونية "?" إلى ما تفهمه اللهجة المستهدفة.
+
+    يتجاهل المحاجيز داخل السلاسل النصية المفردة حتى لا يُفسِد القيم الحرفية،
+    ويضاعف '%' في PostgreSQL لأن psycopg2 يعتبره حرف تنسيق.
+    """
+    if dialect != DIALECT_POSTGRES:
+        return sql
+    out: list[str] = []
+    in_string = False
+    for char in sql:
+        if char == "'":
+            in_string = not in_string
+            out.append(char)
+        elif in_string:
+            out.append(char)
+        elif char == PARAM_PLACEHOLDER:
+            out.append("%s")
+        elif char == "%":
+            out.append("%%")
+        else:
+            out.append(char)
+    return "".join(out)
+
+
+def _as_mapping(row):
+    """توحيد شكل السجلّ: قاموس في اللهجتين معًا."""
+    if row is None:
+        return None
+    if isinstance(row, dict):
+        return row
+    return dict(row)
+
+
+class PortableCursor:
+    """مغلّف مؤشر يخفي اختلافات اللهجة عن مستدعيه.
+
+    يقبل محاجيز "?" دائمًا، ويعيد السجلات كقواميس دائمًا.
+    """
+
+    def __init__(self, cursor, dialect: str) -> None:
+        self._cursor = cursor
+        self.dialect = dialect
+
+    def execute(self, sql: str, params=None):
+        translated = translate_placeholders(sql, self.dialect)
+        if params is None:
+            return self._cursor.execute(translated)
+        return self._cursor.execute(translated, params)
+
+    def executemany(self, sql: str, seq_of_params):
+        translated = translate_placeholders(sql, self.dialect)
+        return self._cursor.executemany(translated, seq_of_params)
+
+    def fetchone(self):
+        return _as_mapping(self._cursor.fetchone())
+
+    def fetchall(self):
+        return [_as_mapping(row) for row in self._cursor.fetchall()]
+
+    def __getattr__(self, name):
+        return getattr(self._cursor, name)
+
+
 @contextlib.contextmanager
 def db_cursor():
-    """محرّك قاعدة البيانات للتوافق العكسي مع events.py."""
-    import sqlite3
-
+    """مؤشر محايد اللهجة يعمل على SQLite و PostgreSQL بنفس الـ SQL."""
     db_url = get_database_url()
-    if db_url.startswith("sqlite:///"):  # pragma: no branch - postgres path is production-only
-        db_path = db_url.replace("sqlite:///", "")
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
+    dialect = db_dialect(db_url)
+
+    if dialect == DIALECT_POSTGRES:
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+
+        pg_args = _pg_connect_args(db_url)
+        conn = psycopg2.connect(db_url, **pg_args)
         try:
-            yield conn.cursor()
+            yield PortableCursor(conn.cursor(cursor_factory=RealDictCursor), dialect)
             conn.commit()
         finally:
             conn.close()
     else:
-        # PostgreSQL path for production (Supabase)
-        import psycopg2
-        from psycopg2.extras import RealDictCursor
+        import sqlite3
 
-        conn = psycopg2.connect(db_url, sslmode="require", connect_timeout=15)
+        db_path = db_url.replace("sqlite:///", "")
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
         try:
-            yield conn.cursor(cursor_factory=RealDictCursor)
+            yield PortableCursor(conn.cursor(), dialect)
             conn.commit()
         finally:
             conn.close()
+
+
+# === سجل التدقيق (audit_log) — تعريف واحد لللهجتين ===
+#
+# عمود seq متزايد رتيب وهو الأساس الوحيد لترتيب السلسلة.
+# لا يجوز الترتيب بـ id لأنه UUID في PostgreSQL فيُعطي ترتيبًا عشوائيًا.
+
+_AUDIT_LOG_DDL = {
+    DIALECT_SQLITE: """
+        CREATE TABLE IF NOT EXISTS audit_log (
+            seq        INTEGER PRIMARY KEY AUTOINCREMENT,
+            id         TEXT,
+            event_id   TEXT,
+            timestamp  TEXT,
+            event_type TEXT,
+            actor_type TEXT,
+            actor_id   TEXT,
+            action     TEXT,
+            chain_hash TEXT,
+            prev_hash  TEXT,
+            metadata   TEXT
+        )
+    """,
+    DIALECT_POSTGRES: """
+        CREATE TABLE IF NOT EXISTS audit_log (
+            seq        BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+            id         UUID DEFAULT gen_random_uuid(),
+            event_id   VARCHAR(255),
+            timestamp  TEXT,
+            event_type VARCHAR(100),
+            actor_type VARCHAR(20),
+            actor_id   VARCHAR(255),
+            action     VARCHAR(255),
+            chain_hash VARCHAR(255),
+            prev_hash  VARCHAR(255),
+            metadata   JSONB
+        )
+    """,
+}
+
+
+def audit_log_ddl(dialect: str | None = None) -> str:
+    """تعريف جدول audit_log المناسب لللهجة الحالية."""
+    return _AUDIT_LOG_DDL[dialect or db_dialect()]
+
+
+def ensure_audit_log_table() -> None:
+    """إنشاء جدول audit_log إن لم يوجد — بنفس العقد في اللهجتين."""
+    with db_cursor() as cur:
+        cur.execute(audit_log_ddl(cur.dialect))
+
+
+def drop_audit_log_table() -> None:
+    """إزالة جدول audit_log — للاختبارات فقط."""
+    with db_cursor() as cur:
+        cur.execute("DROP TABLE IF EXISTS audit_log")
