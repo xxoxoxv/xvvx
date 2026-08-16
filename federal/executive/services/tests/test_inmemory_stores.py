@@ -102,9 +102,7 @@ class TestInMemoryExperienceStore:
 
     def test_record_uses_provided_id_and_provenance(self) -> None:
         store = InMemoryExperienceStore()
-        rec = store.record(
-            {"experience_id": "exp-1", "provenance": {"source": "imported"}}
-        )
+        rec = store.record({"experience_id": "exp-1", "provenance": {"source": "imported"}})
         assert rec["experience_id"] == "exp-1"
         assert rec["provenance"]["source"] == "imported"
 

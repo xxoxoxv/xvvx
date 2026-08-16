@@ -6,7 +6,6 @@
 تاريخ الإنشاء: 2026-08-15
 """
 
-
 import json as _json
 
 import pytest
@@ -198,8 +197,7 @@ class TestPlaceholderTranslation:
     def test_postgres_uses_percent_s(self) -> None:
         sql = "INSERT INTO t (a, b) VALUES (?, ?)"
         assert (
-            translate_placeholders(sql, DIALECT_POSTGRES)
-            == "INSERT INTO t (a, b) VALUES (%s, %s)"
+            translate_placeholders(sql, DIALECT_POSTGRES) == "INSERT INTO t (a, b) VALUES (%s, %s)"
         )
 
     def test_postgres_escapes_literal_percent(self) -> None:
