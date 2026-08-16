@@ -18,7 +18,14 @@ from pathlib import Path
 
 from .articles import Article, load_articles, verify_seals
 from .ledger import ConstitutionalLedger
-from .model import ActionRequest, Decision, RuleViolation, Severity, Verdict
+from .model import (
+    ActionRequest,
+    CrownEffect,
+    Decision,
+    RuleViolation,
+    Severity,
+    Verdict,
+)
 from .rules import RULES, ConstitutionalRule
 
 
@@ -70,9 +77,27 @@ class ConstitutionalEngine:
         )
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
 
-    def evaluate(self, req: ActionRequest, *, record: bool = True) -> Verdict:
-        """قيّم طلبًا. يُسجَّل الحكم دائمًا — سُمح أم رُفض (الشفافية المطلقة)."""
+    def evaluate(
+        self,
+        req: ActionRequest,
+        *,
+        record: bool = True,
+        sovereign: bool = False,
+        decision_kind: str = "",
+        authority_layer: str = "",
+    ) -> Verdict:
+        """قيّم طلبًا. يُسجَّل الحكم دائمًا — سُمح أم رُفض (الشفافية المطلقة).
+
+        معامل `sovereign` ليس راية تجاوز، ولا يُقرّره الطالب: تُمرّره البوابة
+        السيادية **بعد** ثبوت توقيع Ed25519 مقابل مفتاح التاج. وأثره ليس تخطي القواعد
+        بل **تغيير وزنها**: تُقيَّم كلها وتُسجَّل كلها، ثم تُدرَج في
+        `advisory_violations` لا في `violations` (المادة العاشرة · 7 · 2).
+
+        ولاحظ أن عدد القواعد المُقيَّمة واحد في المسارين: الدستور لا يسكت أمام
+        التاج، بل يُبدي رأيه ولا يملك منعه.
+        """
         violations: list[RuleViolation] = []
+        advisory: list[RuleViolation] = []
 
         for rule in self.rules:
             article = self._by_id[rule.article_id]
@@ -94,22 +119,28 @@ class ConstitutionalEngine:
                 )
                 continue
             if reason:
-                violations.append(
-                    RuleViolation(
-                        rule_id=rule.rule_id,
-                        article_id=rule.article_id,
-                        article_title=article.title,
-                        clause=rule.clause,
-                        severity=rule.severity,
-                        reason=reason,
-                    )
+                found = RuleViolation(
+                    rule_id=rule.rule_id,
+                    article_id=rule.article_id,
+                    article_title=article.title,
+                    clause=rule.clause,
+                    severity=rule.severity,
+                    reason=reason,
                 )
+                # الفرق الوحيد بين المسارين: أين تُدرَج النتيجة — لا هل تُقيَّم.
+                if sovereign and rule.crown_effect is CrownEffect.ADVISORY:
+                    advisory.append(found)
+                else:
+                    violations.append(found)
 
         verdict = Verdict(
             decision=Decision.DENY if violations else Decision.ALLOW,
             request_fingerprint=self.fingerprint(req),
             rules_evaluated=len(self.rules),
             violations=tuple(violations),
+            advisory_violations=tuple(advisory),
+            decision_kind=decision_kind,
+            authority_layer=authority_layer,
         )
 
         if record:
@@ -125,6 +156,12 @@ class ConstitutionalEngine:
                     "request_fingerprint": verdict.request_fingerprint,
                     "rules_evaluated": verdict.rules_evaluated,
                     "violations": [v.as_dict() for v in verdict.violations],
+                    "advisory_violations": [
+                        v.as_dict() for v in verdict.advisory_violations
+                    ],
+                    "decision_kind": verdict.decision_kind,
+                    "authority_layer": verdict.authority_layer,
+                    "sovereign_path": sovereign,
                 }
             )
             verdict = replace(verdict, ledger_entry_hash=entry.entry_hash)

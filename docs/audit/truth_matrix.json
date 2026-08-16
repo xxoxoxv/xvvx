@@ -4,10 +4,10 @@
   "domains": {
     "core": {
       "domain": "core",
-      "md_files": 62,
-      "py_files": 15,
+      "md_files": 63,
+      "py_files": 18,
       "yaml_files": 0,
-      "code_lines": 1964,
+      "code_lines": 2816,
       "nucleus_count": 13,
       "nucleus_status": {
         "unspecified": 13
@@ -17,9 +17,9 @@
       "fake_hits": 2,
       "in_memory_hits": 0,
       "secret_hits": 0,
-      "observed_hits": 2,
+      "observed_hits": 3,
       "api_routes": 0,
-      "test_refs": 42,
+      "test_refs": 57,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -214,10 +214,10 @@
     },
     "tools": {
       "domain": "tools",
-      "md_files": 36,
-      "py_files": 7,
+      "md_files": 37,
+      "py_files": 8,
       "yaml_files": 2,
-      "code_lines": 1525,
+      "code_lines": 1660,
       "nucleus_count": 12,
       "nucleus_status": {
         "unspecified": 12
@@ -390,9 +390,9 @@
     "tests": {
       "domain": "tests",
       "md_files": 13,
-      "py_files": 8,
+      "py_files": 9,
       "yaml_files": 0,
-      "code_lines": 1764,
+      "code_lines": 2132,
       "nucleus_count": 5,
       "nucleus_status": {
         "unspecified": 5
@@ -404,7 +404,7 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 49,
+      "test_refs": 50,
       "identity_violations": 1,
       "deployed": true,
       "columns": {

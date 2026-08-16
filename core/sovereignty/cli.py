@@ -16,9 +16,18 @@ import sys
 from pathlib import Path
 
 from core.constitutional_engine.model import ActionRequest, Branch
+from core.sovereignty.authority import (
+    SUBORDINATE_LAYERS,
+    AuthorityLayer,
+    SovereigntyModelError,
+    assert_no_layer_above_crown,
+    supreme_layer,
+)
 from core.sovereignty.crown import CrownError, crown_is_provisioned, load_crown, provision_crown
+from core.sovereignty.gateways import SUBORDINATE_GATEWAYS
 from core.sovereignty.gateway import (
     FORBIDDEN_BYPASS_PARAMS,
+    RoyalImpersonation,
     SovereignGateway,
     SovereigntyViolation,
 )
@@ -63,6 +72,10 @@ def _cmd_crown_status(_args: argparse.Namespace) -> int:
     return 0
 
 
+# قواعد إثبات الأصالة المأذونة — تتوسّع بمرسوم ملكي لا بتعديل برمجي
+_AUTHENTICITY_RULES = frozenset({"R-010-3", "R-010-5"})
+
+
 def _cmd_sovereignty_check(_args: argparse.Namespace) -> int:
     """بوابة CI: هل السيادة الملكية ما زالت محروسة بنيويًا؟"""
     failures: list[str] = []
@@ -92,6 +105,52 @@ def _cmd_sovereignty_check(_args: argparse.Namespace) -> int:
         if expected not in IMMUNE_CLAUSES:
             failures.append(f"النص «{expected}» فُقد من قائمة النصوص المحصَّنة.")
 
+    # ── E2.1: لا طبقة فوق التاج ────────────────────────────────────────────
+    try:
+        assert_no_layer_above_crown()
+    except SovereigntyModelError as exc:
+        failures.append(f"نموذج السلطة مختل: {exc}")
+
+    if supreme_layer() is not AuthorityLayer.CROWN:
+        failures.append(
+            f"الطبقة العليا «{supreme_layer().name}» لا التاج. لا سلطة فوق الملك."
+        )
+
+    # لا قاعدة دستورية تمنع التاج — غير قواعد إثبات الأصالة
+    binding = [r.rule_id for r in gateway.engine.rules if r.can_veto_sovereign]
+    if binding:
+        failures.append(
+            f"قواعد تملك نقض قرار التاج: {sorted(binding)} — لا نقض يعلو على التاج."
+        )
+
+    # قواعد الأصالة محصورة بالاسم: لا يُدسّ نقض موضوعي بثوب «أصالة»
+    authenticity = {r.rule_id for r in gateway.engine.rules if r.guards_royal_authenticity}
+    if authenticity != _AUTHENTICITY_RULES:
+        failures.append(
+            f"قواعد الأصالة {sorted(authenticity)} تخالف المحصور "
+            f"{sorted(_AUTHENTICITY_RULES)} — كل إضافة هنا تقتضي مرسومًا ملكيًا."
+        )
+
+    # مسار التنفيذ السيادي بلا منع دستوري — يُفحص من المصدر نفسه
+    sovereign_src = inspect.getsource(SovereignGateway._execute_sovereign)
+    for forbidden in ("SovereigntyViolation", "ConstitutionalViolation"):
+        if f"raise {forbidden}" in sovereign_src:
+            failures.append(
+                f"مسار التنفيذ السيادي يرفع {forbidden} — هذا نقض لقرار التاج."
+            )
+
+    # ولا شرط مخفي من نوع «إن كان ملكًا فاسمح» في مسار التابعين
+    subordinate_src = inspect.getsource(SovereignGateway._execute_subordinate)
+    if "ROYAL" in subordinate_src or "CROWN" in subordinate_src:
+        failures.append(
+            "مسار التابعين يذكر التاج — يُحتمل استثناء مدسوس لا مسارًا صريحًا."
+        )
+
+    # البوابات التابعة لا تترقّى
+    for gw_cls in SUBORDINATE_GATEWAYS:
+        if gw_cls.layer.is_sovereign:
+            failures.append(f"البوابة التابعة {gw_cls.__name__} تدّعي الطبقة السيادية.")
+
     if failures:
         for f in failures:
             print(f"[SOVEREIGNTY] ✗ {f}", file=sys.stderr)
@@ -101,8 +160,22 @@ def _cmd_sovereignty_check(_args: argparse.Namespace) -> int:
     print(f"[SOVEREIGNTY] ✓ {len(ROYAL_EXCLUSIVE_ACTIONS)} اختصاصًا ملكيًا حصريًا محميًا.")
     print(f"[SOVEREIGNTY] ✓ {len(ROYAL_AUTHORITY_EROSION_ACTIONS)} فعل تآكل للسلطة مرفوض من كل طرف.")
     print(f"[SOVEREIGNTY] ✓ {len(FEDERALISM_BYPASS_ACTIONS)} فعل تجاوز للفدرالية مرفوض.")
-    print(f"[SOVEREIGNTY] ✓ {len(IMMUNE_CLAUSES)} نصًا محصَّنًا لا يُعدَّل من أي طرف.")
+    print(
+        f"[SOVEREIGNTY] ✓ {len(IMMUNE_CLAUSES)} نصًا محصَّنًا لا يُعدَّل من أي طرف تابع "
+        "(المرسوم الملكي يمسُّه ويُسجَّل حدثًا حرجًا — المادة العاشرة · 3 · 4)."
+    )
     print("[SOVEREIGNTY] ✓ البوابة السيادية بلا راية تجاوز واحدة.")
+    print(
+        f"[SOVEREIGNTY] ✓ الطبقة العليا هي التاج، ودونه من الطبقات التابعة "
+        f"{len(SUBORDINATE_LAYERS)}، ولا طبقة فوقه."
+    )
+    print(
+        f"[SOVEREIGNTY] ✓ لا قاعدة تملك نقض قرار التاج من أصل "
+        f"{len(gateway.engine.rules)} قاعدة، ومساره بلا منع دستوري."
+    )
+    print(
+        f"[SOVEREIGNTY] ✓ {len(SUBORDINATE_GATEWAYS)} بوابة تابعة مُثبَّتة على طبقتها لا تترقّى."
+    )
     print(f"[SOVEREIGNTY]   حالة التاج: {gateway.crown_status()}")
     return 0
 
@@ -117,11 +190,27 @@ def _cmd_gate(args: argparse.Namespace) -> int:
     )
     try:
         gateway.execute(request, lambda: "EXECUTED")
+    except RoyalImpersonation as exc:
+        # انتحال صفة ملكية: ليس نقضًا للملك بل نفيًا لملكية الأمر
+        print(f"[GATEWAY] REJECT — إنكار أصالة (A010 · 3 · 2): {exc.reason}")
+        print(f"[GATEWAY] حدث أمني مُسجَّل: {exc.event_kind.value}")
+        print(
+            "[GATEWAY] وهذا نفيٌ لملكية الأمر لا نقضٌ للملك: المرفوض منتحِل لا ملك."
+        )
+        print("[GATEWAY] لم يُستدعَ المُنفِّذ. الفعل لم يقع.")
+        return 2
     except SovereigntyViolation as exc:
         print(exc.verdict.explain())
         print("\n[GATEWAY] لم يُستدعَ المُنفِّذ. الفعل لم يقع.")
         return 2
-    print("[GATEWAY] ALLOW — نُفِّذ الفعل.")
+    record = gateway.records[-1]
+    if record.sovereign:
+        print(
+            f"[GATEWAY] ALLOW — مسار سيادي. ملاحظات دستورية مُسجَّلة لا مانعة: "
+            f"{', '.join(record.advisory_articles) or 'لا شيء'}"
+        )
+    else:
+        print("[GATEWAY] ALLOW — نُفِّذ الفعل.")
     return 0
 
 

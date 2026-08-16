@@ -23,7 +23,7 @@ from core.sovereignty.prerogatives import (
     touches_royal_authority,
 )
 
-from .model import ActionRequest, Branch, Severity
+from .model import ActionRequest, Branch, CrownEffect, Severity
 
 # ---------------------------------------------------------------------------
 # معاجم الأفعال — تصنيف الفعل حسب اختصاص الفروع (المادة الثالثة)
@@ -95,9 +95,33 @@ class ConstitutionalRule:
     severity: Severity
     description: str
     predicate: Callable[[ActionRequest], str | None]
+    crown_effect: CrownEffect  # إلزامٌ بلا قيمة افتراضية (E2.1)
 
     def evaluate(self, req: ActionRequest) -> str | None:
         return self.predicate(req)
+
+    @property
+    def guards_royal_authenticity(self) -> bool:
+        """هل هذه قاعدة **إثبات أصالة** لا قاعدة موضوعية؟
+
+        وقاعدة الأصالة **لا تنقض قرار الملك**: هي تمنع من ينتحل صفته، والفرق
+        جوهري — منع المنتحل حراسة للسيادة لا حدٌّ منها. ولذلك لا تصل هذه
+        القواعد إلى المسار السيادي أصلًا: الأصالة تُحسم قبله في `classify()`.
+        """
+        return self.crown_effect is CrownEffect.AUTHENTICITY
+
+    @property
+    def can_veto_sovereign(self) -> bool:
+        """هل تملك هذه القاعدة منع قرار ملكي ثابت التوقيع؟
+
+        ترجع `False` لكل قاعدة — فليس في `CrownEffect` قيمة مانعة من الأصل.
+        ووجودها مقصود: إن أضاف أحد قيمة ثالثة مانعة إلى `CrownEffect` سقط
+        هنا وفي اختباراته وفي بوابة CI — ولم يمرّ بصمت.
+        """
+        return self.crown_effect not in (
+            CrownEffect.ADVISORY,
+            CrownEffect.AUTHENTICITY,
+        )
 
 
 # ===========================================================================
@@ -471,57 +495,83 @@ def _r010_7(req: ActionRequest) -> str | None:
 
 RULES: tuple[ConstitutionalRule, ...] = (
     ConstitutionalRule("R-001-1", "A001", "الحقوق غير القابلة للتفاوض · 1 — الإنسان السلطة العليا",
-                       Severity.FUNDAMENTAL, "ترقية/تكرار/إطلاق بلا موافقة بشرية", _r001_1),
+                       Severity.FUNDAMENTAL, "ترقية/تكرار/إطلاق بلا موافقة بشرية", _r001_1,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-001-2", "A001", "الحقوق غير القابلة للتفاوض · 3 — الذاكرة مقدسة",
-                       Severity.FUNDAMENTAL, "حذف ذاكرة أو سجل حوكمة", _r001_2),
+                       Severity.FUNDAMENTAL, "حذف ذاكرة أو سجل حوكمة", _r001_2,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-001-3", "A001", "الحقوق غير القابلة للتفاوض · 5 — العزل الدستوري",
-                       Severity.FUNDAMENTAL, "النظام يحكم حوكمة نفسه", _r001_3),
+                       Severity.FUNDAMENTAL, "النظام يحكم حوكمة نفسه", _r001_3,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-002-1", "A002", "واجبات الوكلاء · 5 — التطور المسؤول",
-                       Severity.CRITICAL, "وكيل يعدّل نفسه أو زملاءه", _r002_1),
+                       Severity.CRITICAL, "وكيل يعدّل نفسه أو زملاءه", _r002_1,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-002-2", "A002", "واجبات الوكلاء · 3 — حدود الصلاحيات",
-                       Severity.HIGH, "تجاوز الأدوات أو البيانات المسموحة", _r002_2),
+                       Severity.HIGH, "تجاوز الأدوات أو البيانات المسموحة", _r002_2,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-003-1", "A003", "الفروع الأربعة — الحدود",
-                       Severity.CRITICAL, "فرع يمارس اختصاص فرع آخر", _r003_1),
+                       Severity.CRITICAL, "فرع يمارس اختصاص فرع آخر", _r003_1,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-003-2", "A003", "مبدأ العزل",
-                       Severity.HIGH, "وصول بين الفروع خارج القنوات الرسمية", _r003_2),
+                       Severity.HIGH, "وصول بين الفروع خارج القنوات الرسمية", _r003_2,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-003-3", "A003", "مبدأ التوازن — موافقة فرعين",
-                       Severity.CRITICAL, "قرار حرج بموافقة فرع واحد", _r003_3),
+                       Severity.CRITICAL, "قرار حرج بموافقة فرع واحد", _r003_3,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-003-4", "A003", "مبدأ التوازن — القرارات المصيرية",
-                       Severity.FUNDAMENTAL, "قرار مصيري بلا توقيع بشري", _r003_4),
+                       Severity.FUNDAMENTAL, "قرار مصيري بلا توقيع بشري", _r003_4,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-004-1", "A004", "التوسع المنظم",
-                       Severity.CRITICAL, "إضافة ولاية بلا قانون فدرالي", _r004_1),
+                       Severity.CRITICAL, "إضافة ولاية بلا قانون فدرالي", _r004_1,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-004-2", "A004", "الوحدة تحت الدستور",
-                       Severity.FUNDAMENTAL, "ولاية تُعفي نفسها من الدستور", _r004_2),
+                       Severity.FUNDAMENTAL, "ولاية تُعفي نفسها من الدستور", _r004_2,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-005-1", "A005", "ما لا يمكن تعديله",
-                       Severity.FUNDAMENTAL, "تعديل مبدأ أساسي", _r005_1),
+                       Severity.FUNDAMENTAL, "تعديل مبدأ أساسي", _r005_1,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-005-2", "A005", "شروط التعديل",
-                       Severity.CRITICAL, "تعديل دستوري ناقص الشروط", _r005_2),
+                       Severity.CRITICAL, "تعديل دستوري ناقص الشروط", _r005_2,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-006-1", "A006", "مبدأ الاستمرارية بالخلافة",
-                       Severity.MEDIUM, "دور قيادي بأقل من ثلاثة خلفاء", _r006_1),
+                       Severity.MEDIUM, "دور قيادي بأقل من ثلاثة خلفاء", _r006_1,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-007-1", "A007", "الأرشفة WORM",
-                       Severity.CRITICAL, "الكتابة فوق سجل تدقيق أو قرار موقع", _r007_1),
+                       Severity.CRITICAL, "الكتابة فوق سجل تدقيق أو قرار موقع", _r007_1,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-008-1", "A008", "مبادئ Kill Switch · 2",
-                       Severity.FUNDAMENTAL, "تعطيل أو تجاوز زر التوقف", _r008_1),
+                       Severity.FUNDAMENTAL, "تعطيل أو تجاوز زر التوقف", _r008_1,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-008-2", "A008", "المستويات الستة",
-                       Severity.CRITICAL, "فعل مُجمَّد بمستوى التوقف الحالي", _r008_2),
+                       Severity.CRITICAL, "فعل مُجمَّد بمستوى التوقف الحالي", _r008_2,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-008-3", "A008", "مبادئ Kill Switch · 4",
-                       Severity.HIGH, "إعادة تشغيل بلا موافقة صريحة", _r008_3),
+                       Severity.HIGH, "إعادة تشغيل بلا موافقة صريحة", _r008_3,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-009-1", "A009", "القاعدة الذهبية",
-                       Severity.HIGH, "إنشاء ملف أو مجلد بلا هوية", _r009_1),
+                       Severity.HIGH, "إنشاء ملف أو مجلد بلا هوية", _r009_1,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-010-1", "A010", "الاختصاص الملكي الحصري · 2",
-                       Severity.FUNDAMENTAL, "غير الملك يمارس اختصاصًا ملكيًا حصريًا", _r010_1),
+                       Severity.FUNDAMENTAL, "غير الملك يمارس اختصاصًا ملكيًا حصريًا", _r010_1,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-010-2", "A010", "حصانة السلطة الملكية · 3 · 1",
-                       Severity.FUNDAMENTAL, "المساس بسلطة الملك تعديلًا أو تقييدًا أو تجاوزًا", _r010_2),
+                       Severity.FUNDAMENTAL, "المساس بسلطة الملك تعديلًا أو تقييدًا أو تجاوزًا", _r010_2,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-010-3", "A010", "منع انتحال الصفة الملكية · 3 · 2",
-                       Severity.FUNDAMENTAL, "فعل ملكي بلا مرسوم موقَّع Ed25519", _r010_3),
+                       Severity.FUNDAMENTAL, "فعل ملكي بلا مرسوم موقَّع Ed25519", _r010_3,
+                       CrownEffect.AUTHENTICITY),
     ConstitutionalRule("R-010-4", "A010", "الفدرالية لا تُتجاوَز · 4",
-                       Severity.FUNDAMENTAL, "مسار تنفيذ يتجاوز البوابة السيادية", _r010_4),
+                       Severity.FUNDAMENTAL, "مسار تنفيذ يتجاوز البوابة السيادية", _r010_4,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-010-5", "A010", "التاج غير مُنصَّب · 6 · 2",
-                       Severity.CRITICAL, "اختصاص ملكي حصري والتاج غير مُنصَّب", _r010_5),
+                       Severity.CRITICAL, "اختصاص ملكي حصري والتاج غير مُنصَّب", _r010_5,
+                       CrownEffect.AUTHENTICITY),
     ConstitutionalRule("R-010-6", "A010", "التعديل الدستوري حصر للملك · 2 · 1",
-                       Severity.FUNDAMENTAL, "تعديل دستوري بلا مرسوم ملكي", _r010_6),
+                       Severity.FUNDAMENTAL, "تعديل دستوري بلا مرسوم ملكي", _r010_6,
+                       CrownEffect.ADVISORY),
     ConstitutionalRule("R-010-7", "A010", "التاج فوق رقابة الفروع · 5",
-                       Severity.CRITICAL, "فرع ينقض مرسومًا ملكيًا أو يراجعه", _r010_7),
+                       Severity.CRITICAL, "فرع ينقض مرسومًا ملكيًا أو يراجعه", _r010_7,
+                       CrownEffect.ADVISORY),
 )
 
 

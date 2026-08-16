@@ -38,7 +38,6 @@ _EXPORTS: dict[str, str] = {
     "provision_crown": "crown",
     # decree
     "DecreeError": "decree",
-    "DecreeImmuneClauseError": "decree",
     "DecreeRegistry": "decree",
     "DecreeReplayError": "decree",
     "DecreeSignatureError": "decree",
