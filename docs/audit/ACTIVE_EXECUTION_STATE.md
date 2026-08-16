@@ -40,9 +40,9 @@
 | الحقل | القيمة |
 |---|---|
 | Current Phase | E2.2 — Crown Root of Trust & Protection |
-| Current Subphase | E2.2-B — Crown Root-of-Trust CI gate |
-| Current Objective | إضافة بوابة CI `crown-root-of-trust` تتحقق فعليًّا من سلامة منظومة التاج، واختبار حالات فشلها |
-| Status | E2.2-A = VERIFIED · E2.2-B = IN_PROGRESS |
+| Current Subphase | E2.2-C — Audit / roadmap / truth-matrix integration |
+| Current Objective | تحديث خارطة المرحلة ومصفوفة الحقيقة بحالات دقيقة (DESIGNED..PROVEN) بلا كلمة COMPLETE بلا دليل |
+| Status | E2.2-A/B = VERIFIED · E2.2-C = IN_PROGRESS |
 | Current Commit SHA | `cda68d57eaf3faaa0f8344fc90a05c71dd0a0cf7` |
 | Last Verified Commit | `cda68d57eaf3faaa0f8344fc90a05c71dd0a0cf7` — مؤكَّد على `origin/main` بـ`git ls-remote` |
 | Previous Checkpoint SHA | `e3d0c8a` (أساس التنفيذ) · قبلها `098beb3` (ما قبل التاج) |
@@ -81,6 +81,27 @@ Next Action:    بوابة CI crown-root-of-trust
 Status:         VERIFIED
 ```
 
+### نقطة تفتيش E2.2-B (مغلقة)
+
+```
+CHECKPOINT E2.2-B
+-----------------
+Objective:      بوابة CI crown-root-of-trust غير شكلية
+Completed:      tools/crown/verify_crown_root_of_trust.py (11 فحصًا) ·
+                tools/crown/README.md · وظيفة crown-root-of-trust بثماني خطوات في ci.yml
+Tests:          البوابة محليًّا 11/11 · الاختبارات الكبرى 14/14 · اختبارات الحارس 32/32
+Security:       فحص مادة المفاتيح وحصص الاسترداد ورايات التجاوز وادّعاء الأمن المطلق
+Failure cases:  4 حقن مُجرَّبة أسقطت البوابات 2 و3 و4 و11 برمز 1، ثم استُعيد المستودع
+Real defect:    الفحص التاسع كان يبتلع AttributeError فيمرّ زائفًا — صُحِّح إلى
+                التقاط GuardAuthorityError وحده
+Documentation:  tools/crown/README.md يوثّق حالات الفشل المُجرَّبة
+Commit:         (يُثبَت بعد الالتزام في هذه النقطة)
+Remote:         (يُثبَت بعد الدفع)
+Remaining:      E2.2-C .. E2.3-B
+Next Action:    خارطة المرحلة ومصفوفة الحقيقة
+Status:         VERIFIED محليًّا · CI لم تُشغَّل بعد على GitHub
+```
+
 ### عيوب حقيقية وُجدت في التنفيذ وأُصلحت (لا تُعَد إلى ما كانت)
 
 1. `identity.py::assert_not_key_material` — مدخلات مركَّبة كانت غير قابلة للوصول؛
@@ -105,6 +126,8 @@ Status:         VERIFIED
 | `python tools/governance/generate_crown_threat_doc.py --check` | مطابقة للتنفيذ | 2026-08-16 |
 | `python -m pytest tests/sovereignty tests/constitutional tests/governance -q` | 390 passed (خط الأساس قبل عمل التاج) | 2026-08-16 |
 | `python -m core.sovereignty.cli sovereignty-check` | 9/9 (خط الأساس) | 2026-08-16 |
+
+| `python tools/crown/verify_crown_root_of_trust.py` | 11/11 — رمز خروج 0 · وحالات الفشل الأربع تُخرِج 1 | 2026-08-16 |
 
 **لم يُشغَّل بعد:** بوابات الهوية (`stamp_readme_identity`,
 `check_repository_identity`, `generate_identity_cards`, `write_domain_readmes`)،
@@ -138,8 +161,8 @@ E2.1 باقية كما هي.
 | الوحدة | الموضوع | الحال |
 |---|---|---|
 | E2.2-A | توثيق نطاق التاج ونواته | **VERIFIED** (`cda68d5`، البعيد مؤكَّد) |
-| E2.2-B | بوابة CI `crown-root-of-trust` | IN_PROGRESS |
-| E2.2-C | خارطة المرحلة ومصفوفة الحقيقة | PENDING |
+| E2.2-B | بوابة CI `crown-root-of-trust` | **VERIFIED** (11 فحصًا + 8 خطوات CI، وحالات الفشل مُجرَّبة) |
+| E2.2-C | خارطة المرحلة ومصفوفة الحقيقة | IN_PROGRESS |
 | E2.2-D | بوابات الهوية | PENDING |
 | E2.2-E | تحقق الأسرار وحدود الثقة | PENDING |
 | E2.2-F | إثبات الاستمرارية السيادية من الطرف إلى الطرف | PENDING |
