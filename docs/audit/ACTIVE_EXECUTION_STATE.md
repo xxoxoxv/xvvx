@@ -1138,14 +1138,27 @@ C (الخارطة والمصفوفة المولَّدة) · D (بوابات ال
 
 ### 14.6 ما لم يُنجَز في هذه الجولة (بلا تجميل)
 
-- `api_gateway` و`orchestrator` و`agent_runtime` لم تُوجَّه بعد إلى النواة
-  التنفيذية — هي مسارات موازية لا تمرّ بالبوابة السيادية. (REQUIRED NEXT PHASE)
+- ~~`api_gateway` و`orchestrator` و`agent_runtime` لم تُوجَّه بعد إلى النواة
+  التنفيذية~~ — **أُنجز في R1 (2026-08-16):** الثلاثة صارت واجهات HTTP فوق النواة،
+  ولا تكتب حالة مهمّة ولا تنفّذ بنفسها. التفاصيل والتجاوزات المتبقية في
+  [`R1_CANONICAL_EXECUTION_PATH.md`](R1_CANONICAL_EXECUTION_PATH.md).
 - `tool_registry` و`model_gateway` و`memory_service` ما زالت غير مستدعاة من مسار
   المهمّة.
 - تنفيذ الأدوات محاكاة، فلا يُقال إن الدولة أنجزت عملًا خارجيًّا.
 - CI غير مُلاحَظ.
 
+## 15. R1 — مسار التنفيذ القانوني (2026-08-16)
+
+كل طلب خارجي يؤدي إلى تنفيذ مهمّة يصل الآن إلى `SovereignGateway` قبل التنفيذ:
+`POST /v1/tasks` يفوّض `core.submit`، و`POST /v1/plan` بمعرّف مهمّة يفوّض
+`core.advance_to(PLANNED)`، و`POST /v1/execute` يقبل `task_id` فقط ويفوّض
+`core.run` — والحمولة الخام تُرفض بـ403. حالة القبول صارت `created` بدل `pending`.
+مقيس بـ17 اختباراً مباشراً مع حرس ساكن يمنع عودة أي مسار تنفيذ خارج البوابة.
+تنفيذ الأدوات ما زال `execution_fidelity = SIMULATION`، وسلسلة
+`common/event_wiring.py` ما زالت محاكاة غير قابلة للوصول من HTTP خارجي.
+
 ## المراجع
+- تقرير R1: [`R1_CANONICAL_EXECUTION_PATH.md`](R1_CANONICAL_EXECUTION_PATH.md)
 - خارطة المرحلة: [`PHASE_E_ROADMAP.md`](PHASE_E_ROADMAP.md)
 - مصفوفة الحقيقة: [`TRUTH_MATRIX.md`](TRUTH_MATRIX.md)
 - تعريف الإنجاز: [`DEFINITION_OF_DONE.md`](DEFINITION_OF_DONE.md)

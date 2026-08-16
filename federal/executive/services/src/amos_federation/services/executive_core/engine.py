@@ -439,6 +439,29 @@ class ExecutiveCore:
             "terminal": is_terminal(task["status"]),
         }
 
+    def advance_to(self, task_id: str, target: TaskState, max_steps: int = 8) -> dict[str, Any]:
+        """تقديم المهمّة حتى حالة مطلوبة — بخطوات `advance` نفسها لا بمسار ثانٍ.
+
+        أُضيفت في R1 لتستطيع الخدمات الخارجية (`orchestrator`) أن تطلب حدًّا من
+        دورة الحياة (مثلًا: خطّط ولا تُنفّذ) بلا أن تُعيد تنفيذ آلة الحالات عندها.
+        وإن انتهت المهمّة قبل بلوغ الهدف (رفض دستوري أو سقوط)، تُقال الحقيقة في
+        `reached=False` ولا يُدّعى بلوغ الهدف.
+        """
+        outcomes: list[TransitionOutcome] = []
+        for _ in range(max_steps):
+            state = self._repo.state_of(task_id)
+            if state is target or is_terminal(state):
+                break
+            outcomes.append(self.advance(task_id))
+        task = self._repo.require(task_id)
+        return {
+            "task": task,
+            "transitions": [outcome.as_dict() for outcome in outcomes],
+            "final_state": task["status"],
+            "reached": task["status"] == target.value,
+            "terminal": is_terminal(task["status"]),
+        }
+
     def submit_and_run(self, task_type: str, description: str, **kwargs: Any) -> dict[str, Any]:
         """المسار الكامل: قبول ثم تنفيذ حتى النهاية."""
         task = self.submit(task_type, description, **kwargs)
