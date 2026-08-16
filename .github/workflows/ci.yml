@@ -256,6 +256,76 @@ jobs:
             --cov=core.sovereignty --cov-branch \
             --cov-report=term-missing --cov-fail-under=90
 
+  crown-root-of-trust:
+    name: Crown Root of Trust (E2.2 — بوابات جذر ثقة التاج)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: تثبيت التبعيات
+        run: pip install pytest pytest-cov cryptography
+
+      - name: بوابة 1 — الحدود المطلقة لنطاق التاج (البند 52)
+        run: python -m core.crown.cli crown-check
+
+      - name: بوابة 2 — سلامة جذر الثقة (11 فحصًا تنفيذيًّا)
+        run: python tools/crown/verify_crown_root_of_trust.py
+
+      - name: بوابة 3 — اختبارات التاج بتغطية فروع لا تقل عن 90%
+        run: |
+          python -m pytest tests/crown/ -q \
+            --cov=core.crown --cov-branch \
+            --cov-report=term-missing --cov-fail-under=90
+
+      - name: بوابة 4 — وثيقة نموذج التهديد مولَّدة من التنفيذ لا مكتوبة بيد
+        run: python tools/governance/generate_crown_threat_doc.py --check
+
+      - name: بوابة 5 — لا مادة مفتاح خاص ولا حصة استرداد في المستودع
+        run: |
+          set +e
+          pattern='BEGIN (OPENSSH |EC |RSA |DSA |PGP |ENCRYPTED |)PRIVATE KEY'
+          hits=$(grep -rlE "$pattern" --exclude-dir=.git --exclude-dir=node_modules \
+            --exclude=ci.yml --exclude=verify_crown_root_of_trust.py . )
+          if [ -n "$hits" ]; then
+            echo "::error::مادة مفتاح خاص مُسرَّبة:"; echo "$hits"; exit 1
+          fi
+          share=$(grep -rniE '(recovery|crown|root)_(share|seed|secret) *= *["'"'"'][^"'"'"']{6,}' \
+            --include='*.py' --include='*.json' --include='*.yaml' --include='*.yml' \
+            --exclude-dir=.git core/ tests/ tools/ docs/ )
+          if [ -n "$share" ]; then
+            echo "::error::سرّ استرداد أو بذرة مضمَّنة في الشيفرة:"; echo "$share"; exit 1
+          fi
+          echo "✓ لا مادة مفتاح ولا حصة استرداد في المستودع."
+
+      - name: بوابة 6 — الاختبارات الكبرى الخمسة تعمل فعلًا
+        run: python -m pytest tests/crown/test_crown_grand_tests.py -q
+
+      - name: بوابة 7 — الحارس لا يملك سلطة سيادية ولا نقضًا
+        run: |
+          python -m pytest tests/crown/test_crown_guard.py -q \
+            -k "sovereign or veto or disable or escalation"
+
+      - name: بوابة 8 — حدّ البرمجية والبشر معلَن بالأرقام
+        run: |
+          python -m core.crown.cli boundary > /tmp/boundary.json
+          cat /tmp/boundary.json
+          python - <<'PY'
+          import json
+          data = json.load(open("/tmp/boundary.json", encoding="utf-8"))
+          assert data["out_of_software_scope"] > 0, "حدّ البرمجية مُخفى"
+          assert data["requires_human"] > 0, "لا تهديد يحتاج بشرًا — ادّعاء شمول"
+          total = (
+              data["implemented_and_tested"]
+              + data["partially_implemented"]
+              + data["modelled_not_implemented"]
+              + data["out_of_software_scope"]
+          )
+          assert total == data["total_threats"], "تصنيف التهديدات متناقض"
+          print("✓ الحدّ معلَن:", data["requires_human"], "من", data["total_threats"])
+          PY
+
   truth-audit:
     name: Truth Audit (E0 — Ratchet Gate)
     runs-on: ubuntu-latest
