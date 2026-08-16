@@ -40,13 +40,13 @@
 | الحقل | القيمة |
 |---|---|
 | Current Phase | E2.2 — Crown Root of Trust & Protection |
-| Current Subphase | E2.2-A — Crown documentation + NUCLEUS |
-| Current Objective | توثيق نطاق التاج ونواته توثيقًا مطابقًا للتنفيذ، ثم الالتزام والدفع والتحقق من البعيد |
-| Status | IN_PROGRESS |
-| Current Commit SHA | (يُحدَّث بعد الالتزام في هذه النقطة) |
-| Last Verified Commit | `098beb317e142066956577cbdbc541fc6725b9a9` (قبل عمل التاج) |
-| Previous Checkpoint SHA | لا يوجد — هذه أول نقطة تفتيش في E2.2 |
-| Remote Confirmed | لا — لم يُدفَع بعد |
+| Current Subphase | E2.2-B — Crown Root-of-Trust CI gate |
+| Current Objective | إضافة بوابة CI `crown-root-of-trust` تتحقق فعليًّا من سلامة منظومة التاج، واختبار حالات فشلها |
+| Status | E2.2-A = VERIFIED · E2.2-B = IN_PROGRESS |
+| Current Commit SHA | `cda68d57eaf3faaa0f8344fc90a05c71dd0a0cf7` |
+| Last Verified Commit | `cda68d57eaf3faaa0f8344fc90a05c71dd0a0cf7` — مؤكَّد على `origin/main` بـ`git ls-remote` |
+| Previous Checkpoint SHA | `e3d0c8a` (أساس التنفيذ) · قبلها `098beb3` (ما قبل التاج) |
+| Remote Confirmed | نعم — `origin/main = cda68d5` |
 | Last Updated | 2026-08-16 |
 
 ## 2. ما أُنجز (مثبَت تنفيذيًّا)
@@ -62,6 +62,24 @@
   `core/crown/threats.py` ويتحقق من تطابقها بـ`--check`، فلا تنفصل الوثيقة عن
   التنفيذ.
 - `core/crown/README.md` و`core/crown/NUCLEUS.md` و`tests/crown/README.md`.
+
+### نقطة تفتيش E2.2-A (مغلقة)
+
+```
+CHECKPOINT E2.2-A
+-----------------
+Objective:      توثيق نطاق التاج ونواته + إنشاء ذاكرة التسليم
+Completed:      core/crown/README.md · core/crown/NUCLEUS.md · tests/crown/README.md ·
+                docs/audit/ACTIVE_EXECUTION_STATE.md
+Tests:          299 passed / 0 failed · تغطية فروع 94% على core.crown
+Security:       crown-check 9/9 (رمز خروج 0) · لا مادة مفتاح في المستودع
+Documentation:  مطابقة للتنفيذ · وثيقة التهديد مولَّدة ومتحقَّق من تطابقها
+Commit:         e3d0c8a (أساس التنفيذ) + cda68d5 (توثيق E2.2-A)
+Remote:         origin/main = cda68d5 — مؤكَّد بـgit ls-remote
+Remaining:      E2.2-B .. E2.3-B
+Next Action:    بوابة CI crown-root-of-trust
+Status:         VERIFIED
+```
 
 ### عيوب حقيقية وُجدت في التنفيذ وأُصلحت (لا تُعَد إلى ما كانت)
 
@@ -119,8 +137,8 @@ E2.1 باقية كما هي.
 
 | الوحدة | الموضوع | الحال |
 |---|---|---|
-| E2.2-A | توثيق نطاق التاج ونواته | IN_PROGRESS |
-| E2.2-B | بوابة CI `crown-root-of-trust` | PENDING |
+| E2.2-A | توثيق نطاق التاج ونواته | **VERIFIED** (`cda68d5`، البعيد مؤكَّد) |
+| E2.2-B | بوابة CI `crown-root-of-trust` | IN_PROGRESS |
 | E2.2-C | خارطة المرحلة ومصفوفة الحقيقة | PENDING |
 | E2.2-D | بوابات الهوية | PENDING |
 | E2.2-E | تحقق الأسرار وحدود الثقة | PENDING |
@@ -131,11 +149,21 @@ E2.1 باقية كما هي.
 
 ## 7. الأمر التالي حرفيًّا
 
+E2.2-B: أضف وظيفة `crown-root-of-trust` إلى `.github/workflows/ci.yml` تُنفِّذ فعليًّا:
+
 ```bash
-cd /home/user/workspace/AMOS-Fedration
-git add core/crown tests/crown docs/security tools/governance/generate_crown_threat_doc.py docs/audit/ACTIVE_EXECUTION_STATE.md
-# التزام أساس التنفيذ برسالة البند 50، ثم التزام التوثيق (E2.2-A)، ثم الدفع والتحقق:
-git ls-remote origin main   # تأكيد أن البعيد يحتوي الالتزام فعلًا
+python -m core.crown.cli crown-check
+python -m pytest tests/crown/ -q --cov=core.crown --cov-branch --cov-fail-under=90
+python tools/governance/generate_crown_threat_doc.py --check
+# فحص تسريب مادة مفتاح داخل core/crown و tests/crown و docs/security
+```
+
+ثم اختبر حالات الفشل محليًّا (تعديل حال تهديد بلا مرجع اختبار يجب أن يُسقط
+البوابة)، ثم حدِّث هذا الملف، ثم:
+
+```bash
+git commit -m "ci(crown): enforce crown root of trust integrity"
+git push origin main && git ls-remote origin main   # وتحقق من التطابق
 ```
 
 ## 8. ما لا يُفعَل بعد (Do NOT Do Yet)
@@ -150,7 +178,8 @@ git ls-remote origin main   # تأكيد أن البعيد يحتوي الالت
 
 | # | الوحدة | الالتزام | البعيد | الحال |
 |---|---|---|---|---|
-| 0 | أساس التنفيذ (كود + اختبارات + توثيق أمني) | (قيد الالتزام) | — | IN_PROGRESS |
+| 0 | أساس التنفيذ (كود + اختبارات + توثيق أمني) | `e3d0c8a` | مؤكَّد | VERIFIED |
+| E2.2-A | توثيق نطاق التاج ونواته وذاكرة التسليم | `cda68d5` | مؤكَّد بـ`ls-remote` | VERIFIED |
 
 ## المراجع
 - خارطة المرحلة: [`PHASE_E_ROADMAP.md`](PHASE_E_ROADMAP.md)
