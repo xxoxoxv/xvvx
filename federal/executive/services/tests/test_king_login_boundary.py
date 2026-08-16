@@ -69,17 +69,13 @@ def test_login_is_refused_when_secret_is_not_configured(king_secret) -> None:
 def test_placeholder_secret_is_not_a_secret(king_secret, placeholder: str) -> None:
     """قيمة نائبة معروفة = لا سرّ."""
     king_secret(placeholder)
-    response = client.post(
-        "/v1/auth/login", json={"username": "king", "password": placeholder}
-    )
+    response = client.post("/v1/auth/login", json={"username": "king", "password": placeholder})
     assert response.status_code == 503
 
 
 def test_wrong_password_is_rejected(king_secret) -> None:
     king_secret(CONFIGURED_VALUE)
-    response = client.post(
-        "/v1/auth/login", json={"username": "king", "password": "wrong"}
-    )
+    response = client.post("/v1/auth/login", json={"username": "king", "password": "wrong"})
     assert response.status_code == 401
 
 

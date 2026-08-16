@@ -22,13 +22,15 @@ SECRET_FIELDS: tuple[str, ...] = (
 )
 
 #: قيم نائبة تاريخية — وجودها في الإنتاج كوجود الفراغ.
-PLACEHOLDER_SECRETS: frozenset[str] = frozenset({
-    "dev_password_change_me",
-    "dev_secret_change_me",
-    "dev_secret_change_me_at_least_32_characters",
-    "changeme",
-    "change_me",
-})
+PLACEHOLDER_SECRETS: frozenset[str] = frozenset(
+    {
+        "dev_password_change_me",
+        "dev_secret_change_me",
+        "dev_secret_change_me_at_least_32_characters",
+        "changeme",
+        "change_me",
+    }
+)
 
 #: أسماء البيئات التي تُعامَل معاملة الإنتاج.
 PRODUCTION_ENVIRONMENTS: frozenset[str] = frozenset({"production", "prod", "staging"})
@@ -113,9 +115,7 @@ class Settings(BaseSettings):
             return
         missing = self.secret_violations()
         if missing:
-            raise InsecureConfigurationError(
-                "أسرار غير مهيّأة في بيئة إنتاج: " + "، ".join(missing)
-            )
+            raise InsecureConfigurationError("أسرار غير مهيّأة في بيئة إنتاج: " + "، ".join(missing))
 
     @property
     def postgres_dsn(self) -> str:
