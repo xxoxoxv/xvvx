@@ -43,10 +43,10 @@
 | Current Subphase | E2.2-G — Full relevant suite across systems |
 | Current Objective | تشغيل الحِزَم الكاملة عبر الأنظمة (تاج + سيادة + دستور + حكامة + خدمات فدرالية) مع ruff والفحوص الساكنة ومسح الأسرار، وأي ارتداد = BLOCK |
 | Status | E2.2-A..F = VERIFIED محليًّا · E2.2-F مدفوعة · E2.2-G = NOT_STARTED |
-| Current Commit SHA | E2.2-F — يُثبَت بعد الدفع في هذه النقطة |
-| Last Verified Commit | `24cae55` — مؤكَّد على `origin/main` بـ`git ls-remote` |
-| Previous Checkpoint SHA | `24cae55` (تثبيت حالة E2.2-E) · `891f6fe` (E2.2-E) · `3fed334` (E2.2-D) · `dae73f6` (E2.2-C) · `b13cd87` (E2.2-B) · `fb5ce9d` (E2.2-A) · `098beb3` (ما قبل التاج) |
-| Remote Confirmed | `origin/main = 24cae55` قبل هذه النقطة · التزام E2.2-F يُؤكَّد بعد دفعه |
+| Current Commit SHA | `b4deb5a` (E2.2-F — مدفوع ومؤكَّد) |
+| Last Verified Commit | `b4deb5a` — مؤكَّد على `origin/main` بـ`git ls-remote` |
+| Previous Checkpoint SHA | `b4deb5a` (E2.2-F) · `24cae55` (تثبيت حالة E2.2-E) · `891f6fe` (E2.2-E) · `3fed334` (E2.2-D) · `dae73f6` (E2.2-C) · `b13cd87` (E2.2-B) · `fb5ce9d` (E2.2-A) · `098beb3` (ما قبل التاج) |
+| Remote Confirmed | نعم — `origin/main = b4deb5a` مؤكَّد بـ`git ls-remote` |
 | Last Updated | 2026-08-16 |
 
 ## 2. ما أُنجز (مثبَت تنفيذيًّا)
@@ -257,8 +257,8 @@ Truth audit:    ارتفع إلى 108 من عمل هذه الوحدة (استث�
                 مصدره وعاد إلى 106 — لا تخفيف عتبة ولا استثناء في الماسح
 Documentation:  مصفوفة الحقيقة مولَّدة من جديد · sovereign_session.py مُسقَط إلى
                 TESTED لأن لا وحدة إنتاج تستوردها — والإسقاط أُبقي ولم يُزيَّف
-Commit:         (يُثبَت بعد الالتزام في هذه النقطة)
-Remote:         (يُثبَت بعد الدفع)
+Commit:         b4deb5a
+Remote:         مؤكَّد — origin/main = b4deb5a بـgit ls-remote
 Remaining:      E2.2-G · E2.3-A · E2.3-B
 Next Action:    E2.2-G — الحِزَم الكاملة عبر الأنظمة
 Status:         VERIFIED محليًّا · CI لم تُشغَّل بعد على GitHub
@@ -404,7 +404,7 @@ git push origin main && git ls-remote origin main   # وتحقق من التطا
 | E2.2-C | خارطة المرحلة ومصفوفة الحقيقة المولَّدة | `dae73f6` | مؤكَّد بـ`ls-remote` | VERIFIED |
 | E2.2-D | بوابات الهوية (وعيبان في الحُرّاس أنفسهم) | `3fed334` | مؤكَّد بـ`ls-remote` | VERIFIED |
 | E2.2-E | حدود الأسرار والثقة | `891f6fe` ثم `24cae55` | مؤكَّد بـ`ls-remote` | VERIFIED |
-| E2.2-F | الاستمرارية السيادية عبر مسار منفَّذ (وتصحيح ادّعاء في اختبار قائم) | يُثبَت بعد الدفع | يُثبَت بعد الدفع | VERIFIED محليًّا |
+| E2.2-F | الاستمرارية السيادية عبر مسار منفَّذ (وتصحيح ادّعاء في اختبار قائم) | `b4deb5a` | مؤكَّد بـ`ls-remote` | VERIFIED |
 
 ## المراجع
 - خارطة المرحلة: [`PHASE_E_ROADMAP.md`](PHASE_E_ROADMAP.md)
