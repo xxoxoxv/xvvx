@@ -15,19 +15,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
 from amos_federation.services.executive_core.dispatcher import register_agent
-from amos_federation.services.executive_core.engine import (
-    ExecutionRefusedError,
-    get_executive_core,
-)
-from amos_federation.services.executive_core.repository import TaskNotFoundError
-from amos_federation.services.executive_core.sovereignty_bridge import SovereigntyUnavailableError
-from amos_federation.services.executive_core.states import IllegalTransitionError, UnknownStateError
+from amos_federation.services.executive_core.engine import get_executive_core
+from amos_federation.services.executive_core.http_errors import to_http_exception
 
 router = APIRouter(prefix="/v1/executive", tags=["executive-core"])
 
@@ -59,17 +54,6 @@ class AgentRegistration(BaseModel):
     tenant_id: str = "default"
 
 
-def _guard_errors(exc: Exception) -> HTTPException:
-    """ترجمة أخطاء النواة إلى رموز HTTP — بلا طمس السبب."""
-    if isinstance(exc, TaskNotFoundError):
-        return HTTPException(status_code=404, detail=str(exc))
-    if isinstance(exc, IllegalTransitionError | UnknownStateError | ExecutionRefusedError):
-        return HTTPException(status_code=409, detail=str(exc))
-    if isinstance(exc, SovereigntyUnavailableError):
-        return HTTPException(status_code=503, detail=str(exc))
-    raise exc
-
-
 @router.post("/tasks")
 def submit_task(request: SubmitRequest) -> dict[str, Any]:
     """قبول مهمّة، وتشغيلها حتى النهاية إن طُلب ذلك صراحةً."""
@@ -91,7 +75,7 @@ def submit_task(request: SubmitRequest) -> dict[str, Any]:
             tenant_id=request.tenant_id,
         )
     except Exception as exc:
-        raise _guard_errors(exc) from exc
+        raise to_http_exception(exc) from exc
 
 
 @router.post("/tasks/{task_id}/advance")
@@ -99,7 +83,7 @@ def advance_task(task_id: str) -> dict[str, Any]:
     try:
         return get_executive_core().advance(task_id).as_dict()
     except Exception as exc:
-        raise _guard_errors(exc) from exc
+        raise to_http_exception(exc) from exc
 
 
 @router.post("/tasks/{task_id}/run")
@@ -107,7 +91,7 @@ def run_task(task_id: str) -> dict[str, Any]:
     try:
         return get_executive_core().run(task_id)
     except Exception as exc:
-        raise _guard_errors(exc) from exc
+        raise to_http_exception(exc) from exc
 
 
 @router.post("/tasks/{task_id}/cancel")
@@ -115,7 +99,7 @@ def cancel_task(task_id: str, request: CancelRequest) -> dict[str, Any]:
     try:
         return get_executive_core().cancel(task_id, request.reason).as_dict()
     except Exception as exc:
-        raise _guard_errors(exc) from exc
+        raise to_http_exception(exc) from exc
 
 
 @router.get("/tasks/{task_id}")
@@ -123,7 +107,7 @@ def task_status(task_id: str) -> dict[str, Any]:
     try:
         return get_executive_core().status(task_id)
     except Exception as exc:
-        raise _guard_errors(exc) from exc
+        raise to_http_exception(exc) from exc
 
 
 @router.post("/agents")
@@ -146,7 +130,7 @@ def recover_tasks() -> dict[str, Any]:
     try:
         return get_executive_core().recover()
     except Exception as exc:
-        raise _guard_errors(exc) from exc
+        raise to_http_exception(exc) from exc
 
 
 @router.get("/state")
@@ -155,7 +139,7 @@ def executive_state() -> dict[str, Any]:
     try:
         return get_executive_core().health()
     except Exception as exc:
-        raise _guard_errors(exc) from exc
+        raise to_http_exception(exc) from exc
 
 
 _service = SERVICES["executive-core"]

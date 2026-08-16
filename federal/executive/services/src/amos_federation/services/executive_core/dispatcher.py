@@ -134,6 +134,22 @@ class CapabilityDispatcher:
         finally:
             session.close()
 
+    def available_agents(self, tenant_id: str = "default") -> list[dict[str, Any]]:
+        """الوكلاء القابلون للتوزيع فعلًا — نفس مصدر `select` لا قائمة موازية.
+
+        أُضيفت في R1 لتعرض `agent-runtime` ما يمكن توزيعه حقًّا، بدل القائمة
+        النصّية الثابتة التي كانت تعرضها ولا علاقة لها بسجل الوكلاء.
+        """
+        return [
+            {
+                "id": row.id,
+                "role": row.role,
+                "status": row.status,
+                "allowed_tools": list(row.allowed_tools or []),
+            }
+            for row in self.candidates(tenant_id)
+        ]
+
     def select(
         self,
         plan: list[dict[str, Any]],
