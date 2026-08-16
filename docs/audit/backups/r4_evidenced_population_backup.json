@@ -1,0 +1,892 @@
+{
+  "purpose": "نسخة احتياطية للصفوف المتأثرة قبل تطبيق ترحيل R4 (OPTION 2) على القاعدة الحقيقية",
+  "database": "supabase project mqcfmwtdaymrmwvthqyw (PostgreSQL 17.6.1.155)",
+  "policy": "OPTION_2_HISTORICAL_EVIDENCE_ONLY",
+  "taken_before_apply": true,
+  "affected_rows": 48,
+  "evidenced_rows": [
+    {
+      "agent_id": "agent-04aba8c4",
+      "name": "منسق عام 1",
+      "role": "coordinator",
+      "category": "governance",
+      "state": "paused",
+      "permissions": "[\"task:assign\", \"agent:manage\", \"report:view\"]",
+      "allowed_tools": "[\"chart_generate\", \"text_summary\", \"document_analysis\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-16T11:16:04.679234",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-0858e6b7",
+      "name": "منفذ معرفي 7",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "specialized",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "finance",
+      "created_at": "2026-08-15T04:07:35.236571",
+      "graduated_at": "2026-08-16T11:11:51.802888",
+      "evidence": [
+        "non_registered_status:specialized"
+      ]
+    },
+    {
+      "agent_id": "agent-0b9ac4ee",
+      "name": "منفذ معرفي 5",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "retired",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:58.831207",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:retired"
+      ]
+    },
+    {
+      "agent_id": "agent-12ec6ecd",
+      "name": "مفتش 1",
+      "role": "inspector",
+      "category": "oversight",
+      "state": "active",
+      "permissions": "[\"inspect:all\", \"report:view\"]",
+      "allowed_tools": "[\"document_analysis\", \"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:39.783752",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:active"
+      ]
+    },
+    {
+      "agent_id": "agent-137673fe",
+      "name": "احتياطي 3",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T12:04:03.199877",
+      "graduated_at": "2026-08-16T12:05:22.323177",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-14d00d4d",
+      "name": "منفذ معرفي 9",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "paused",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:36.145583",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-19a5aa26",
+      "name": "احتياطي 3",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T11:10:13.719583",
+      "graduated_at": "2026-08-16T11:10:58.577505",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-1aff6422",
+      "name": "منفذ معرفي 4",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "paused",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:33.872095",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-2cc2d8b8",
+      "name": "منسق عام 1",
+      "role": "coordinator",
+      "category": "governance",
+      "state": "active",
+      "permissions": "[\"task:assign\", \"agent:manage\", \"report:view\"]",
+      "allowed_tools": "[\"chart_generate\", \"text_summary\", \"document_analysis\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:32.048414",
+      "graduated_at": "2026-08-15T04:17:46.346864",
+      "evidence": [
+        "non_registered_status:active",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-2faa555a",
+      "name": "احتياطي 2",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T11:46:59.865058",
+      "graduated_at": "2026-08-16T11:47:51.376669",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-32ce98d7",
+      "name": "منفذ معرفي 6",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "paused",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:59.286006",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-3501e9b2",
+      "name": "احتياطي 2",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T11:10:33.385881",
+      "graduated_at": "2026-08-16T11:11:12.251445",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-41853df1",
+      "name": "احتياطي 1",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T12:04:02.299754",
+      "graduated_at": "2026-08-16T12:05:08.716341",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-43a89ad8",
+      "name": "احتياطي 1",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T11:10:32.93139",
+      "graduated_at": "2026-08-16T11:11:05.511111",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-447d7770",
+      "name": "منفذ معرفي 5",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "active",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:34.326766",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:active"
+      ]
+    },
+    {
+      "agent_id": "agent-4de01e24",
+      "name": "احتياطي 2",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T11:10:13.26547",
+      "graduated_at": "2026-08-16T11:10:51.580884",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-4eba9c51",
+      "name": "احتياطي 1",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T11:48:10.295015",
+      "graduated_at": "2026-08-16T12:05:42.553715",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-4f3ee472",
+      "name": "منفذ معرفي 8",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "active",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:35.691141",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:active"
+      ]
+    },
+    {
+      "agent_id": "agent-5fbe6805",
+      "name": "منفذ معرفي 10",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "retired",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:08:01.105728",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:retired",
+        "reference:agent_health_checks"
+      ]
+    },
+    {
+      "agent_id": "agent-67dbefae",
+      "name": "منفذ معرفي 1",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "paused",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:57.005351",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-67f23d96",
+      "name": "منسق عام 1",
+      "role": "coordinator",
+      "category": "governance",
+      "state": "paused",
+      "permissions": "[\"task:assign\", \"agent:manage\", \"report:view\"]",
+      "allowed_tools": "[\"chart_generate\", \"text_summary\", \"document_analysis\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:56.550643",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-69a3bcd5",
+      "name": "مدقق 1",
+      "role": "auditor",
+      "category": "audit",
+      "state": "active",
+      "permissions": "[\"audit:view\", \"audit:write\"]",
+      "allowed_tools": "[\"sql_query\", \"document_analysis\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:39.328673",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:active"
+      ]
+    },
+    {
+      "agent_id": "agent-6cdb00de",
+      "name": "متعلم 1",
+      "role": "learner",
+      "category": "education",
+      "state": "active",
+      "permissions": "[\"school:attend\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:40.70321",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:active"
+      ]
+    },
+    {
+      "agent_id": "agent-73c1e3f6",
+      "name": "منفذ معرفي 2",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "paused",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:57.46546",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-77c217b1",
+      "name": "احتياطي 1",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T11:10:12.811791",
+      "graduated_at": "2026-08-16T11:10:44.640871",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-78524664",
+      "name": "منفذ معرفي 10",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "retired",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:36.59985",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:retired"
+      ]
+    },
+    {
+      "agent_id": "agent-7ef51db8",
+      "name": "منفذ معرفي 2",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "active",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:32.961472",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:active"
+      ]
+    },
+    {
+      "agent_id": "agent-86cf1318",
+      "name": "منفذ تشغيلي 2",
+      "role": "operational_executor",
+      "category": "operational",
+      "state": "active",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"text_summary\", \"document_analysis\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:37.508626",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:active"
+      ]
+    },
+    {
+      "agent_id": "agent-8a7deac3",
+      "name": "منفذ معرفي 1",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "active",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:32.506556",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:active"
+      ]
+    },
+    {
+      "agent_id": "agent-8b4ddc74",
+      "name": "احتياطي 2",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T11:48:10.757452",
+      "graduated_at": "2026-08-16T12:05:49.087905",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-8dcf4380",
+      "name": "منفذ تشغيلي 4",
+      "role": "operational_executor",
+      "category": "operational",
+      "state": "retired",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"text_summary\", \"document_analysis\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:38.417483",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:retired"
+      ]
+    },
+    {
+      "agent_id": "agent-90c4c4c7",
+      "name": "منفذ تشغيلي 3",
+      "role": "operational_executor",
+      "category": "operational",
+      "state": "paused",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"text_summary\", \"document_analysis\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:37.963106",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-9369e56b",
+      "name": "مراقب أمني 1",
+      "role": "security_monitor",
+      "category": "security",
+      "state": "active",
+      "permissions": "[\"audit:view\", \"alert:raise\"]",
+      "allowed_tools": "[\"document_analysis\", \"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:38.87395",
+      "graduated_at": "2026-08-16T12:26:00.855208",
+      "evidence": [
+        "non_registered_status:active",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-9447614f",
+      "name": "احتياطي 1",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T12:04:23.741944",
+      "graduated_at": "2026-08-16T12:05:55.916654",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-94f87260",
+      "name": "منفذ معرفي 7",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "paused",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:59.74094",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-95b19d44",
+      "name": "منفذ تشغيلي 1",
+      "role": "operational_executor",
+      "category": "operational",
+      "state": "retired",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"text_summary\", \"document_analysis\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:08:01.57308",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:retired"
+      ]
+    },
+    {
+      "agent_id": "agent-a5ad24b5",
+      "name": "منفذ معرفي 3",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "training",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:33.41664",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:training"
+      ]
+    },
+    {
+      "agent_id": "agent-bb2fb611",
+      "name": "منفذ معرفي 3",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "paused",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:57.920849",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-c25e75b8",
+      "name": "متعلم 1",
+      "role": "learner",
+      "category": "education",
+      "state": "retired",
+      "permissions": "[\"school:attend\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-16T12:03:57.132226",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:retired"
+      ]
+    },
+    {
+      "agent_id": "agent-d0b86802",
+      "name": "منفذ معرفي 6",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "paused",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:34.781177",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-d1684650",
+      "name": "مدرب 1",
+      "role": "trainer",
+      "category": "education",
+      "state": "active",
+      "permissions": "[\"agent:train\", \"school:manage\"]",
+      "allowed_tools": "[\"text_summary\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:40.238311",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:active"
+      ]
+    },
+    {
+      "agent_id": "agent-d1cf661c",
+      "name": "احتياطي 2",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T12:04:24.192108",
+      "graduated_at": "2026-08-16T12:06:02.558229",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-e4b8dd8e",
+      "name": "منفذ معرفي 9",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "retired",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:08:00.650578",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:retired",
+        "reference:agent_health_checks"
+      ]
+    },
+    {
+      "agent_id": "agent-efba5d26",
+      "name": "احتياطي 2",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T12:04:02.750048",
+      "graduated_at": "2026-08-16T12:05:15.487639",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-eff67f75",
+      "name": "منفذ معرفي 4",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "active",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:58.376364",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:active"
+      ]
+    },
+    {
+      "agent_id": "agent-f159e2b8",
+      "name": "احتياطي 1",
+      "role": "reserve",
+      "category": "reserve",
+      "state": "employed",
+      "permissions": "[\"standby\"]",
+      "allowed_tools": "[\"text_summary\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "86",
+      "specialization": "",
+      "created_at": "2026-08-16T11:46:59.406004",
+      "graduated_at": "2026-08-16T11:47:44.604664",
+      "evidence": [
+        "non_registered_status:employed",
+        "reference:school_results"
+      ]
+    },
+    {
+      "agent_id": "agent-f3ca5c9c",
+      "name": "منفذ تشغيلي 1",
+      "role": "operational_executor",
+      "category": "operational",
+      "state": "paused",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"text_summary\", \"document_analysis\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "",
+      "created_at": "2026-08-15T04:07:37.054213",
+      "graduated_at": null,
+      "evidence": [
+        "non_registered_status:paused"
+      ]
+    },
+    {
+      "agent_id": "agent-fe598255",
+      "name": "منفذ معرفي 8",
+      "role": "cognitive_executor",
+      "category": "cognitive",
+      "state": "specialized",
+      "permissions": "[\"task:execute\", \"tool:use\"]",
+      "allowed_tools": "[\"python_execute\", \"sql_query\", \"document_analysis\", \"chart_generate\"]",
+      "token_budget": 10000,
+      "tokens_used": 0,
+      "school_score": "",
+      "specialization": "finance",
+      "created_at": "2026-08-15T04:08:00.1962",
+      "graduated_at": "2026-08-16T12:37:02.943495",
+      "evidence": [
+        "non_registered_status:specialized",
+        "reference:agent_health_checks"
+      ]
+    }
+  ]
+}

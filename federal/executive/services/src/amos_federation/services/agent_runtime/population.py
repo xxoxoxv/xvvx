@@ -45,6 +45,9 @@ from amos_federation.services.executive_core.agent_identity import (
     set_lifecycle_state,
 )
 
+#: حالة «بُذِر ولم يُستخدم» — وجودها وحده ليس دليلًا تاريخيًّا على الاستخدام.
+SEED_LIFECYCLE_STATE = "registered"
+
 
 class PopulationBase(DeclarativeBase):
     pass
@@ -351,7 +354,7 @@ class PopulationRegistry:
 
 
 def unmigrated_profiles() -> list[str]:
-    """معرّفات صفوف `agent_population` التي لا هوية كانونية لها (دَين توفيق)."""
+    """معرّفات صفوف `agent_population` التي لا هوية كانونية لها — كاملة بلا تصفية."""
     registry = get_population_registry()
     session = registry._Session()  # noqa: SLF001 — نفس الوحدة
     try:
@@ -359,6 +362,46 @@ def unmigrated_profiles() -> list[str]:
     finally:
         session.close()
     return [agent_id for agent_id in ids if get_identity(agent_id) is None]
+
+
+def _evidenced_population_ids() -> set[str]:
+    """معرّفات سكّانية يثبت سجلّ النِّطاق السكّاني أنّها استُخدمت فعلًا."""
+    registry = get_population_registry()
+    session = registry._Session()  # noqa: SLF001 — نفس الوحدة
+    try:
+        evidenced = {
+            row.agent_id
+            for row in session.query(AgentPopulationModel).all()
+            if row.state and row.state != SEED_LIFECYCLE_STATE
+        }
+        evidenced |= {row.agent_id for row in session.query(SchoolResultModel).all()}
+    finally:
+        session.close()
+    return evidenced
+
+
+def reconciliation_debt() -> list[str]:
+    """دَين التوفيق الحقيقي: صفّ ذو دليل تاريخي وما زال بلا هوية كانونية.
+
+    هذا وحده خلل يستحقّ `degraded`: وكيل له أثر في النِّطاق ولا يراه مسار
+    التنفيذ. الدليل المقاس هنا جزئيٌّ بقصد: محرِّك السكّان يملك `state` و
+    `school_results` فقط؛ والمرجع الكامل للأدلّة هو
+    `tools/migrations/r4_unify_agent_identity.py`، ولا يستورد ملفّ خدمة أداة ترحيل.
+    """
+    evidenced = _evidenced_population_ids()
+    return [agent_id for agent_id in unmigrated_profiles() if agent_id in evidenced]
+
+
+def legacy_seed_profiles() -> list[str]:
+    """صفوف بذر مكرّرة بلا أي أثر: ليست هويّات ولا تُرحَّل ولا تُحذَف.
+
+    حقيقة مقيسة على القاعدة الحقيقية: 5116 صفًّا بـ24 اسمًا متميزًا فقط، أي
+    تنفيذ متكرِّر لـ`seed_initial_population`. عدّها دَين توفيق كان يجعل الصحّة
+    `degraded` دائمًا، وترحيلها كان سيُدخل ألاف الوكلاء إلى التوزيع (لأنّ
+    `registered` من `EMPLOYABLE_STATUSES`). فتُعلَن كما هي: legacy وليست خللًا.
+    """
+    evidenced = _evidenced_population_ids()
+    return [agent_id for agent_id in unmigrated_profiles() if agent_id not in evidenced]
 
 
 # === المدرسة — منهج ست خطوات ===
