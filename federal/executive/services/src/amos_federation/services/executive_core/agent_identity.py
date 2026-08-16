@@ -373,12 +373,24 @@ def identity_health(*, tenant_id: str | None = None) -> dict[str, Any]:
         components["event_bus"] = {"status": "unavailable", "error": str(exc)}
 
     try:
-        from amos_federation.services.agent_runtime.population import unmigrated_profiles
+        # R4 (OPTION 2): «بلا هوية كانونية» ليس خللًا بحدّ ذاته. القاعدة الحقيقية
+        # تحمل 5116 صفًّا سكّانيًّا بـ24 اسمًا متميزًا، أي بذر مكرّر لا هويّات. عدّها
+        # دَين توفيق كان يُثبِّت `degraded` إلى الأبد فيفقد المقياس معناه. الخلل
+        # الحقيقي: صفّ **ذو دليل تاريخي** لا يراه مسار التنفيذ. والعدد الكلّي
+        # يُعلَن معه ولا يُخفَى.
+        from amos_federation.services.agent_runtime.population import (
+            legacy_seed_profiles,
+            reconciliation_debt,
+            unmigrated_profiles,
+        )
 
         orphans = unmigrated_profiles()
+        debt = reconciliation_debt()
         components["population_projection"] = {
-            "status": "available" if not orphans else "degraded",
+            "status": "available" if not debt else "degraded",
             "unmigrated_profile_rows": len(orphans),
+            "reconciliation_debt_rows": len(debt),
+            "legacy_seed_rows": len(legacy_seed_profiles()),
             "table": PROJECTION_TABLE,
         }
     except Exception as exc:  # noqa: BLE001
