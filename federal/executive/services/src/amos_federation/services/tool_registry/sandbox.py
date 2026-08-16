@@ -286,7 +286,27 @@ with open({repr(result_path)}, "w") as f:
         }
 
 
-# === تنفيذ الأدوات مع Policy Check ===
+# === تنفيذ الأدوات: تخويل ثم صندوق ===
+#
+# `python_execute` صار يمرّ عبر طبقة المزوِّدات (R5): يُختار المزوِّد من
+# `AMOS_SANDBOX_PROVIDER`، والافتراضي `local` وهو نفس العملية الفرعية المقيَّدة
+# التي كانت هنا — فلا تغيير سلوك لمن لم يُعِدّ شيئًا. وبقية الأدوات المتخصّصة
+# (SQL، الرسم، المستندات، التلخيص) تبقى على `ToolSandbox` أعلاه لأنها ليست تنفيذ
+# كود عامًّا ولا معنى لتوزيعها على مزوِّد بعد.
+#
+# نطاق التخويل مُعلَن في كل نتيجة بحقل `authorization_scope`:
+#
+# - `AGENT_CHAIN` — مُرِّر `agent_id`، فاجتيزت السلسلة كاملة:
+#   Agent → Role → Capability → Permission → Tool → Sandbox.
+# - `ROLE_ONLY` — لم يُمرَّر `agent_id`، فالمفحوص هو الدور وحده (kill switch +
+#   محرِّك السياسة). وهذا **أضعف**، ويُقال في النتيجة ولا يُقدَّم كتخويل كامل.
+
+
+#: نطاقات التخويل الممكنة — تُفحَص في الاختبارات.
+AUTHORIZATION_SCOPES: tuple[str, ...] = ("AGENT_CHAIN", "ROLE_ONLY")
+
+#: أدوات تمرّ عبر طبقة المزوِّدات لا عبر مُعالِج محلّي.
+PROVIDER_BACKED_TOOLS: frozenset[str] = frozenset({"python_execute"})
 
 
 def execute_tool_with_governance(
@@ -294,31 +314,148 @@ def execute_tool_with_governance(
     params: dict[str, Any],
     role: str = "user",
 ) -> dict[str, Any]:
-    """تنفيذ أداة مع فحص Policy Engine و Kill Switch و Audit."""
+    """نفِّذ أداة بعد التخويل — ولا يُنشأ صندوق قبله بحال."""
     from amos_federation.common.event_bus import get_event_bus
     from amos_federation.services.governance.canary import enforce_kill_switch, get_system_status
     from amos_federation.services.governance.policy_engine import get_policy_engine
 
-    # 1. Kill Switch check
-    enforce_kill_switch(tool_id, role)
+    agent_id = params.get("agent_id")
+    scope = "AGENT_CHAIN" if agent_id else "ROLE_ONLY"
 
-    # 2. Policy Engine check
-    engine = get_policy_engine()
-    state = get_system_status()["level"]
-    policy_result = engine.evaluate_tool_access(tool_id, role, state)
-    if not policy_result["allowed"]:
+    if agent_id:
+        # السلسلة الكاملة. الرفض يُرجَع قاموسًا للتوافُق مع النداءات القائمة،
+        # لكنه رفض حقيقي: لا صندوق يُنشأ بعده.
+        from amos_federation.services.tool_registry.authorized_execution import (
+            AuthorizationDenied,
+            authorize,
+        )
+
+        try:
+            decision = authorize(
+                agent_id=str(agent_id),
+                tool_id=tool_id,
+                actor_role=role,
+            )
+        except AuthorizationDenied as denial:
+            return {
+                "error": "policy_denied" if denial.stage == "tool" else "authorization_denied",
+                "denied_at": denial.stage,
+                "reason": denial.reason,
+                "tool": tool_id,
+                "agent_id": agent_id,
+                "authorization_scope": scope,
+            }
+        stages = list(decision.stages_passed)
+    else:
+        # 1. Kill Switch — يرفع استثناءً كما كان.
+        enforce_kill_switch(tool_id, role)
+
+        # 2. محرِّك السياسة على الدور.
+        engine = get_policy_engine()
+        state = get_system_status()["level"]
+        policy_result = engine.evaluate_tool_access(tool_id, role, state)
+        if not policy_result["allowed"]:
+            return {
+                "error": "policy_denied",
+                "denied_by": policy_result["denied_by"],
+                "tool": tool_id,
+                "authorization_scope": scope,
+            }
+        stages = ["role", "tool"]
+
+    # 3. التنفيذ — الآن فقط يُنشأ صندوق.
+    if tool_id in PROVIDER_BACKED_TOOLS:
+        result = _execute_via_provider(tool_id, params, agent_id=agent_id)
+    else:
+        result = _execute_locally(tool_id, params)
+        if "error" in result and result["error"] == "unknown_tool":
+            return {**result, "authorization_scope": scope}
+
+    result["authorization_scope"] = scope
+    result["authorization_stages"] = stages
+
+    # 4. نشر حدث بنَسَب التنفيذ وصدقه.
+    get_event_bus().publish(
+        "amos_federation.tool.executed",
+        {
+            "tool_id": tool_id,
+            "agent_id": params.get("agent_id", "unknown"),
+            "result": "error" if "error" in result else "success",
+            "task_id": params.get("task_id"),
+            "provider": result.get("provider"),
+            "execution_fidelity": result.get("execution_fidelity"),
+            "execution_id": result.get("execution_id"),
+            "correlation_id": result.get("correlation_id"),
+            "authorization_scope": scope,
+        },
+    )
+    return result
+
+
+def _execute_via_provider(
+    tool_id: str,
+    params: dict[str, Any],
+    *,
+    agent_id: Any = None,
+) -> dict[str, Any]:
+    """نفِّذ عبر طبقة المزوِّدات، وأعلِن الغياب غيابًا لا محاكاةً.
+
+    `ProviderUnavailableError` تُترجَم إلى `execution_fidelity = "UNAVAILABLE"`
+    مع سببها. ولا مسار هنا يُنتج `SIMULATION` عند الفشل.
+    """
+    from amos_federation.services.tool_registry.providers.contract import (
+        ExecutionContext,
+        ExecutionRequest,
+        ProviderUnavailableError,
+        SandboxSpec,
+    )
+    from amos_federation.services.tool_registry.providers.selection import execute_in_sandbox
+
+    spec = SandboxSpec(
+        tool_id=tool_id,
+        timeout_seconds=int(params.get("timeout_seconds", 10)),
+        memory_limit_mb=int(params.get("memory_limit_mb", 256)),
+        network_policy=str(params.get("network_policy", "DENY")),
+        secret_allowlist=tuple(params.get("secret_allowlist", ()) or ()),
+    )
+    context = ExecutionContext(
+        tool_id=tool_id,
+        agent_id=str(agent_id) if agent_id else None,
+        task_id=params.get("task_id"),
+    )
+    request = ExecutionRequest(code=params.get("code", ""), context=context)
+
+    try:
+        result = execute_in_sandbox(spec, request)
+    except ProviderUnavailableError as exc:
         return {
-            "error": "policy_denied",
-            "denied_by": policy_result["denied_by"],
+            "error": "provider_unavailable",
+            "message": str(exc),
             "tool": tool_id,
+            "execution_fidelity": "UNAVAILABLE",
+            "fidelity_reason": str(exc),
+            "exit_code": None,
+            "returncode": None,
+            "stdout": "",
+            "stderr": "",
         }
 
-    # 3. تنفيذ الأداة
+    payload = result.as_dict()
+    payload["tool"] = tool_id
+    # اسم قديم محفوظ للنداءات القائمة — القيمة نفسها لا قيمة موازية.
+    payload["returncode"] = result.exit_code
+    if result.error:
+        payload["error"] = result.error
+    return payload
+
+
+def _execute_locally(tool_id: str, params: dict[str, Any]) -> dict[str, Any]:
+    """الأدوات المتخصّصة على `ToolSandbox` المحلّي — REAL على المضيف."""
+    from amos_federation.services.executive_core.fidelity import ExecutionFidelity
+
     sandbox = ToolSandbox(tool_id)
     try:
-        if tool_id == "python_execute":
-            result = sandbox.execute_python(params.get("code", ""))
-        elif tool_id == "sql_query":
+        if tool_id == "sql_query":
             result = sandbox.execute_sql(params.get("query", ""))
         elif tool_id == "http_request":
             if params.get("allow_network"):
@@ -335,16 +472,6 @@ def execute_tool_with_governance(
     finally:
         sandbox.cleanup()
 
-    # 4. نشر حدث
-    status = "error" if "error" in result else "success"
-    get_event_bus().publish(
-        "amos_federation.tool.executed",
-        {
-            "tool_id": tool_id,
-            "agent_id": params.get("agent_id", "unknown"),
-            "result": status,
-            "task_id": params.get("task_id"),
-        },
-    )
-
+    result.setdefault("provider", "local")
+    result.setdefault("execution_fidelity", ExecutionFidelity.REAL.value)
     return result

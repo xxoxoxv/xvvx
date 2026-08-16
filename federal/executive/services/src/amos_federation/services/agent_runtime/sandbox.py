@@ -1,12 +1,45 @@
 """
 AMOS-Federation Tool Sandbox
-الهدف: تنفيذ آمن للأدوات المسموح بها في بيئة معزولة
+الهدف: الواجهة الكانونية لأدوات بيئة تشغيل الوكلاء
 النطاق: agent-runtime
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
+تاريخ آخر تعديل: 2026-08-17 (R5 — إعلان الصدق وحدّ المزوِّدات)
+
+هذا الصنف هو **الواجهة الكانونية** التي تراها بيئة تشغيل الوكلاء، وبقاؤه كذلك
+شرطٌ صريح في R5: لا بيئة تشغيل بديلة تُبنى بجانبه.
+
+وحدُّه مُعلَن بالسلب، وهو ما يجعله كانونيًّا بلا أن يكون كاذبًا:
+
+- كل مُعالِجاته `_mock_*`. المخرَج مُصطنَع، وصدقه `SIMULATION` مُصرَّح في كل
+  استجابة بحقل `execution_fidelity` وسبب مُسمّى في `fidelity_reason` — لا يُقرأ
+  الصدق من مكان آخر ولا يُفترَض.
+- هذه الوحدة **لا** تستورد `modal` ولا `e2b` ولا طبقة المزوِّدات، و**لا** تُنشئ
+  صندوقًا عند مزوِّد. الربط المباشر بين بيئة تشغيل الوكلاء ومزوِّد بعينه ممنوع،
+  ويحرسه اختبار ساكن.
+- التنفيذ الحقيقي على مزوِّد يُطلَب من مسار واحد فقط:
+  `services.tool_registry.authorized_execution.execute_authorized_tool` — وهو
+  يُخوِّل قبل أن يُنشئ صندوقًا. أي أن الطريق إلى Modal أو E2B يمرّ بالتخويل
+  حتمًا، لا اختيارًا.
 """
 
 from typing import Any
+
+from amos_federation.services.executive_core.fidelity import ExecutionFidelity
+
+#: صدق مخرَج هذا الصندوق — كل مُعالِجاته مُصطنَعة، ولا يُزعم غير ذلك.
+SANDBOX_FIDELITY = ExecutionFidelity.SIMULATION
+
+#: سبب الصدق المُعلَن — مرفق بكل استجابة.
+SANDBOX_FIDELITY_REASON = (
+    "مُعالِجات _mock_* في بيئة تشغيل الوكلاء — تنفيذ حقيقي يُطلَب من "
+    "tool_registry.authorized_execution عبر طبقة المزوِّدات"
+)
+
+#: المسار الوحيد للتنفيذ الحقيقي — نصٌّ للتوثيق والتشخيص، لا استيراد.
+REAL_EXECUTION_ENTRYPOINT = (
+    "amos_federation.services.tool_registry.authorized_execution.execute_authorized_tool"
+)
 
 
 class ToolSandbox:
@@ -29,14 +62,45 @@ class ToolSandbox:
         }
 
     def execute(self, tool_id: str, params: dict[str, Any]) -> dict[str, Any]:
-        """تنفيذ أداة بالمعرّف والمعطيات."""
+        """تنفيذ أداة بالمعرّف والمعطيات — بصدق مُعلَن في كل استجابة.
+
+        الأداة غير المسجَّلة حالتها `UNAVAILABLE` لا `SIMULATION`: لم يُنفَّذ شيء
+        أصلًا، فلا يجوز أن تبدو محاكاةً ناجحة.
+        """
         handler = self._handlers.get(tool_id)
         if handler is None:
-            return {"error": f"الأداة '{tool_id}' غير مسجلة في الصندوق الرمل"}
+            return self._declare(
+                {"error": f"الأداة '{tool_id}' غير مسجلة في الصندوق الرمل"},
+                fidelity=ExecutionFidelity.UNAVAILABLE,
+                reason=f"لا مُعالِج للأداة '{tool_id}' في هذا الصندوق",
+                tool_id=tool_id,
+            )
         try:
-            return handler(params)
+            result = handler(params)
         except Exception as exc:
-            return {"error": str(exc)}
+            return self._declare(
+                {"error": str(exc)},
+                fidelity=ExecutionFidelity.UNAVAILABLE,
+                reason=f"فشل مُعالِج المحاكاة: {exc}",
+                tool_id=tool_id,
+            )
+        return self._declare(result, tool_id=tool_id)
+
+    def _declare(
+        self,
+        result: dict[str, Any],
+        *,
+        fidelity: ExecutionFidelity = SANDBOX_FIDELITY,
+        reason: str = SANDBOX_FIDELITY_REASON,
+        tool_id: str = "",
+    ) -> dict[str, Any]:
+        """أرفِق الصدق وسببه والنَسَب الأدنى — بلا طمس مفاتيح المُعالِج."""
+        result.setdefault("execution_fidelity", fidelity.value)
+        result.setdefault("fidelity_reason", reason)
+        result.setdefault("provider", "agent_runtime_mock")
+        if tool_id:
+            result.setdefault("tool_id", tool_id)
+        return result
 
     def available_tools(self) -> list[str]:
         """قائمة الأدوات المتاحة."""
