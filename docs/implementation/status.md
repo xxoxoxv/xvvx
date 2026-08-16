@@ -319,7 +319,7 @@ Federal Council
 - 7 اختبارات PostgreSQL رسمية (test_phase1_postgres.py) — كلها تنجح:
   - 4 ORM-level: persistence across sessions, CRUD, engine restart, JSON columns
   - 3 service-level: Tool Registry, PersistentTaskStore, API Gateway Adapter — كلها عبر إعادة تشغيل
-- API Gateway مربوط بـ PersistentTaskStoreAdapter ( بدلاً من InMemoryTaskStore)
+- API Gateway مربوط بـ DatabaseTaskStore (مصدر الحقيقة الدائم `TaskModel`، لا بديل ذاكرة)
 - conftest.py يستخدم AMOS_RUN_POSTGRES_TESTS=1 + AMOS_TEST_DATABASE_URL (opt-in صريح)
 - إجمالي الاختبارات: 598 (591 SQLite + 7 PostgreSQL)
 
@@ -328,7 +328,7 @@ Federal Council
 - ✅ كل النماذج تعمل في PostgreSQL
 - ✅ JSON columns تعمل
 - ✅ اختبارات service-level: Tool Registry, Task Store, API Gateway
-- ✅ API Gateway مربوط بـ PostgreSQL عبر PersistentTaskStoreAdapter
+- ✅ API Gateway مربوط بـ PostgreSQL عبر DatabaseTaskStore (E2.2-G: مرجعية واحدة `TaskModel`)
 - ⚠️ Orchestrator و Agent Runtime لا تزال تستخدم PopulationRegistry (يدعم PostgreSQL تلقائيًا) لكن لم يُختبرا عبر endpoint
 - ⚠️ Training لا يزال InMemory (حسب الخارطة، Phase 14)
 

@@ -34,8 +34,12 @@ from amos_federation.common.event_schemas import (
 )
 from amos_federation.common.schemas import TaskDetails
 from amos_federation.services.api_gateway.store import (
+    TASK_DTO_TO_MODEL_FIELDS,
+    DatabaseTaskStore,
     InMemoryTaskStore,
-    PostgresTaskStore,
+    TaskStoreUnavailableError,
+    task_details_to_model_kwargs,
+    task_model_to_details,
 )
 
 # تعريف جدول audit_log لم يعد مكررًا هنا بلهجة SQLite: الاختبارات تستخدم
@@ -94,8 +98,18 @@ class TestEventPublisher:
         try:
             publisher = events.EventPublisher()
             metadata = {"task_id": "t-1"}
+            # البصمة تُبنى من نفس التمثيل القانوني الذي يعيد verify_chain بناءه.
             chain_hash = events.compute_chain_hash(
-                events.GENESIS_HASH, {"event_id": "e1", "metadata": metadata}
+                events.GENESIS_HASH,
+                events.canonical_audit_record(
+                    event_id="e1",
+                    timestamp=None,
+                    event_type=None,
+                    actor_type=None,
+                    actor_id=None,
+                    action=None,
+                    metadata=metadata,
+                ),
             )
             with db_cursor() as cur:
                 cur.execute(
@@ -248,21 +262,86 @@ class TestInMemoryTaskStore:
         assert store.get("missing") is None
 
 
-class TestPostgresTaskStoreFallback:
-    def test_create_falls_back_to_memory(self) -> None:
-        store = PostgresTaskStore(fallback=InMemoryTaskStore())
-        task = _make_task()
-        result = store.create(task)
-        # No tasks table in sqlite -> except -> fallback.create
-        assert result.task_id == "task-test-1"
+class TestTaskModelMapping:
+    """قرار E2.2-G: `TaskModel` هو النموذج الدائم الوحيد، والتحويل صريح."""
 
-    def test_get_falls_back_to_memory(self) -> None:
-        fallback = InMemoryTaskStore()
-        fallback.create(_make_task())
-        store = PostgresTaskStore(fallback=fallback)
-        # SELECT raises -> except -> fallback.get
-        assert store.get("task-test-1") is not None
-        assert store.get("missing") is None
+    def test_dto_task_id_maps_to_model_id(self) -> None:
+        # الجوهر: لا يوجد عمود `task_id` في النموذج الدائم — المفتاح هو `id`.
+        assert TASK_DTO_TO_MODEL_FIELDS["task_id"] == "id"
+        assert "task_id" not in TASK_DTO_TO_MODEL_FIELDS.values()
+
+    def test_mapping_covers_every_persisted_dto_field(self) -> None:
+        from amos_federation.common.database import TaskModel
+
+        columns = {c.name for c in TaskModel.__table__.columns}
+        for column in TASK_DTO_TO_MODEL_FIELDS.values():
+            assert column in columns, column
+
+    def test_round_trip_preserves_identity(self) -> None:
+        from amos_federation.common.database import TaskModel
+
+        task = _make_task()
+        row = TaskModel(**task_details_to_model_kwargs(task))
+        assert row.id == task.task_id
+        restored = task_model_to_details(row)
+        assert restored.task_id == task.task_id
+        assert restored.type == task.type
+        assert restored.description == task.description
+        assert restored.status == task.status
+
+    def test_missing_domain_and_tenant_get_explicit_defaults(self) -> None:
+        task = _make_task().model_copy(update={"domain": None, "tenant_id": None})
+        values = task_details_to_model_kwargs(task)
+        assert values["domain"] == "general"
+        assert values["tenant_id"] == "default"
+
+
+class TestDatabaseTaskStoreIsSourceOfTruth:
+    """الذاكرة ليست مصدر حقيقة: تعذّر القاعدة يُرفع ولا يُخفى."""
+
+    def test_create_then_get_persists_through_the_database(self, sqlite_url: str) -> None:
+        store = DatabaseTaskStore()
+        task = _make_task()
+        store.create(task)
+        # قراءة جديدة من نفس مصدر الحقيقة، لا من ذاكرة الكائن.
+        fetched = DatabaseTaskStore().get(task.task_id)
+        assert fetched is not None
+        assert fetched.task_id == task.task_id
+        assert fetched.description == task.description
+
+    def test_get_returns_none_for_unknown_task(self, sqlite_url: str) -> None:
+        assert DatabaseTaskStore().get("task-does-not-exist") is None
+
+    def test_create_raises_instead_of_silent_memory_fallback(
+        self, sqlite_url: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        store = DatabaseTaskStore()
+
+        def _boom() -> None:
+            raise RuntimeError("database unavailable")
+
+        monkeypatch.setattr("amos_federation.services.api_gateway.store.get_session_factory", _boom)
+        with pytest.raises(TaskStoreUnavailableError):
+            store.create(_make_task())
+
+    def test_get_raises_instead_of_silent_memory_fallback(
+        self, sqlite_url: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        store = DatabaseTaskStore()
+
+        class _BrokenSession:
+            def query(self, *_args: object) -> object:
+                raise RuntimeError("database unavailable")
+
+            def close(self) -> None:
+                return None
+
+        monkeypatch.setattr(
+            "amos_federation.services.api_gateway.store.get_session_factory",
+            lambda: _BrokenSession,
+        )
+        with pytest.raises(TaskStoreUnavailableError):
+            store.get("task-test-1")
 
 
 # =============================================================================

@@ -250,11 +250,11 @@ class TestServiceLevelPersistence:
         session.close()
 
     def test_api_gateway_task_create_and_read(self, pg_session):
-        """API Gateway PersistentTaskStoreAdapter يكتب ويقرأ من PostgreSQL."""
+        """API Gateway DatabaseTaskStore يكتب ويقرأ من PostgreSQL عبر TaskModel."""
         from amos_federation.common.schemas import TaskDetails
-        from amos_federation.services.api_gateway.main import PersistentTaskStoreAdapter
+        from amos_federation.services.api_gateway.store import DatabaseTaskStore
 
-        adapter = PersistentTaskStoreAdapter()
+        adapter = DatabaseTaskStore()
         task = TaskDetails(
             task_id=f"api-test-{uuid.uuid4().hex[:8]}",
             type="analysis",
@@ -288,9 +288,9 @@ class TestServiceLevelPersistence:
     def test_api_gateway_preserves_non_default_fields(self, pg_session):
         """API Gateway يحفظ ويقرأ الحقول غير الافتراضية (priority, domain, tenant_id, status)."""
         from amos_federation.common.schemas import TaskDetails
-        from amos_federation.services.api_gateway.main import PersistentTaskStoreAdapter
+        from amos_federation.services.api_gateway.store import DatabaseTaskStore
 
-        adapter = PersistentTaskStoreAdapter()
+        adapter = DatabaseTaskStore()
         task = TaskDetails(
             task_id=f"api-fields-{uuid.uuid4().hex[:8]}",
             type="report",

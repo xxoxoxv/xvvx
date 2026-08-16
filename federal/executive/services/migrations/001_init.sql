@@ -56,6 +56,10 @@ CREATE INDEX idx_tools_risk_level ON tools (risk_level);
 -- ============================================================
 -- 3. tasks — المهام
 -- ============================================================
+-- ملاحظة مرجعية (E2.2-G · 2026-08-16): هذا التعريف **مُتجاوَز**.
+-- المرجع الوحيد لجدول tasks هو نموذج ORM `TaskModel` في `common/database.py`،
+-- حيث `id` هو معرّف المهمة ولا يوجد عمود `task_id`. لتصحيح نشرة طُبِّق عليها هذا
+-- الملف، طبّق `004_unify_tasks_schema.sql`. لا تُعتمد الأعمدة أدناه كعقد.
 CREATE TABLE IF NOT EXISTS tasks (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_id         VARCHAR(255) UNIQUE NOT NULL,
