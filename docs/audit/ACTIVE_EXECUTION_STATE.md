@@ -42,11 +42,11 @@
 | Current Phase | E2.2 — Crown Root of Trust & Protection |
 | Current Subphase | E2.2-F — End-to-end sovereign continuity proof |
 | Current Objective | إثبات الاستمرارية السيادية من الطرف إلى الطرف: K1 نشط ← مرساة محقَّقة ← أمر D1 ← لا نقض من تابع ← تنفيذ ← سجل ← إبطال K1 ← بقاء D1 التاريخي قابلًا للتحقق ← تفعيل K2 ← تنفيذ D2 ← رفض أمر K1 جديد ← حدث أمني ← لا تاج زائف |
-| Status | E2.2-A/B/C/D = VERIFIED · E2.2-E = VERIFIED محليًّا · E2.2-F = NOT_STARTED |
-| Current Commit SHA | `3fed334` (يُحدَّث إلى التزام E2.2-E بعد الدفع) |
-| Last Verified Commit | `3fed334` — مؤكَّد على `origin/main` بـ`git ls-remote` |
-| Previous Checkpoint SHA | `3fed334` (E2.2-D) · `dae73f6` (E2.2-C) · `b13cd87` (E2.2-B) · `fb5ce9d` (E2.2-A) · `098beb3` (ما قبل التاج) |
-| Remote Confirmed | نعم — `origin/main = 3fed334` وقت كتابة هذه النقطة |
+| Status | E2.2-A/B/C/D/E = VERIFIED ومدفوعة · E2.2-F = NOT_STARTED |
+| Current Commit SHA | `891f6fe` (E2.2-E — مدفوع ومؤكَّد) |
+| Last Verified Commit | `891f6fe` — مؤكَّد على `origin/main` بـ`git ls-remote` |
+| Previous Checkpoint SHA | `891f6fe` (E2.2-E) · `3fed334` (E2.2-D) · `dae73f6` (E2.2-C) · `b13cd87` (E2.2-B) · `fb5ce9d` (E2.2-A) · `098beb3` (ما قبل التاج) |
+| Remote Confirmed | نعم — `origin/main = 891f6fe` وقت كتابة هذه النقطة |
 | Last Updated | 2026-08-16 |
 
 ## 2. ما أُنجز (مثبَت تنفيذيًّا)
@@ -226,8 +226,8 @@ Injections:     إعادة سرّ الملك نصًّا إلى royal/main.py ←
                 وعاد الخروج إلى 0 بعد كل استعادة
 Documentation:  docs/security/SECRET_BOUNDARIES.md · tools/crown/README.md ·
                 هذه النقطة + تصنيف المخالفات أدناه
-Commit:         (يُثبَت بعد الالتزام)
-Remote:         (يُثبَت بعد الدفع)
+Commit:         891f6fe
+Remote:         مؤكَّد — origin/main = 891f6fe بـgit ls-remote
 Remaining:      E2.2-F .. E2.3-B
 Next Action:    E2.2-F — إثبات الاستمرارية السيادية من الطرف إلى الطرف
 Status:         VERIFIED محليًّا · CI لم تُشغَّل بعد على GitHub
@@ -313,7 +313,7 @@ E2.1 باقية كما هي.
 | E2.2-B | بوابة CI `crown-root-of-trust` | **VERIFIED** (11 فحصًا + 8 خطوات CI، وحالات الفشل مُجرَّبة) |
 | E2.2-C | خارطة المرحلة ومصفوفة الحقيقة | **VERIFIED** (مصفوفة مولَّدة تُسقِط الادّعاء إلى دليله) |
 | E2.2-D | بوابات الهوية | **VERIFIED** (`3fed334`، البعيد مؤكَّد) — عيبان حقيقيان في الحُرّاس أنفسهم |
-| E2.2-E | تحقق الأسرار وحدود الثقة | VERIFIED محليًّا — 11 بوابة، وثلاثة حقن، وسرّ الملك خرج من الكود |
+| E2.2-E | تحقق الأسرار وحدود الثقة | **VERIFIED** (`891f6fe`، البعيد مؤكَّد) — 11 بوابة، وثلاثة حقن، وسرّ الملك خرج من الكود |
 | E2.2-F | إثبات الاستمرارية السيادية من الطرف إلى الطرف | PENDING |
 | E2.2-G | الحِزَم الكاملة عبر الأنظمة | PENDING |
 | E2.3-A | التحقق النهائي العابر للأنظمة | PENDING |
@@ -358,7 +358,7 @@ git push origin main && git ls-remote origin main   # وتحقق من التطا
 | E2.2-B | بوابة CI `crown-root-of-trust` (وكشف بوابة زائفة) | `b13cd87` | مؤكَّد بـ`ls-remote` | VERIFIED |
 | E2.2-C | خارطة المرحلة ومصفوفة الحقيقة المولَّدة | `dae73f6` | مؤكَّد بـ`ls-remote` | VERIFIED |
 | E2.2-D | بوابات الهوية (وعيبان في الحُرّاس أنفسهم) | `3fed334` | مؤكَّد بـ`ls-remote` | VERIFIED |
-| E2.2-E | حدود الأسرار والثقة | (يُثبَت بعد الدفع) | (يُثبَت بعد الدفع) | VERIFIED محليًّا |
+| E2.2-E | حدود الأسرار والثقة | `891f6fe` | مؤكَّد بـ`ls-remote` | VERIFIED |
 
 ## المراجع
 - خارطة المرحلة: [`PHASE_E_ROADMAP.md`](PHASE_E_ROADMAP.md)
