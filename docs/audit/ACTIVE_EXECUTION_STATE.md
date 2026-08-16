@@ -995,6 +995,43 @@ PostgreSQL غائبة. الـ25 المتخطّاة هي بالضبط اختبا�
 - **البوابة لا تُثبِت أن كل شيفرة الخدمات جُرِّبت على PostgreSQL** — تُثبِت أن
   حِزَم اللهجة المُعلنة جُرِّبت عليه بلا تخطٍّ. الفارق مكتوب في الوثيقة المولَّدة.
 
+### 13.9 بوابات E2.2-G المُشغَّلة على `1b341b9` — الجدول الكامل
+
+كل ما يلي شُغِّل الآن على HEAD الحالي، لا نقلًا عن جولة سابقة:
+
+| البوابة | النتيجة |
+|---|---|
+| `check_repository_identity.py .` | PASS |
+| `generate_identity_cards.py --check` | PASS |
+| `write_domain_readmes.py --check` | PASS |
+| `stamp_readme_identity.py --check` | PASS |
+| `sovereignty/prove_supreme_authority.py` | PASS |
+| `crown/verify_crown_root_of_trust.py` | PASS |
+| `crown/verify_secret_boundaries.py` | PASS |
+| `generate_crown_threat_doc.py --check` | PASS |
+| `crown/generate_crown_truth_matrix.py --check` | PASS |
+| `crown/prove_sovereign_continuity.py` | PASS |
+| `tests/smoke/run_smoke_tests.py` | PASS |
+| `truth_audit.py . --ratchet` | ثابت عند 100 |
+| `ruff format` + `ruff check .` (0.6.9 المثبَّتة في CI) | نظيف |
+| حزمة الجذر · حزمة الخدمات SQLite · حزمة PostgreSQL | 757 · 725/25 · 25 — كلها PASS |
+| تغطية فروع الخدمات ≥ 80% | 80.7% PASS |
+| `lockfile-check` | PASS |
+
+**تصحيح موضعي مفيد لمن يأتي بعدي:** `verify_crown_root_of_trust.py` و
+`verify_secret_boundaries.py` و`prove_sovereign_continuity.py` تسكن `tools/crown/`
+لا `tools/governance/` (و`prove_supreme_authority.py` في `tools/sovereignty/`).
+البحث عنها في `tools/governance/` يعطي «الملف غير موجود» فيُقرأ خطأً كأن البوابة
+سقطت.
+
+### 13.10 تناقض توثيقي مُسجَّل ولم يُحرَّر
+
+`PHASE_E_ROADMAP.md` يعرض E2.2-C = `IN_PROGRESS` وE2.2-D/E/F = `PENDING`، بينما
+`ACTIVE_EXECUTION_STATE.md:49` يعرض `E2.2-A..F = VERIFIED`. **لم تُوحَّد الصفوف**:
+توحيدها بالتحرير يعني ادّعاء إثبات لم أُشغّله في هذه الجولة، وهو بالضبط ما يمنعه
+الميثاق. سُجّل التناقض في الخارطة نفسها ليُحلّ بإثبات. صفّ E2.2-G وحده حُدِّث إلى
+`IN_PROGRESS` مع مراجع الدفعات، لأنه العمل المقيس هنا.
+
 ## المراجع
 - خارطة المرحلة: [`PHASE_E_ROADMAP.md`](PHASE_E_ROADMAP.md)
 - مصفوفة الحقيقة: [`TRUTH_MATRIX.md`](TRUTH_MATRIX.md)
