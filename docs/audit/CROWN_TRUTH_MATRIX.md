@@ -26,30 +26,30 @@
 
 | الوحدة | الدور | الحالة المُثبَتة | تعليمات | تغطية فروع | يستوردها | اختبارات خصومية |
 |---|---|---|---:|---:|---|---:|
-| `trust_anchor.py` | مرساة الثقة — المفتاح العام مرجعًا لا سرًّا | `SECURITY_TESTED` | 221 | 91.9% | cli | 2 |
-| `key_registry.py` | سجل مفاتيح التاج — نسب وحالة ولا تاجان | `SECURITY_TESTED` | 244 | 92.0% | command، succession، trust_anchor | 2 |
-| `command.py` | الأمر الملكي — توقيع Ed25519 ومنع إعادة اللعب | `TESTED` | 202 | 93.9% | — | 3 |
+| `trust_anchor.py` | مرساة الثقة — المفتاح العام مرجعًا لا سرًّا | `SECURITY_TESTED` | 221 | 91.9% | cli، sovereign_session | 2 |
+| `key_registry.py` | سجل مفاتيح التاج — نسب وحالة ولا تاجان | `SECURITY_TESTED` | 244 | 92.0% | command، sovereign_session، succession، trust_anchor | 2 |
+| `command.py` | الأمر الملكي — توقيع Ed25519 ومنع إعادة اللعب | `SECURITY_TESTED` | 202 | 94.3% | sovereign_session | 3 |
 | `keystore.py` | حِفظ المفاتيح — الخاص خارج البرمجية | `SECURITY_TESTED` | 146 | 95.2% | cli | 1 |
 | `identity.py` | هوية التاج — الحيوية دليل حضور لا مادة مفتاح | `SECURITY_TESTED` | 200 | 98.4% | cli | 1 |
 | `succession.py` | الخلافة — لا خليفة يقرره نظام | `SECURITY_TESTED` | 169 | 94.3% | cli | 2 |
 | `recovery.py` | الاسترداد — لا كلمة طوارئ ولا باب خلفي | `SECURITY_TESTED` | 177 | 95.0% | cli | 1 |
-| `continuity.py` | الاستمرارية — الاستمرار بلا تاج زائف | `TESTED` | 230 | 91.7% | — | 2 |
-| `guard.py` | الحارس السيادي — يحمي ولا يصير التاج | `SECURITY_TESTED` | 415 | 94.6% | cli | 3 |
-| `audit.py` | سجل التاج — سلسلة تجزئة تكشف التحريف | `SECURITY_TESTED` | 117 | 100.0% | cli، continuity، guard، recovery، succession | 1 |
+| `continuity.py` | الاستمرارية — الاستمرار بلا تاج زائف | `SECURITY_TESTED` | 230 | 92.1% | sovereign_session | 2 |
+| `guard.py` | الحارس السيادي — يحمي ولا يصير التاج | `SECURITY_TESTED` | 415 | 94.6% | cli، sovereign_session | 3 |
+| `audit.py` | سجل التاج — سلسلة تجزئة تكشف التحريف | `SECURITY_TESTED` | 117 | 100.0% | cli، continuity، guard، recovery، sovereign_session، succession | 1 |
 | `threats.py` | نموذج التهديد — 38 تهديدًا بحدّ بشري مُعلَن | `SECURITY_TESTED` | 107 | 95.7% | cli | 1 |
+| `sovereign_session.py` | المسار السيادي المنفَّذ — بوابات متسلسلة بلا سلطة | `TESTED` | 108 | 95.0% | — | 3 |
 | `cli.py` | واجهة الأوامر — بوابة الحدود المطلقة (9 فحوص) | `INTEGRATED` | 123 | 93.2% | — | 0 |
 
 | المقياس | القيمة |
 |---|---:|
-| وحدات النطاق | 12 |
-| منها `SECURITY_TESTED` | 9 |
-| إجمالي التعليمات التنفيذية | 2351 |
-| أدنى تغطية وحدة | continuity.py — 91.7% |
+| وحدات النطاق | 13 |
+| منها `SECURITY_TESTED` | 11 |
+| إجمالي التعليمات التنفيذية | 2459 |
+| أدنى تغطية وحدة | trust_anchor.py — 91.9% |
 
 ## إسقاطات الحالة (ادّعاء لم يصمد للدليل)
 
-- `command.py`: لا وحدة تستوردها — غير مدمجة
-- `continuity.py`: لا وحدة تستوردها — غير مدمجة
+- `sovereign_session.py`: لا وحدة تستوردها — غير مدمجة
 
 ## ما ليس مُثبَتًا في هذه المرحلة
 

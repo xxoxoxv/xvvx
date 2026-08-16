@@ -317,6 +317,11 @@ jobs:
       - name: بوابة 6 — الاختبارات الكبرى الخمسة تعمل فعلًا
         run: python -m pytest tests/crown/test_crown_grand_tests.py -q
 
+      - name: بوابة 6ب — إثبات تنفيذي للاستمرارية السيادية من الطرف إلى الطرف
+        # الإثبات هنا لا يمرّ عبر pytest: يقود مسار الإنتاج نفسه ويطبع سلسلة
+        # الأدلة، ويُرجع رمزًا غير صفري عند أول ادّعاء لم يتحقق.
+        run: python tools/crown/prove_sovereign_continuity.py
+
       - name: بوابة 7 — الحارس لا يملك سلطة سيادية ولا نقضًا
         run: |
           python -m pytest tests/crown/test_crown_guard.py -q \
