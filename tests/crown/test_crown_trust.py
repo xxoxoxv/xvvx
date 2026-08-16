@@ -137,6 +137,43 @@ def test_biometric_can_never_be_a_private_key(source: str) -> None:
         assert_not_key_material(source)
 
 
+@pytest.mark.parametrize(
+    "source",
+    [
+        "بصمة_الإصبع",
+        "بصمة الإصبع مفتاح خاص",
+        "بصمة_العين",
+        "قزحية العين",
+        "حمض نووي",
+        "biometric_key",
+        "biometric private key",
+        "keystroke_dynamics",
+    ],
+)
+def test_arabic_and_generic_biometrics_are_refused(source: str) -> None:
+    """المعجم كان إنجليزيًّا وحده، والمستودع عربيّ — فكان «بصمة_الإصبع» يمرّ.
+
+    هذه ثغرة رُصدت في E2.2-E: الحدّ الذي لا يُقاس بلغة أهله ليس حدًّا.
+    """
+    with pytest.raises(BiometricAsKeyError):
+        assert_not_key_material(source)
+
+
+def test_reader_device_names_are_not_key_material() -> None:
+    """«biometric_reader» جهاز قارئ لا مادة مفتاح — والمنع على الاتخاذ لا على الذكر."""
+    for benign in ("biometric_reader", "قارئ_بيومتري", "biometric_terminal"):
+        assert_not_key_material(benign)
+
+
+def test_hash_fingerprint_is_not_a_biometric() -> None:
+    """«بصمة» وحدها تعني التجزئة في هذا المستودع، فلا تُرفض بلا قرينة العضو.
+
+    ومنعها لكان منعًا للكلام عن SHA-256 نفسه — والحدّ الذي يمنع الصواب يُهجَر.
+    """
+    for benign in ("بصمة sha256", "بصمة الالتزام", "بصمة المرساة"):
+        assert_not_key_material(benign)
+
+
 def test_legitimate_source_names_are_not_false_positives() -> None:
     """أسماء مشروعة لا تُرفَض: مطابقة الكلمة لا المقطع."""
     for benign in ["device_interface", "hsm_slot", "surface_terminal", "smartcard"]:

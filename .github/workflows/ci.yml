@@ -265,13 +265,25 @@ jobs:
         with:
           python-version: "3.12"
       - name: تثبيت التبعيات
-        run: pip install pytest pytest-cov cryptography
+        run: |
+          pip install pytest pytest-cov cryptography
+          # بوابتا الأسرار تفحصان إعدادات الخدمات فعليًّا، فتلزمهما تبعياتها.
+          pip install -r federal/executive/services/requirements.lock
 
       - name: بوابة 1 — الحدود المطلقة لنطاق التاج (البند 52)
         run: python -m core.crown.cli crown-check
 
       - name: بوابة 2 — سلامة جذر الثقة (11 فحصًا تنفيذيًّا)
         run: python tools/crown/verify_crown_root_of_trust.py
+
+      - name: بوابة 2ب — حدود الأسرار والثقة (11 فحصًا تنفيذيًّا)
+        run: python tools/crown/verify_secret_boundaries.py
+
+      - name: بوابة 2ج — اختبارات حدّ سرّ الملك
+        working-directory: federal/executive/services
+        run: |
+          pip install -e . --no-deps
+          python -m pytest tests/test_king_login_boundary.py -q
 
       - name: بوابة 3 — اختبارات التاج بتغطية فروع لا تقل عن 90%
         run: |

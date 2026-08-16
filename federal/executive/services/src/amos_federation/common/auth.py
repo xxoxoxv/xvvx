@@ -27,6 +27,25 @@ ROLE_CITIZEN = "citizen"  # مواطن — وصول للقراءة فقط
 ALL_ROLES = [ROLE_KING, ROLE_ROYAL_GUARD, ROLE_ADMIN, ROLE_AGENT, ROLE_CITIZEN]
 
 
+#: أدنى طول مقبول لسرّ توقيع الرموز — أقصر منه توقيعٌ قابل للتخمين.
+MIN_JWT_SECRET_LENGTH = 32
+
+
+def _signing_secret() -> str:
+    """سرّ التوقيع بعد التحقق منه، أو رفضٌ صريح.
+
+    التوقيع بسرّ فارغ ليس توقيعًا: أي طرف يستطيع أن يُصدر رمز ملك. فالخدمة تسقط
+    هنا صراحةً بدل أن تُصدر رموزًا لا تحمي شيئًا.
+    """
+    secret = settings.jwt_secret
+    if len(secret) < MIN_JWT_SECRET_LENGTH:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="سرّ توقيع الرموز غير مهيّأ — تُقرأ قيمته من البيئة",
+        )
+    return secret
+
+
 def create_access_token(
     subject: str, scopes: list[str], tenant_id: str | None = None, role: str = ROLE_CITIZEN
 ) -> str:
@@ -40,7 +59,7 @@ def create_access_token(
     }
     if tenant_id is not None:
         payload["tenant_id"] = tenant_id
-    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    return jwt.encode(payload, _signing_secret(), algorithm=settings.jwt_algorithm)
 
 
 def create_king_token() -> str:
@@ -56,7 +75,7 @@ def create_king_token() -> str:
 def decode_token(token: str) -> dict[str, Any]:
     """فك رمز وصول والتحقق من توقيعه وصلاحيته."""
     try:
-        return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+        return jwt.decode(token, _signing_secret(), algorithms=[settings.jwt_algorithm])
     except jwt.PyJWTError as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

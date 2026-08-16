@@ -40,13 +40,13 @@
 | الحقل | القيمة |
 |---|---|
 | Current Phase | E2.2 — Crown Root of Trust & Protection |
-| Current Subphase | E2.2-E — Secret & trust-boundary verification |
-| Current Objective | التحقق من حدود الأسرار والثقة: لا مفتاح خاص، ولا سرّ إنتاج مضمَّن، ولا سلطة فوق الملك — والحجب عند أي خطر |
-| Status | E2.2-A/B/C/D = VERIFIED · E2.2-E = IN_PROGRESS |
-| Current Commit SHA | `dae73f6` (يُحدَّث إلى التزام E2.2-D بعد الدفع) |
-| Last Verified Commit | `dae73f6` — مؤكَّد على `origin/main` بـ`git ls-remote` |
-| Previous Checkpoint SHA | `dae73f6` (E2.2-C) · قبلها `b13cd87` (E2.2-B) · `fb5ce9d` (E2.2-A) · `098beb3` (ما قبل التاج) |
-| Remote Confirmed | نعم — `origin/main = dae73f6` وقت كتابة هذه النقطة |
+| Current Subphase | E2.2-F — End-to-end sovereign continuity proof |
+| Current Objective | إثبات الاستمرارية السيادية من الطرف إلى الطرف: K1 نشط ← مرساة محقَّقة ← أمر D1 ← لا نقض من تابع ← تنفيذ ← سجل ← إبطال K1 ← بقاء D1 التاريخي قابلًا للتحقق ← تفعيل K2 ← تنفيذ D2 ← رفض أمر K1 جديد ← حدث أمني ← لا تاج زائف |
+| Status | E2.2-A/B/C/D = VERIFIED · E2.2-E = VERIFIED محليًّا · E2.2-F = NOT_STARTED |
+| Current Commit SHA | `3fed334` (يُحدَّث إلى التزام E2.2-E بعد الدفع) |
+| Last Verified Commit | `3fed334` — مؤكَّد على `origin/main` بـ`git ls-remote` |
+| Previous Checkpoint SHA | `3fed334` (E2.2-D) · `dae73f6` (E2.2-C) · `b13cd87` (E2.2-B) · `fb5ce9d` (E2.2-A) · `098beb3` (ما قبل التاج) |
+| Remote Confirmed | نعم — `origin/main = 3fed334` وقت كتابة هذه النقطة |
 | Last Updated | 2026-08-16 |
 
 ## 2. ما أُنجز (مثبَت تنفيذيًّا)
@@ -197,6 +197,61 @@ E2.2-D: بوابة تمرّ لأنها تسأل السؤال الخطأ أسوأ
    هوية)؛ صار يرفع `IdentityConflationError`.
 6. `recovery.py::ShareHolderDescriptor` كان يقبل حصةً بلا حرز بارد؛ صار يرفض.
 
+### نقطة تفتيش E2.2-E (مغلقة)
+
+```
+CHECKPOINT E2.2-E
+-----------------
+Objective:      التحقق من حدود الأسرار والثقة والحجب عند أي خطر: لا مفتاح خاص في
+                الشجرة ولا في التاريخ، ولا سرّ إنتاج مضمَّن، ولا سلطة فوق الملك
+Completed:      tools/crown/verify_secret_boundaries.py — 11 بوابة تنفيذية ·
+                إخراج سرّ دخول الملك من royal/main.py إلى الإعدادات، بمقارنة
+                hmac.compare_digest ورفض 503 عند غيابه أو كونه قيمة نائبة ·
+                SECRET_FIELDS و secret_violations() و assert_secrets_configured()
+                في common/config.py، وكل حقل سرّي بلا قيمة افتراضية ·
+                _signing_secret() في common/auth.py يرفض سرًّا أقصر من 32 محرفًا ·
+                توسيع FORBIDDEN_KEY_MATERIAL بالعربية وبتركيب biometric_key ·
+                docs/security/SECRET_BOUNDARIES.md · خطوتا CI جديدتان (2ب و2ج)
+Tests:          federal/.../tests/test_king_login_boundary.py — 22 اختبارًا جديدًا ·
+                tests/crown 321 ناجحًا (كانت 311؛ +10 تحرس معجم السمة الحيوية)
+                بتغطية فروع 94.39% · 718 اختبار تاج/سيادة/دستور/حوكمة ناجح ·
+                حزمة خدمات الاتحاد 694 ناجحًا و8 متخطّاة · ruff نظيف
+Security:       verify_secret_boundaries=0 (11/11) · verify_crown_root_of_trust=0 ·
+                crown-check=0 · truth-matrix --check=0 · threat-doc --check=0 ·
+                بوابات الهوية الأربع=0 · truth_audit: 110 ← 106 مخالفة، وخط
+                الأساس شُدَّ إلى 106 (تشديد لا تخفيف)
+Injections:     إعادة سرّ الملك نصًّا إلى royal/main.py ← خروج 1 ·
+                كتلة مفتاح خاص في docs/audit/ ← خروج 1 ·
+                قيمة افتراضية لـjwt_secret في الإعدادات ← خروج 1 ·
+                وعاد الخروج إلى 0 بعد كل استعادة
+Documentation:  docs/security/SECRET_BOUNDARIES.md · tools/crown/README.md ·
+                هذه النقطة + تصنيف المخالفات أدناه
+Commit:         (يُثبَت بعد الالتزام)
+Remote:         (يُثبَت بعد الدفع)
+Remaining:      E2.2-F .. E2.3-B
+Next Action:    E2.2-F — إثبات الاستمرارية السيادية من الطرف إلى الطرف
+Status:         VERIFIED محليًّا · CI لم تُشغَّل بعد على GitHub
+```
+
+### تصنيف مخالفات الأسرار في E2.2-E
+
+| المخالفة | العدد | التصنيف | التصرّف |
+|---|---|---|---|
+| `amos-king-2026` مكتوب في `royal/main.py` | 1 | **EXISTING** (سبقت هذه المرحلة) | أُخرج إلى الإعدادات، ومقارنة بزمن ثابت، ورفض 503 |
+| قيم افتراضية لأسرار الإنتاج في `config.py` | 3 | **EXISTING** | الافتراضي صار فارغًا، والإنتاج يرفض الإقلاع بسرّ ناقص |
+| معجم السمة الحيوية إنجليزي وحده في مستودع عربي | 1 | **REAL DEFECT** في الحارس نفسه | وُسِّع المعجم، مع إبقاء `biometric_reader` و«بصمة sha256» مقبولين |
+| استثناءان يُبتلعان في الأداة الجديدة | 2 | **NEW** (من عمل هذه الوحدة) | أُصلحا في مصدرهما: تُقرأ الملفات بايتات فتُفحَص الثنائيات أيضًا، وما تعذّر يُعلَن |
+| ثابت اختباري باسم يحمل لفظ «سرّ» | 1 | **NEW** | أُعيدت تسميته — ولا استثناء يُضاف إلى الماسح |
+| مفتاح خاص في الشجرة أو في 67 التزامًا من التاريخ | 0 | — | لا شيء |
+| ارتداد في أي بوابة قائمة | 0 | **REGRESSION** — لا شيء | — |
+
+**ما لم يُنجَز، ويجب ألّا يُدّعى:** كلمة مرور الملك ليست إثبات سيادة. سدادُ دين E9
+هنا **جزئي**: أُخرج السرّ من الكود، ولم يُستبدَل بتوقيع بمفتاح الملك بعد. وادّعاء
+غير ذلك ادّعاءُ حمايةٍ غير موجودة، وهو أخطر من غيابها.
+
+**ولا تُدّعى حصانة تاريخية مطلقة:** فحص التاريخ يمسح 67 التزامًا في هذا المستودع،
+وهو دليلُ نظافةٍ هنا لا برهانٌ على أن سرًّا لم يوجد يومًا في نسخة أخرى.
+
 ## 3. ما شُغِّل من اختبارات وبوابات
 
 | الأمر | النتيجة | متى |
@@ -214,10 +269,19 @@ E2.2-D: بوابة تمرّ لأنها تسأل السؤال الخطأ أسوأ
 | `python tools/governance/check_repository_identity.py` | صفر مخالفة هوية | 2026-08-16 |
 | `python tools/governance/truth_audit.py . --ratchet` | ثابت عند 110 — لا ارتداد | 2026-08-16 |
 
-**لم يُشغَّل بعد:** بوابات الهوية (`stamp_readme_identity`,
-`check_repository_identity`, `generate_identity_cards`, `write_domain_readmes`)،
-و`truth_audit . --ratchet`، والحِزَم الكاملة بعد إضافة ملفات التاج، وبوابة CI
-`crown-root-of-trust` (غير موجودة بعد).
+### جولة E2.2-E (2026-08-16)
+
+| الأمر | النتيجة |
+|---|---|
+| `python tools/crown/verify_secret_boundaries.py` | 11/11 — رمز 0 · وثلاثة حقن تُخرِج 1 |
+| `python -m pytest tests/crown -q --cov=core.crown --cov-branch` | 321 passed · تغطية فروع 94.39% |
+| `python -m pytest tests/crown tests/sovereignty tests/constitutional tests/governance -q` | 718 passed |
+| `PYTHONPATH=src pytest tests -q` (federal/executive/services) | 694 passed · 8 skipped |
+| `python tools/governance/truth_audit.py . --ratchet` | 110 ← 106، وخط الأساس شُدَّ إلى 106 |
+| بوابات الهوية الأربع + `crown-check` + `verify_crown_root_of_trust` + `--check` للمصفوفة والوثيقة | كلها رمز 0 |
+
+**لم يُشغَّل بعد:** CI على GitHub (لا يملك الوكيل تشغيلها)، وإثبات الاستمرارية
+السيادية من الطرف إلى الطرف (E2.2-F)، والتحقق العابر للأنظمة (E2.3-A).
 
 ## 4. الملفات
 
@@ -248,8 +312,8 @@ E2.1 باقية كما هي.
 | E2.2-A | توثيق نطاق التاج ونواته | **VERIFIED** (`cda68d5`، البعيد مؤكَّد) |
 | E2.2-B | بوابة CI `crown-root-of-trust` | **VERIFIED** (11 فحصًا + 8 خطوات CI، وحالات الفشل مُجرَّبة) |
 | E2.2-C | خارطة المرحلة ومصفوفة الحقيقة | **VERIFIED** (مصفوفة مولَّدة تُسقِط الادّعاء إلى دليله) |
-| E2.2-D | بوابات الهوية | VERIFIED محليًّا |
-| E2.2-E | تحقق الأسرار وحدود الثقة | PENDING |
+| E2.2-D | بوابات الهوية | **VERIFIED** (`3fed334`، البعيد مؤكَّد) — عيبان حقيقيان في الحُرّاس أنفسهم |
+| E2.2-E | تحقق الأسرار وحدود الثقة | VERIFIED محليًّا — 11 بوابة، وثلاثة حقن، وسرّ الملك خرج من الكود |
 | E2.2-F | إثبات الاستمرارية السيادية من الطرف إلى الطرف | PENDING |
 | E2.2-G | الحِزَم الكاملة عبر الأنظمة | PENDING |
 | E2.3-A | التحقق النهائي العابر للأنظمة | PENDING |
@@ -257,20 +321,23 @@ E2.1 باقية كما هي.
 
 ## 7. الأمر التالي حرفيًّا
 
-E2.2-B: أضف وظيفة `crown-root-of-trust` إلى `.github/workflows/ci.yml` تُنفِّذ فعليًّا:
+E2.2-F: اكتب `tests/crown/test_sovereign_continuity_e2e.py` يُثبت السلسلة كاملةً في
+اختبار واحد متصل، لا في اختبارات متفرقة:
 
-```bash
-python -m core.crown.cli crown-check
-python -m pytest tests/crown/ -q --cov=core.crown --cov-branch --cov-fail-under=90
-python tools/governance/generate_crown_threat_doc.py --check
-# فحص تسريب مادة مفتاح داخل core/crown و tests/crown و docs/security
+```
+K1 ACTIVE ← مرساة محقَّقة خارج القناة ← أمر D1 موقَّع ← لا نقض من تابع ←
+تنفيذ ← قيد في السجل ← إعلان اختراق K1 وإبطاله ← D1 التاريخي ما يزال قابلًا
+للتحقق ← تفعيل K2 ← تنفيذ D2 ← رفض أمر جديد بـK1 ← حدث أمني مسجَّل ←
+لا تاج زائف ولا خلافة ذاتية
 ```
 
-ثم اختبر حالات الفشل محليًّا (تعديل حال تهديد بلا مرجع اختبار يجب أن يُسقط
-البوابة)، ثم حدِّث هذا الملف، ثم:
+ثم قائمة الخصم: استبدال مرساة، وإرجاع نسخة، وتخفيض إصدار، وحارس يدّعي سيادة،
+وخليفة يُفعِّل نفسه. ثم:
 
 ```bash
-git commit -m "ci(crown): enforce crown root of trust integrity"
+python -m pytest tests/crown -q --cov=core.crown --cov-branch --cov-fail-under=90
+python tools/crown/verify_secret_boundaries.py && python tools/crown/verify_crown_root_of_trust.py
+git commit -m "test(crown): prove sovereign continuity and adversarial resilience"
 git push origin main && git ls-remote origin main   # وتحقق من التطابق
 ```
 
@@ -287,7 +354,11 @@ git push origin main && git ls-remote origin main   # وتحقق من التطا
 | # | الوحدة | الالتزام | البعيد | الحال |
 |---|---|---|---|---|
 | 0 | أساس التنفيذ (كود + اختبارات + توثيق أمني) | `e3d0c8a` | مؤكَّد | VERIFIED |
-| E2.2-A | توثيق نطاق التاج ونواته وذاكرة التسليم | `cda68d5` | مؤكَّد بـ`ls-remote` | VERIFIED |
+| E2.2-A | توثيق نطاق التاج ونواته وذاكرة التسليم | `cda68d5` ثم `fb5ce9d` | مؤكَّد بـ`ls-remote` | VERIFIED |
+| E2.2-B | بوابة CI `crown-root-of-trust` (وكشف بوابة زائفة) | `b13cd87` | مؤكَّد بـ`ls-remote` | VERIFIED |
+| E2.2-C | خارطة المرحلة ومصفوفة الحقيقة المولَّدة | `dae73f6` | مؤكَّد بـ`ls-remote` | VERIFIED |
+| E2.2-D | بوابات الهوية (وعيبان في الحُرّاس أنفسهم) | `3fed334` | مؤكَّد بـ`ls-remote` | VERIFIED |
+| E2.2-E | حدود الأسرار والثقة | (يُثبَت بعد الدفع) | (يُثبَت بعد الدفع) | VERIFIED محليًّا |
 
 ## المراجع
 - خارطة المرحلة: [`PHASE_E_ROADMAP.md`](PHASE_E_ROADMAP.md)

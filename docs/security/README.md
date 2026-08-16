@@ -29,6 +29,7 @@
 | [`CROWN_SOVEREIGNTY_PROTECTION.md`](CROWN_SOVEREIGNTY_PROTECTION.md) | المعمار المرجعي: الهويات، والمرساة، والمفتاح، والدورة، والخلافة، والاسترداد، والأمر، والسجل، والاستمرارية، والحارس، والاحتواء |
 | [`CROWN_THREAT_MODEL.md`](CROWN_THREAT_MODEL.md) | 38 تهديدًا بحال معالجتها ومسؤولها — **مولَّد** من `core/crown/threats.py` |
 | [`HUMAN_SOFTWARE_BOUNDARY.md`](HUMAN_SOFTWARE_BOUNDARY.md) | ما تُثبته البرمجية وما لا تُثبته، وما تفعله عند حدّها |
+| [`SECRET_BOUNDARIES.md`](SECRET_BOUNDARIES.md) | أين يسكن كل سرّ، وما يُنشر عمدًا، وبوابة منع عودة السرّ إلى الكود |
 | [`CROWN_SECURITY_ROADMAP.md`](CROWN_SECURITY_ROADMAP.md) | قدرات مستقبلية غير منفَّذة: بعد الكمّي، والإشهاد، والجيوب، والهوية |
 
 ## القاعدة الذهبية
