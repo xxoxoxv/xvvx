@@ -281,11 +281,14 @@ def render(results: list[SuiteResult], *, pg_present: bool) -> str:
 
 
 def _display_path(path: Path) -> str:
-    """مسار للعرض: نسبي إن كان داخل المستودع، وإلا مطلق كما هو."""
-    try:
+    """مسار للعرض: نسبي إن كان داخل المستودع، وإلا مطلق كما هو.
+
+    الشرط صريح وليس `try/except`: ابتلاع استثناء هنا مخالفة `SILENT_FALLBACK`
+    في مدقّق الحقيقة ولو كان الاستثناء متوقّعًا — والمدقّق محقّ بنيويًّا.
+    """
+    if path.is_relative_to(REPO_ROOT):
         return str(path.relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
+    return str(path)
 
 
 def check_drift() -> list[str]:
