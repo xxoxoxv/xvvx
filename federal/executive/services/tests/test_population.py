@@ -244,11 +244,26 @@ def test_agent_can_execute_tool() -> None:
         allowed_tools=["python_execute"],
     )
 
-    # تنفيذ أداة حقيقية
+    # تنفيذ أداة حقيقية بمبدأ مُتحقَّق منه.
+    #
+    # تغيَّر هذا الاختبار في R6: كان يُمرِّر `role="admin"` فيُصدَّق ادّعاؤه.
+    # الآن الدور المُدّعى لا يوسِّع شيئًا — دور الهوية الكانونية هو ما يراه
+    # محرِّك السياسة عند مبدأ غير مُتحقَّق منه، ودور المبدأ عند المُتحقَّق منه.
+    from amos_federation.common.principal import AuthorizationContext, Principal
+
+    principal = Principal.from_session_record(
+        session_id="test-session-population",
+        username="tester",
+        role_id="official",
+        permissions=("execute:tools",),
+        expires_at=None,
+    )
     result = execute_tool_with_governance(
         "python_execute",
         {"code": "print(2+2)", "agent_id": agent["agent_id"]},
-        role="admin",
+        principal=AuthorizationContext.from_principal(principal),
     )
     assert result.get("returncode") == 0
     assert "4" in result.get("stdout", "")
+    # والهوية المُتحقَّق منها تظهر في النتيجة، فلا تُقرأ النتيجة بلا نَسَب.
+    assert result["principal_verification"] == "SESSION_VERIFIED"

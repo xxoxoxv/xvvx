@@ -196,7 +196,11 @@ class RBACSystem:
             session.close()
 
     def check_permission(self, session_token: str, permission: str) -> bool:
-        """فحص صلاحية."""
+        """فحص صلاحية — والجلسة المنتهية لا صلاحية لها.
+
+        كانت هذه الدالّة قبل R6 لا تنظر إلى `expires_at` إطلاقًا، فجلسة انتهت
+        منذ شهر تمرّ كأنها حيّة. أُضيف الفحص: انتهاء الجلسة رفضٌ لا تحذير.
+        """
         session = self._Session()
         try:
             user_session = (
@@ -206,6 +210,12 @@ class RBACSystem:
             )
             if not user_session:
                 return False
+            expires_at = user_session.expires_at
+            if expires_at is not None:
+                if expires_at.tzinfo is None:
+                    expires_at = expires_at.replace(tzinfo=UTC)
+                if expires_at <= datetime.now(UTC):
+                    return False
             role = (
                 session.query(RoleModel).filter(RoleModel.role_id == user_session.role_id).first()
             )

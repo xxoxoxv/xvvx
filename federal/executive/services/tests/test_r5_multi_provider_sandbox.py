@@ -488,7 +488,12 @@ def test_authorization_denial_fails_closed_before_any_sandbox_exists() -> None:
     )
 
     # الترتيب نفسه محروس: الصندوق آخر الحلقات لا أوّلها.
+    #
+    # R6 أضافت `principal` و`session` إلى مقدّمة السلسلة: قبلها كانت تبدأ
+    # من `agent`، أي أن أوّل سؤال كان «أيّ وكيل؟» لا «من يطلب؟».
     assert AUTHORIZATION_CHAIN == (
+        "principal",
+        "session",
         "agent",
         "role",
         "capability",
@@ -496,6 +501,8 @@ def test_authorization_denial_fails_closed_before_any_sandbox_exists() -> None:
         "tool",
         "sandbox",
     )
+    # المبدأ قبل الوكيل، والوكيل قبل الأداة — لا يُعاد الترتيب.
+    assert AUTHORIZATION_CHAIN.index("principal") < AUTHORIZATION_CHAIN.index("agent")
     assert AUTHORIZATION_CHAIN.index("permission") < AUTHORIZATION_CHAIN.index("sandbox")
     # القرار يبدأ رفضًا لا سماحًا.
     assert AuthorizationDecision().allowed is False
@@ -625,7 +632,16 @@ def test_network_policy_is_explicit_and_denies_by_default() -> None:
         network.normalize_policy("maybe")
 
     # لا يُزعم فرضٌ لا يملكه المزوِّد.
-    assert network.enforcement_for("local") == "DECLARED_ONLY"
+    # R6: صار المزوِّد المحلّي يفرض DENY بـnamespace شبكي حين تسمح البيئة.
+    # فالقيمة تعتمد على القدرة المقيسة، ولا يُثبَّت أحد الاحتمالين تعسُّفًا.
+    local_enforcement = network.enforcement_for("local", "DENY")
+    assert local_enforcement in {"DECLARED_ONLY", "NAMESPACE_ENFORCED"}
+    if network.isolation_available():
+        assert local_enforcement == "NAMESPACE_ENFORCED"
+    else:
+        assert local_enforcement == "DECLARED_ONLY"
+    # ALLOWLIST تبقى مُعلَنة فقط: العزل يقطع الشبكة ولا يُرشِّح مضيفًا.
+    assert network.enforcement_for("local", "ALLOWLIST") == "DECLARED_ONLY"
     assert network.enforcement_for("modal") == "PROVIDER_ENFORCED"
     assert network.enforcement_for("e2b") == "PROVIDER_ENFORCED"
 

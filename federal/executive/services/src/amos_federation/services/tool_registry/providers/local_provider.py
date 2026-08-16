@@ -109,6 +109,18 @@ class LocalSubprocessProvider(SandboxProvider):
                 handle_file.write(preamble + request.code)
             argv = ["python3", script]
 
+        # عزل شبكي حقيقي عند سياسة DENY، إن كانت البيئة تسمح به.
+        #
+        # هذا ما تغيّر في R6: قبلها كانت سياسة الشبكة تُعلَن ولا تُفرَض عند
+        # المزوِّد المحلّي. الآن تُسبَق العمليّة بـnamespace شبكي معزول، فيفشل أي
+        # اتّصال خارجي بـ`ENETUNREACH` فشلًا حقيقيًّا من النواة لا من فحصنا.
+        #
+        # وإن تعذّر العزل فلا يُزعم: `network_enforcement` تُرجَع `DECLARED_ONLY`
+        # في النتيجة، والأمر يُشغَّل بلا عزل كما كان.
+        enforcement = network.enforcement_for(self.name, spec.network_policy)
+        if enforcement == "NAMESPACE_ENFORCED":
+            argv = [*network.NETWORK_ISOLATION_ARGV, *argv]
+
         started = time.monotonic()
         try:
             proc = subprocess.run(  # noqa: S603
@@ -124,6 +136,7 @@ class LocalSubprocessProvider(SandboxProvider):
             return self.result(
                 handle,
                 request,
+                network_enforcement=enforcement,
                 stdout=(exc.stdout or "") if isinstance(exc.stdout, str) else "",
                 stderr=(exc.stderr or "") if isinstance(exc.stderr, str) else "",
                 exit_code=None,
@@ -136,6 +149,7 @@ class LocalSubprocessProvider(SandboxProvider):
             return self.result(
                 handle,
                 request,
+                network_enforcement=enforcement,
                 stdout="",
                 stderr=str(exc),
                 exit_code=None,
@@ -147,6 +161,7 @@ class LocalSubprocessProvider(SandboxProvider):
         return self.result(
             handle,
             request,
+            network_enforcement=enforcement,
             stdout=proc.stdout or "",
             stderr=proc.stderr or "",
             exit_code=proc.returncode,
