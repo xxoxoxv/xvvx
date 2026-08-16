@@ -40,10 +40,16 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture(autouse=True)
-def _set_pg_url():
-    """استخدام AMOS_TEST_DATABASE_URL لكل اختبار."""
-    os.environ["AMOS_DATABASE_URL"] = os.environ["AMOS_TEST_DATABASE_URL"]
+def _set_pg_url(monkeypatch: pytest.MonkeyPatch):
+    """استخدام AMOS_TEST_DATABASE_URL لهذا الملف وحده، ثم إعادة البيئة كما كانت.
+
+    النسخة السابقة كانت تكتب os.environ مباشرة ولا تردّ القيمة، فتتسرّب لهجة
+    PostgreSQL إلى الملفات التالية في نفس الجلسة. monkeypatch يضمن العزل.
+    """
+    monkeypatch.setenv("AMOS_DATABASE_URL", os.environ["AMOS_TEST_DATABASE_URL"])
+    reset_engine()
     yield
+    reset_engine()
 
 
 @pytest.fixture

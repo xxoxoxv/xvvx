@@ -50,7 +50,7 @@ class PostgresTaskStore:
                 cursor.execute(
                     """INSERT INTO tasks
                        (task_id, type, description, priority, status, domain, tenant_id, result, created_at)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         task.task_id,
                         task.type,
@@ -74,7 +74,7 @@ class PostgresTaskStore:
                 cursor.execute(
                     """SELECT task_id, type, description, priority, status, domain, tenant_id,
                               assigned_agent, result, created_at
-                       FROM tasks WHERE task_id = %s""",
+                       FROM tasks WHERE task_id = ?""",
                     (task_id,),
                 )
                 row: dict[str, Any] | None = cursor.fetchone()
