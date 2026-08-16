@@ -283,3 +283,98 @@ def test_generators_are_settled_on_the_repository(tool: str) -> None:
         cwd=REPO_ROOT, capture_output=True, text=True, timeout=180, check=False,
     )
     assert r.returncode == 0, f"{tool} --check فشل:\n{r.stdout}\n{r.stderr}"
+
+
+# ── ثغرة الحاشية: القسم الأخير كان يُعَدّ مملوءًا بحاشية البطاقة ─────────────
+
+
+CARD_FOOTER = (
+    "\n---\n*بطاقة هوية إقليم — المادة التاسعة (قانون هوية الملفات). "
+    "اسم الإقليم ثابت؛ ولا يُضاف إليه ما يخرج عن نطاقه أعلاه.*\n"
+)
+
+
+def test_card_footer_does_not_fill_the_last_field(tmp_path: Path) -> None:
+    """حاشية الذيل ليست جوابًا عن حقل — وهي الثغرة التي كُشفت في E2.2-D.
+
+    كان القسم الأخير في البطاقة يمرّ فارغًا لأن الحاشية تقع تحته فتُحتسب مضمونًا
+    له، فمرّت 43 بطاقة بحقل «المحتويات» فارغًا.
+    """
+    body = COMPLETE_README.replace(
+        "## المحتويات\n- `a.md` — ملف تجريبي",
+        "## المحتويات\n<!-- يُملأ آليًا بـ stamp_readme_identity.py -->",
+    ) + CARD_FOOTER
+    root = _mk(tmp_path, readme=body)
+    violations = checker.check_readmes(root)
+    assert violations, "حقل فارغ فوق حاشية يجب أن يُرفض"
+    assert "المحتويات" in violations[0]["detail"]
+
+
+def test_horizontal_rule_alone_is_not_content(tmp_path: Path) -> None:
+    body = COMPLETE_README.replace(
+        "## المحتويات\n- `a.md` — ملف تجريبي", "## المحتويات\n\n---\n"
+    )
+    root = _mk(tmp_path, readme=body)
+    assert checker.check_readmes(root), "فاصل أفقي ليس مضمونًا"
+
+
+def test_stamper_agrees_with_checker_on_emptiness() -> None:
+    """المدقّق والخاتم يجب أن يتّفقا على معنى «فارغ»، وإلا صار بينهما شقّ يمرّ منه النقص."""
+    sample = "<!-- نائب -->\n\n---\n*حاشية بطاقة.*\n"
+    assert checker.strip_boilerplate(sample) == ""
+    assert stamper.strip_boilerplate(sample) == ""
+    assert checker.strip_boilerplate("محتوى فعلي") == "محتوى فعلي"
+    assert stamper.strip_boilerplate("محتوى فعلي") == "محتوى فعلي"
+
+
+# ── صدق التاريخ المشتقّ: الوجود ليس صدقًا ────────────────────────────────────
+
+
+def test_stale_declared_date_is_a_violation(tmp_path: Path, monkeypatch) -> None:
+    """بطاقة تُعلن تاريخًا أقدم من آخر تعديل فعلي = كذب موثَّق."""
+    root = _mk(tmp_path)
+    readme = root / "domain" / "README.md"
+    monkeypatch.setattr(stamper, "expected_last_modified", lambda _p: "2026-08-16")
+    text = readme.read_text(encoding="utf-8").replace(
+        "## تاريخ آخر تعديل\n2026-08-16", "## تاريخ آخر تعديل\n2020-01-01"
+    )
+    readme.write_text(text, encoding="utf-8")
+    drift = stamper.date_drift(readme)
+    assert drift == ("2020-01-01", "2026-08-16")
+
+
+def test_future_declared_date_is_a_violation(tmp_path: Path, monkeypatch) -> None:
+    """تاريخ لم يأتِ بعد لا يوصف به ملف."""
+    root = _mk(tmp_path)
+    readme = root / "domain" / "README.md"
+    monkeypatch.setattr(stamper, "expected_last_modified", lambda _p: "2026-08-16")
+    text = readme.read_text(encoding="utf-8").replace(
+        "## تاريخ آخر تعديل\n2026-08-16", "## تاريخ آخر تعديل\n2099-12-31"
+    )
+    readme.write_text(text, encoding="utf-8")
+    drift = stamper.date_drift(readme)
+    assert drift is not None and drift[0] == "2099-12-31"
+
+
+def test_declared_today_with_older_commit_is_not_a_violation(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """بطاقة خُتِمت اليوم ولم تُلتزَم بعد ليست كاذبة — واشتراط المطابقة يُنتج تذبذبًا."""
+    from datetime import date as _date
+
+    root = _mk(tmp_path)
+    readme = root / "domain" / "README.md"
+    monkeypatch.setattr(stamper, "expected_last_modified", lambda _p: "2026-08-15")
+    text = readme.read_text(encoding="utf-8").replace(
+        "## تاريخ آخر تعديل\n2026-08-16",
+        f"## تاريخ آخر تعديل\n{_date.today().isoformat()}",
+    )
+    readme.write_text(text, encoding="utf-8")
+    assert stamper.date_drift(readme) is None
+
+
+def test_crown_domains_are_registered_for_identity(tmp_path: Path) -> None:
+    """نطاق التاج مسجَّل في بوابة الأقاليم، فلا تفلت بطاقته من الفحص."""
+    registered = set(writer.SCOPES) | set(writer.GUARDS)
+    for domain in ("core/crown", "tools/crown", "docs/security"):
+        assert domain in registered, f"{domain} خارج سجل الأقاليم — نطاق فحص منقوص"

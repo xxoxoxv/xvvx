@@ -62,6 +62,22 @@ EXEMPT_SUBSTRINGS = (".example", ".lock")
 
 # كل حقل: (المعرّف، مرادفاته المقبولة). يكفي مرادف واحد.
 _PLACEHOLDER = re.compile(r"<!--.*?-->", re.S)
+_HORIZONTAL_RULE = re.compile(r"^\s*-{3,}\s*$", re.M)
+# حاشية البطاقة: فقرة مائلة في ذيل الملف («*بطاقة هوية إقليم — المادة التاسعة…*»).
+_CARD_FOOTER = re.compile(r"^\s*\*[^*][\s\S]*?\*\s*$", re.M)
+
+
+def strip_boilerplate(body: str) -> str:
+    """جرّد ما ليس مضمونًا: النائب، والفاصل الأفقي، وحاشية البطاقة.
+
+    كان الفحص يقبل قسمًا فارغًا إذا وقع **آخر** أقسام البطاقة، لأن حاشية الذيل
+    تقع تحته فتُحتسب مضمونًا له. فكانت `## المحتويات` فوق تعليق نائب تمرّ.
+    الحاشية ليست جوابًا عن سؤال الحقل، فتُجرَّد قبل الحكم.
+    """
+    cleaned = _PLACEHOLDER.sub("", body)
+    cleaned = _CARD_FOOTER.sub("", cleaned)
+    cleaned = _HORIZONTAL_RULE.sub("", cleaned)
+    return cleaned.strip()
 
 
 def _field_filled(text: str, aliases: tuple[str, ...]) -> bool:
@@ -72,7 +88,7 @@ def _field_filled(text: str, aliases: tuple[str, ...]) -> bool:
             rf"^#+\s*{re.escape(head)}\s*$\n(.*?)(?=^#+\s|\Z)",
             text, re.M | re.S,
         )
-        if m and _PLACEHOLDER.sub("", m.group(1)).strip():
+        if m and strip_boilerplate(m.group(1)):
             return True
     return False
 

@@ -19,7 +19,7 @@
       "secret_hits": 0,
       "observed_hits": 3,
       "api_routes": 0,
-      "test_refs": 111,
+      "test_refs": 112,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -217,7 +217,7 @@
       "md_files": 38,
       "py_files": 11,
       "yaml_files": 2,
-      "code_lines": 2484,
+      "code_lines": 2581,
       "nucleus_count": 12,
       "nucleus_status": {
         "unspecified": 12
@@ -229,7 +229,7 @@
       "secret_hits": 0,
       "observed_hits": 7,
       "api_routes": 0,
-      "test_refs": 29,
+      "test_refs": 30,
       "identity_violations": 3,
       "deployed": true,
       "columns": {
@@ -334,7 +334,7 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 7,
+      "test_refs": 8,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -392,7 +392,7 @@
       "md_files": 14,
       "py_files": 21,
       "yaml_files": 0,
-      "code_lines": 5956,
+      "code_lines": 6027,
       "nucleus_count": 5,
       "nucleus_status": {
         "unspecified": 5
