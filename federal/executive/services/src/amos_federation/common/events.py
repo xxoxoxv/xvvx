@@ -34,11 +34,98 @@ EVENT_SUBJECT_PREFIX = "amos_federation"
 # البصمة التأسيسية لأول حدث في السلسلة
 GENESIS_HASH = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
 
+# =============================================================================
+# السجل القانوني الواحد (canonical audit record) — قرار E2.2-G
+# =============================================================================
+# المواد الداخلة في البصمة هي أعمدة `audit_log` الجوهرية وحدها، لأن التحقق
+# لا يملك إلا الصف المحفوظ. أي حقل داخل البصمة يجب أن يكون قابلًا للاسترداد
+# من الصف حرفيًا، وإلا صار التحقق مستحيلًا بنيوًّا.
+# `prev_hash` يدخل في المادة المهشّمة كبادئة منفصلة، فيربط الصف بما قبله.
+CANONICAL_AUDIT_FIELDS: tuple[str, ...] = (
+    "event_id",
+    "timestamp",
+    "event_type",
+    "actor_type",
+    "actor_id",
+    "action",
+    "metadata",
+)
+
+
+def _canonical_timestamp(value: Any) -> str | None:
+    """توحيد الوقت إلى نص ISO بتوقيت UTC ليتطابق في اللهجتين."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        try:
+            parsed = datetime.fromisoformat(str(value))
+        except ValueError:
+            # نص غير قابل للتحليل يُأخذ كما هو بلا تأويل.
+            return str(value)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC).isoformat()
+
+
+def _canonical_metadata(value: Any) -> Any:
+    """توحيد الحمولة: JSONB يعود قاموسًا وTEXT يعود نصًا — والقانوني قاموس."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except (TypeError, ValueError):
+            return value
+    return value
+
+
+def canonical_audit_record(
+    *,
+    event_id: str,
+    timestamp: Any,
+    event_type: str | None,
+    actor_type: str | None,
+    actor_id: str | None,
+    action: str | None,
+    metadata: Any,
+) -> dict[str, Any]:
+    """بناء التمثيل القانوني الوحيد لسجل تدقيق.
+
+    هذه الدالة هي المصدر الوحيد للشكل المهشّم، ويستدعيها الإنشاء والتحقق معًا.
+    """
+    return {
+        "event_id": None if event_id is None else str(event_id),
+        "timestamp": _canonical_timestamp(timestamp),
+        "event_type": event_type,
+        "actor_type": actor_type,
+        "actor_id": actor_id,
+        "action": action,
+        "metadata": _canonical_metadata(metadata),
+    }
+
+
+def canonical_audit_record_from_row(row: Any) -> dict[str, Any]:
+    """بناء نفس التمثيل القانوني من صف `audit_log` محفوظ."""
+    return canonical_audit_record(
+        event_id=row["event_id"],
+        timestamp=row["timestamp"],
+        event_type=row["event_type"],
+        actor_type=row["actor_type"],
+        actor_id=row["actor_id"],
+        action=row["action"],
+        metadata=row["metadata"],
+    )
+
 
 def compute_chain_hash(prev_hash: str, event_data: dict[str, Any]) -> str:
     """
-    حساب بصمة SHA-256 للحدث الحالي.
-    chain_hash = SHA256(prev_hash + canonical_json(event_data))
+    حساب بصمة SHA-256 للسجل القانوني.
+    chain_hash = SHA256(prev_hash + ":" + canonical_json(canonical_audit_record))
+
+    الخوارزمية لم تتغير: مفاتيح مرتبة، وUTF-8 بلا هروب ASCII، وSHA-256،
+    و`prev_hash` بادئة داخلة في المادة المهشّمة.
     """
     canonical = json.dumps(event_data, sort_keys=True, ensure_ascii=False)
     combined = f"{prev_hash}:{canonical}"
@@ -127,12 +214,23 @@ class EventPublisher:
             "data": data,
         }
 
-        # حساب سلسلة البصمات
+        # حساب سلسلة البصمات من **نفس** التمثيل القانوني الذي يعيد التحقق بناءه.
+        # ملاحظة صريحة: `source` ليس من أعمدة `audit_log`، فلا يدخل في البصمة — لأنه
+        # غير محفوظ أصلًا فلا محل للتلاعب فيه، وأي تغطية له تقتضي تغيير المخطّط.
+        action = f"{event_type}"
+        record = canonical_audit_record(
+            event_id=event_id,
+            timestamp=timestamp,
+            event_type=event_type,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            action=action,
+            metadata=data,
+        )
         prev_hash = get_last_chain_hash()
-        chain_hash = compute_chain_hash(prev_hash, event)
+        chain_hash = compute_chain_hash(prev_hash, record)
 
         # إدراج في سجل التدقيق الملحق فقط عند توفر قاعدة البيانات.
-        action = f"{event_type}"
         try:
             with db_cursor() as cur:
                 cur.execute(
@@ -196,12 +294,11 @@ class EventPublisher:
         التحقق من سلامة سلسلة الكتل في audit_log.
         يعيد True إذا كانت السلسلة سليمة، False إذا وُجد تلاعب.
         """
+        # الترتيب الأساسي للسلسلة هو `seq` — عمود متزايد رتيب، لا `id` ولا الوقت.
+        columns = ", ".join((*CANONICAL_AUDIT_FIELDS, "chain_hash", "prev_hash"))
         try:
             with db_cursor() as cur:
-                cur.execute(
-                    "SELECT event_id, chain_hash, prev_hash, metadata "
-                    "FROM audit_log ORDER BY seq ASC"
-                )
+                cur.execute(f"SELECT {columns} FROM audit_log ORDER BY seq ASC")
                 rows = cur.fetchall()
         except Exception as e:
             logger.error("chain.verify_failed", error=str(e))
@@ -209,15 +306,18 @@ class EventPublisher:
 
         prev_hash = GENESIS_HASH
         for row in rows:
-            expected_hash = compute_chain_hash(
-                prev_hash,
-                {
-                    "event_id": row["event_id"],
-                    "metadata": row["metadata"]
-                    if isinstance(row["metadata"], dict)
-                    else json.loads(row["metadata"]),
-                },
-            )
+            # `prev_hash` المحفوظ يجب أن يطابق البصمة السابقة فعلًا، وإلا فالترتيب
+            # أو الربط تلاعَب بهما حتى لو كانت كل بصمة صحيحة في ذاتها.
+            if row["prev_hash"] != prev_hash:
+                logger.error(
+                    "chain.broken",
+                    event_id=row["event_id"],
+                    expected=prev_hash[:20] + "...",
+                    actual=str(row["prev_hash"])[:20] + "...",
+                    reason="prev_hash_mismatch",
+                )
+                return False
+            expected_hash = compute_chain_hash(prev_hash, canonical_audit_record_from_row(row))
             if row["chain_hash"] != expected_hash:
                 logger.error(
                     "chain.broken",

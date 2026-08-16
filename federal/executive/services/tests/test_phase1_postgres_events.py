@@ -152,8 +152,18 @@ class TestVerifyChainOnPostgres:
     @pytest.mark.asyncio
     async def test_verify_chain_true_for_valid_chain(self, pg_audit_log: str) -> None:
         metadata = {"task_id": "pg-t-1"}
+        # نفس التمثيل القانوني الذي يبنيه publish ويعيد verify_chain بناءه.
         chain_hash = events.compute_chain_hash(
-            events.GENESIS_HASH, {"event_id": "pg-e1", "metadata": metadata}
+            events.GENESIS_HASH,
+            events.canonical_audit_record(
+                event_id="pg-e1",
+                timestamp=None,
+                event_type=None,
+                actor_type=None,
+                actor_id=None,
+                action=None,
+                metadata=metadata,
+            ),
         )
         _insert_row("pg-e1", chain_hash, events.GENESIS_HASH, metadata)
         publisher = events.EventPublisher()
@@ -170,3 +180,111 @@ class TestVerifyChainOnPostgres:
         drop_audit_log_table()
         publisher = events.EventPublisher()
         assert await publisher.verify_chain() is False
+
+
+# =============================================================================
+# السجل القانوني الواحد على PostgreSQL — قرار E2.2-G
+# =============================================================================
+class TestCanonicalAuditRecordOnPostgres:
+    """publish وverify_chain يبنيان نفس التمثيل القانوني على PostgreSQL أيضًا.
+
+    هذا مهم على PostgreSQL تحديدًا لأن `metadata` عمود JSONB يعود قاموسًا،
+    لا نصًّا كما في SQLite — فلو لم يكن التوحيد حقيقيًّا لانكسر التحقق هنا وحده.
+    """
+
+    @pytest.mark.asyncio
+    async def test_published_chain_verifies_on_postgres(self, pg_audit_log: str) -> None:
+        publisher = events.EventPublisher()
+        for index in range(3):
+            await publisher.publish(
+                f"pg.step{index}",
+                "test-suite",
+                {"index": index, "note": "قيمة عربية"},
+                actor_type="system",
+                actor_id=f"actor-{index}",
+            )
+        with db_cursor() as cur:
+            cur.execute("SELECT event_id, chain_hash, prev_hash FROM audit_log ORDER BY seq ASC")
+            rows = cur.fetchall()
+        assert len(rows) == 3
+        assert rows[0]["prev_hash"] == events.GENESIS_HASH
+        assert rows[1]["prev_hash"] == rows[0]["chain_hash"]
+        assert await publisher.verify_chain() is True
+
+    @pytest.mark.asyncio
+    async def test_jsonb_metadata_canonicalizes_like_text(self, pg_audit_log: str) -> None:
+        publisher = events.EventPublisher()
+        await publisher.publish("pg.one", "test-suite", {"b": 2, "a": 1})
+        with db_cursor() as cur:
+            columns = ", ".join(events.CANONICAL_AUDIT_FIELDS)
+            cur.execute(f"SELECT {columns} FROM audit_log ORDER BY seq ASC")
+            row = cur.fetchone()
+        # العمود JSONB يعود قاموسًا فعلًا، والتمثيل القانوني يوحّده مع مسار النص.
+        assert isinstance(row["metadata"], dict)
+        rebuilt = events.canonical_audit_record_from_row(row)
+        assert rebuilt["metadata"] == {"a": 1, "b": 2}
+        assert await publisher.verify_chain() is True
+
+    @pytest.mark.asyncio
+    async def test_tampering_metadata_breaks_verification_on_postgres(
+        self, pg_audit_log: str
+    ) -> None:
+        publisher = events.EventPublisher()
+        await publisher.publish("pg.one", "test-suite", {"index": 1})
+        assert await publisher.verify_chain() is True
+        with db_cursor() as cur:
+            cur.execute("UPDATE audit_log SET metadata = ?", (json.dumps({"index": 999}),))
+        assert await publisher.verify_chain() is False
+
+    @pytest.mark.asyncio
+    async def test_swapping_seq_breaks_verification_on_postgres(self, pg_audit_log: str) -> None:
+        publisher = events.EventPublisher()
+        for index in range(3):
+            await publisher.publish(f"pg.step{index}", "test-suite", {"index": index})
+        assert await publisher.verify_chain() is True
+        with db_cursor() as cur:
+            cur.execute("SELECT seq FROM audit_log ORDER BY seq ASC")
+            seqs = [row["seq"] for row in cur.fetchall()]
+            spare = max(seqs) + 1000
+            cur.execute("UPDATE audit_log SET seq = ? WHERE seq = ?", (spare, seqs[0]))
+            cur.execute("UPDATE audit_log SET seq = ? WHERE seq = ?", (seqs[0], seqs[1]))
+            cur.execute("UPDATE audit_log SET seq = ? WHERE seq = ?", (seqs[1], spare))
+        # الترتيب الأساسي للسلسلة هو seq — تبديله وحده يكسر التحقق.
+        assert await publisher.verify_chain() is False
+
+
+class TestTaskModelIsSourceOfTruthOnPostgres:
+    """جدول tasks على PostgreSQL يُكتب ويُقرأ عبر TaskModel وحده."""
+
+    def test_tasks_table_has_no_competing_task_id_column(self, postgres_url: str) -> None:
+        from amos_federation.common.database import TaskModel, init_db
+
+        init_db()
+        columns = {column.name for column in TaskModel.__table__.columns}
+        assert "task_id" not in columns
+        assert "id" in columns
+
+    def test_create_then_get_persists_on_postgres(self, postgres_url: str) -> None:
+        from datetime import UTC, datetime
+
+        from amos_federation.common.schemas import TaskDetails
+        from amos_federation.services.api_gateway.store import DatabaseTaskStore
+
+        task_id = f"pg-task-{uuid.uuid4().hex[:12]}"
+        task = TaskDetails(
+            task_id=task_id,
+            type="analysis",
+            description="مهمة إثبات على PostgreSQL",
+            priority="normal",
+            status="pending",
+            domain="federal",
+            tenant_id="default",
+            created_at=datetime.now(UTC),
+            result=None,
+        )
+        DatabaseTaskStore().create(task)
+        # مثيل جديد تمامًا: القراءة من القاعدة لا من ذاكرة الكائن.
+        fetched = DatabaseTaskStore().get(task_id)
+        assert fetched is not None
+        assert fetched.task_id == task_id
+        assert fetched.description == "مهمة إثبات على PostgreSQL"
