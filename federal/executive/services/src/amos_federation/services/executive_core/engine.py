@@ -47,6 +47,7 @@ from amos_federation.services.executive_core.dispatcher import (
     CapabilityDispatcher,
     NoEligibleAgentError,
 )
+from amos_federation.services.executive_core.fidelity import ExecutionFidelity
 from amos_federation.services.executive_core.repository import ExecutiveTaskRepository
 from amos_federation.services.executive_core.sovereignty_bridge import (
     AuthorityEvidence,
@@ -66,7 +67,9 @@ TRANSITION_SUBJECT = "amos_federation.executive.task_transitioned"
 AUDIT_ACTOR = "federal.executive.core"
 
 #: أمانة المخرَج: تنفيذ الأدوات محاكاة حتى يُستبدل صندوق الأدوات بأدوات حقيقية.
-EXECUTION_FIDELITY = "SIMULATION"
+#: القيمة تأتي من مفردات واحدة (`fidelity.ExecutionFidelity`) لا من نصّ حرّ، كي
+#: تُقارَن إعلانات الصدق بين النواة والخدمات المتخصّصة بدلًا من تشابه لفظي.
+EXECUTION_FIDELITY = ExecutionFidelity.SIMULATION.value
 
 
 class ExecutionRefusedError(RuntimeError):

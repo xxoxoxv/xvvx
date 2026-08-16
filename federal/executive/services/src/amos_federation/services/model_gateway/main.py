@@ -18,6 +18,13 @@ from amos_federation.common.auth import require_auth
 from amos_federation.common.config import settings
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
+from amos_federation.services.executive_core.fidelity import ExecutionFidelity
+from amos_federation.services.executive_core.repository import TaskNotFoundError
+from amos_federation.services.executive_core.subsystem_boundary import (
+    ActivityKind,
+    SubsystemRefusedError,
+    get_subsystem_boundary,
+)
 from amos_federation.services.model_gateway.shadow import (
     InMemoryShadowStore,
     _alpha_response,
@@ -47,10 +54,12 @@ class ModelInvokeRequest(BaseModel):
     model: str | None = None
     max_tokens: int = Field(default=1024, ge=1, le=8192)
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    #: المهمّة التنفيذية التي يخدمها هذا الاستدعاء — إن وُجدت، تُتحقَّق من المستودع القانوني.
+    task_id: str | None = None
 
 
 class ModelInvokeResponse(BaseModel):
-    """استجابة استدعاء نموذج."""
+    """استجابة استدعاء نموذج — تُعلن صدق مخرَجها وإذنه ونسبه."""
 
     text: str
     model_used: str
@@ -58,6 +67,11 @@ class ModelInvokeResponse(BaseModel):
     latency_ms: int
     source: str  # "external" أو "local_fallback"
     cost_usd: float = 0.0
+    execution_fidelity: str = ExecutionFidelity.REAL.value
+    fidelity_reason: str | None = None
+    task_id: str | None = None
+    activity_id: str | None = None
+    authority_decision: str | None = None
 
 
 class ModelRouteResponse(BaseModel):
@@ -128,18 +142,38 @@ async def invoke_model(
     request: ModelInvokeRequest,
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> ModelInvokeResponse:
-    """استدعاء نموذج خارجي مع fallback محلي عند عدم توفر المفتاح."""
+    """استدعاء نموذج تحت سلطة النواة، مع إعلان صريح لصدق المخرَج.
+
+    ثلاثة فروق عن ما قبل R2:
+
+    1. الاستدعاء يمرّ بحدّ النواة (`SubsystemBoundary`): إذن دستوري fail-closed،
+       ثم قيد تدقيق وحدث دائم. البوابة لم تبق سلطة مستقلة عن البوابة السيادية.
+    2. إن ذُكرت `task_id` فهي تُقرأ من المستودع القانوني؛ معرّف وهمي يُرد بـ404.
+       ولا تُغيَّر حالة المهمّة هنا بحال — الأثر يُرفَق ولا يُحرّك دورة الحياة.
+    3. الفشل لا يُبتلع: كان `except Exception` يُرجع نصًّا محليًّا كأنه نجاح.
+       الآن يُعلَن `UNAVAILABLE` مع سبب مُسمّى — لا `SIMULATION` تُغطّي انقطاعًا.
+    """
     model = request.model or settings.default_model
+    boundary = get_subsystem_boundary()
+
     start = time.monotonic()
     source = "external"
+    fidelity = ExecutionFidelity.REAL
+    fidelity_reason: str | None = None
     try:
         if not settings.claude_api_key:
             raise ValueError("لا يتوفر مفتاح Claude API")
         text, tokens = await _invoke_claude(request.prompt, model, request.max_tokens)
-    except Exception:
+    except Exception as exc:  # الانقطاع يُسمّى ولا يُقدَّم كأنه استدعاء ناجح
         text, tokens = _local_fallback(request.prompt, request.max_tokens)
         source = "local_fallback"
         model = "local-fallback"
+        fidelity = ExecutionFidelity.UNAVAILABLE
+        fidelity_reason = (
+            "claude_api_key_missing"
+            if not settings.claude_api_key
+            else f"external_invocation_failed:{type(exc).__name__}"
+        )
     latency = int((time.monotonic() - start) * 1000)
     cost = round(tokens * COST_PER_1K_TOKENS.get(model, 0.0) / 1000, 6)
     _cost_log.append(
@@ -153,6 +187,32 @@ async def invoke_model(
             "source": source,
         }
     )
+    try:
+        activity = boundary.authorized_activity(
+            ActivityKind.MODEL_INVOCATION,
+            f"model:{model}",
+            fidelity,
+            {
+                "tokens_used": tokens,
+                "cost_usd": cost,
+                "latency_ms": latency,
+                "source": source,
+                "fidelity_reason": fidelity_reason,
+            },
+            task_id=request.task_id,
+            context={"model": model, "max_tokens": request.max_tokens},
+        )
+    except TaskNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"لا يوجد مهمّة قانونية بهذا المعرّف، فلا نسب للاستدعاء: {exc}",
+        ) from exc
+    except SubsystemRefusedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
     return ModelInvokeResponse(
         text=text,
         model_used=model,
@@ -160,6 +220,11 @@ async def invoke_model(
         latency_ms=latency,
         source=source,
         cost_usd=cost,
+        execution_fidelity=fidelity.value,
+        fidelity_reason=fidelity_reason,
+        task_id=request.task_id,
+        activity_id=activity.activity_id,
+        authority_decision=activity.authority["decision"],
     )
 
 

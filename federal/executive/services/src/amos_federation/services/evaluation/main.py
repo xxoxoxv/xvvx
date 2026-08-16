@@ -16,6 +16,12 @@ from amos_federation.common.persistent import PersistentExperienceStore
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
 from amos_federation.services.evaluation.benchmark import analyze_gaps, run_benchmark
+from amos_federation.services.executive_core.fidelity import ExecutionFidelity
+from amos_federation.services.executive_core.subsystem_boundary import (
+    ActivityKind,
+    SubsystemRefusedError,
+    get_subsystem_boundary,
+)
 
 router = APIRouter(prefix="/v1", tags=["evaluation"])
 experience_store = PersistentExperienceStore()
@@ -38,8 +44,44 @@ async def record_experience(
     record: ExperienceRecord,
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
-    """تسجيل خبرة جديدة مع تتبع المصدر."""
-    return experience_store.record(record.model_dump())
+    """تسجيل خبرة مع نسب مُصنّف لا مُدّعَى.
+
+    `task_id` كانت نصًّا حرًّا يُخزّن كما ورد، فكانت الذاكرة المؤسّسية تتراكم
+    على خبرات منسوبة إلى مهمّات لا وجود لها. الآن يُقرأ المعرّف من المستودع
+    القانوني ويُوسم `canonical` أو `unverified`، ويُقيد الأثر عبر حدّ النواة —
+    بلا تغيير حالة المهمّة، وبلا اختراع درجة جودة لم يُرسلها مُقيّم.
+    """
+    boundary = get_subsystem_boundary()
+    provenance, linked_task_id = boundary.classify_provenance(record.task_id)
+
+    try:
+        activity = boundary.authorized_activity(
+            ActivityKind.EVALUATION_RUN,
+            f"experience:{record.type}",
+            ExecutionFidelity.REAL,
+            {
+                "experience_type": record.type,
+                "agent_id": record.agent_id,
+                "quality_score": record.quality_score,
+                "task_provenance": provenance,
+                "claimed_task_id": record.task_id,
+            },
+            task_id=linked_task_id,
+            context={"provenance": provenance},
+        )
+    except SubsystemRefusedError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+    payload = record.model_dump()
+    payload["provenance"] = {
+        "source": "api",  # يُحفظ ما كان المخزن يضعه تلقائيًّا حين لا نسب مع الطلب
+        **(record.provenance or {}),
+        "task_provenance": provenance,
+        "activity_id": activity.activity_id,
+        "authority_decision": activity.authority["decision"],
+    }
+    stored = experience_store.record(payload)
+    return {**stored, "task_provenance": provenance, "activity_id": activity.activity_id}
 
 
 @router.get("/experiences", response_model=list[dict])

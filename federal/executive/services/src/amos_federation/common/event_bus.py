@@ -151,6 +151,19 @@ EVENT_CONTRACTS = {
             "detail",
         ],
     },
+    # نشاط نظام متخصّص (نماذج/تدريب/تقييم/نقد) — أثر بلا تغيير حالة مهمّة.
+    "amos_federation.executive.subsystem_activity": {
+        "required_fields": ["activity_id", "activity_kind", "fidelity"],
+        "optional_fields": [
+            "target",
+            "task_id",
+            "authority_decision",
+            "authority_layer",
+            "audit_id",
+            "execution_effect",
+            "payload",
+        ],
+    },
     "amos_federation.task.created": {
         "required_fields": ["task_id", "type", "description"],
         "optional_fields": ["tenant_id", "priority"],

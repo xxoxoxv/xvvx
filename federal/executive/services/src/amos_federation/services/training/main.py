@@ -12,6 +12,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from amos_federation.common.auth import require_auth
+from amos_federation.services.executive_core.fidelity import ExecutionFidelity
+from amos_federation.services.executive_core.repository import TaskNotFoundError
+from amos_federation.services.executive_core.subsystem_boundary import (
+    ActivityKind,
+    SubsystemRefusedError,
+    get_subsystem_boundary,
+)
 from amos_federation.services.training.data_pipeline import InMemoryDataPipeline
 from amos_federation.services.training.model_registry import InMemoryModelRegistry
 
@@ -46,6 +53,8 @@ class TrainRequest(BaseModel):
     hyperparameters: dict[str, Any] = Field(default_factory=dict)
     description: str = ""
     intended_use: str = ""
+    #: المهمّة التنفيذية التي أمرت بالتدريب — تُتحقَّق من المستودع القانوني إن ذُكرت.
+    task_id: str | None = None
 
 
 class UpdateModelStatusRequest(BaseModel):
@@ -93,7 +102,18 @@ async def train_model(
     request: TrainRequest,
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> dict[str, Any]:
-    """تدريب LoRA (محاكاة حتمية) وإنشاء Model Card."""
+    """تدريب LoRA **محاكى** تحت إذن النواة، مع إعلان أن المقاييس ليست قياسًا.
+
+    لم يُحوّل هنا التدريب إلى تدريب حقيقي — ذلك خارج نطاق R2. المطلوب أربعة:
+
+    - **إذن**: لا يقع تدريب دون تقييم دستوري fail-closed عبر حدّ النواة.
+    - **نسب**: `task_id` إن ذُكرت تُقرأ من المستودع القانوني؛ معرّف وهمي يُردّ.
+    - **أثر**: قيد تدقيق وحدث دائم — فلا يبقى التدريب حدثًا داخليًّا بلا أثر.
+    - **صدق**: `accuracy` و`loss` مشتقّان من sha256 لا من تدريب، فيُعلَنان
+      `SIMULATION` في الاستجابة وفي Model Card نفسه، لا في تعليق داخلي فقط.
+      ولا يُسمح لمسار التدريب بتحريك حالة مهمّة تنفيذية.
+    """
+    boundary = get_subsystem_boundary()
 
     # التحقق من وجود البيانات
     dataset = _pipeline.get_dataset(request.dataset_id)
@@ -110,10 +130,34 @@ async def train_model(
         f"{request.dataset_id}:{request.base_model}:{request.training_method}".encode()
     ).hexdigest()
 
-    # مقاييس حتمية بناءً على hash
+    # مقاييس حتمية بناءً على hash — أرقام مُولّدة، ليست نتيجة تدريب
     seed = int(train_hash[:8], 16)
     accuracy = round(0.75 + (seed % 20) / 100, 4)  # 0.75-0.95
     loss = round(0.05 + (seed % 10) / 100, 4)  # 0.05-0.15
+
+    # الإذن والنسب والأثر — قبل أن يُسجّل أي نموذج باسم الدولة
+    try:
+        activity = boundary.authorized_activity(
+            ActivityKind.TRAINING_RUN,
+            f"training:{request.base_model}",
+            ExecutionFidelity.SIMULATION,
+            {
+                "dataset_id": request.dataset_id,
+                "training_method": request.training_method,
+                "metrics_origin": "sha256_seed",
+                "accuracy": accuracy,
+                "loss": loss,
+            },
+            task_id=request.task_id,
+            context={"base_model": request.base_model, "method": request.training_method},
+        )
+    except TaskNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"لا يوجد مهمّة قانونية بهذا المعرّف، فلا نسب للتدريب: {exc}",
+        ) from exc
+    except SubsystemRefusedError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
     # تسجيل النموذج
     model = _registry.register(
@@ -129,13 +173,22 @@ async def train_model(
                 "accuracy": accuracy,
                 "loss": loss,
                 "train_hash": train_hash[:16],
+                "execution_fidelity": ExecutionFidelity.SIMULATION.value,
+                "metrics_origin": "sha256_seed",
             },
             "knowledge_injection": True,  # anti-forgetting enabled
             "status": "trained",
         }
     )
 
-    return model
+    return {
+        **model,
+        "execution_fidelity": ExecutionFidelity.SIMULATION.value,
+        "fidelity_reason": "metrics_derived_from_hash_not_training",
+        "task_id": request.task_id,
+        "activity_id": activity.activity_id,
+        "authority_decision": activity.authority["decision"],
+    }
 
 
 @router.get("/models", response_model=list[dict])

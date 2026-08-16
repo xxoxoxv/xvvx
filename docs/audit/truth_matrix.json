@@ -75,21 +75,21 @@
     "federal": {
       "domain": "federal",
       "md_files": 52,
-      "py_files": 134,
+      "py_files": 137,
       "yaml_files": 3,
-      "code_lines": 22467,
+      "code_lines": 23373,
       "nucleus_count": 7,
       "nucleus_status": {
         "unspecified": 7
       },
       "has_readme": true,
-      "real_source_hits": 132,
+      "real_source_hits": 135,
       "fake_hits": 1,
       "in_memory_hits": 60,
       "secret_hits": 0,
       "observed_hits": 114,
       "api_routes": 141,
-      "test_refs": 58,
+      "test_refs": 59,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -124,7 +124,7 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 17,
+      "test_refs": 18,
       "identity_violations": 2,
       "deployed": true,
       "columns": {
@@ -194,7 +194,7 @@
       "secret_hits": 0,
       "observed_hits": 0,
       "api_routes": 0,
-      "test_refs": 132,
+      "test_refs": 133,
       "identity_violations": 3,
       "deployed": true,
       "columns": {
@@ -319,7 +319,7 @@
     },
     "docs": {
       "domain": "docs",
-      "md_files": 50,
+      "md_files": 51,
       "py_files": 2,
       "yaml_files": 0,
       "code_lines": 47,
@@ -966,28 +966,28 @@
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/src/amos_federation/services/training/main.py",
-      "line": 15,
+      "line": 22,
       "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/src/amos_federation/services/training/main.py",
-      "line": 16,
+      "line": 23,
       "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/src/amos_federation/services/training/main.py",
-      "line": 29,
+      "line": 36,
       "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/src/amos_federation/services/training/main.py",
-      "line": 30,
+      "line": 37,
       "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
@@ -1022,22 +1022,15 @@
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/src/amos_federation/services/model_gateway/main.py",
-      "line": 22,
+      "line": 29,
       "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/src/amos_federation/services/model_gateway/main.py",
-      "line": 40,
+      "line": 47,
       "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/model_gateway/main.py",
-      "line": 139,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
       "severity": "HIGH"
     },
     {
@@ -1123,6 +1116,13 @@
       "line": 102,
       "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/services/executive_core/subsystem_boundary.py",
+      "line": 165,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
     }
   ],
   "summary": {
@@ -1132,8 +1132,8 @@
     "identity_violations": 25,
     "by_severity": {
       "CRITICAL": 11,
-      "MEDIUM": 25,
-      "HIGH": 64
+      "MEDIUM": 26,
+      "HIGH": 63
     },
     "by_kind": {
       "SANDBOX_DISABLED": 1,

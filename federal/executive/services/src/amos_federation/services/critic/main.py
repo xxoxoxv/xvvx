@@ -15,6 +15,12 @@ from amos_federation.common.auth import require_auth
 from amos_federation.common.persistent import PersistentCriticStore
 from amos_federation.common.registry import SERVICES
 from amos_federation.common.service import create_service_app
+from amos_federation.services.executive_core.fidelity import ExecutionFidelity
+from amos_federation.services.executive_core.subsystem_boundary import (
+    ActivityKind,
+    SubsystemRefusedError,
+    get_subsystem_boundary,
+)
 
 router = APIRouter(prefix="/v1", tags=["critic"])
 critic_store = PersistentCriticStore()
@@ -40,6 +46,11 @@ class ReviewResponse(BaseModel):
     approved: bool
     criteria: dict[str, Any]
     created_at: str
+    #: من أين جاءت المادة المُقَيّمة: `canonical` من المستودع، أو ادّعاء لم يُتحقّق.
+    task_provenance: str = "none"
+    #: مصدر الخطوات التي بُنيت عليها الدرجة: `canonical_result` أو `caller_supplied`.
+    scored_material: str = "caller_supplied"
+    activity_id: str | None = None
 
 
 def _score_review(request: ReviewRequest) -> tuple[float, str, bool, dict[str, Any]]:
@@ -100,8 +111,63 @@ async def review_task(
     request: ReviewRequest,
     _: Annotated[dict[str, object], Depends(require_auth)],
 ) -> ReviewResponse:
-    """مراجعة نتيجة مهمة وتعيين درجة جودة وتغذية راجعة."""
+    """مراجعة نتيجة مهمة — من المستودع القانوني متى أمكن، لا مما يقوله الطالب.
+
+    ما كان يحدث قبل R2: الناقد يُقيّم خطواتٍ يرسلها الطالب نفسه، وينسبها إلى
+    `task_id` لا يُتحقّق من وجوده — أي أن أي جهة تستطيع أن تشتري لنفسها درجة
+    جودة عالية على مهمّة لا وجود لها.
+
+    بعد R2:
+
+    - `task_id` موجودة في المستودع القانوني ← تُقرأ الخطوات والملخّص من نتيجة
+      المهمّة المُخزّنة، وإرسال `steps` معها يُردّ بـ403.
+    - `task_id` مذكورة وغير موجودة ← تمرّ المراجعة لكن تُوسَم `unverified`، فلا
+      تُقرأ لاحقًا كأنها حكم رسمي على مهمّة للدولة.
+    - المراجعة نفسها تمرّ بحدّ النواة: إذن دستوري ثم تدقيق وحدث دائم، بلا تحريك
+      حالة المهمّة — حلقة الإعادة/التصعيد ليست من نطاق R2.
+    """
+    boundary = get_subsystem_boundary()
+    provenance, linked_task_id = boundary.classify_provenance(request.task_id)
+
+    scored_material = "caller_supplied"
+    if linked_task_id is not None:
+        # مهمّة قانونية: المادة المُقَيّمة تُقرأ من المستودع، ولا يُقيّم أحد ما قدّمه بنفسه
+        if request.steps:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="مهمّة قانونية تُقيَّم من نتيجتها المُخزّنة، فلا تُرسل معها steps",
+            )
+        canonical = boundary.canonical_result(linked_task_id)
+        request = request.model_copy(
+            update={
+                "steps": canonical["steps"],
+                "result_summary": request.result_summary or canonical["summary"],
+                "agent_id": request.agent_id or canonical["agent_id"],
+            }
+        )
+        scored_material = "canonical_result"
+
     score, feedback, approved, criteria = _score_review(request)
+
+    try:
+        activity = boundary.authorized_activity(
+            ActivityKind.CRITIQUE,
+            f"task:{request.task_id or 'unlinked'}",
+            ExecutionFidelity.REAL,
+            {
+                "quality_score": score,
+                "approved": approved,
+                "criteria": criteria,
+                "task_provenance": provenance,
+                "scored_material": scored_material,
+                "claimed_task_id": request.task_id,
+            },
+            task_id=linked_task_id,
+            context={"provenance": provenance},
+        )
+    except SubsystemRefusedError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
     record = critic_store.review(
         {
             "task_id": request.task_id,
@@ -112,7 +178,12 @@ async def review_task(
             "criteria": criteria,
         }
     )
-    return ReviewResponse(**record)
+    return ReviewResponse(
+        **record,
+        task_provenance=provenance,
+        scored_material=scored_material,
+        activity_id=activity.activity_id,
+    )
 
 
 @router.get("/reviews", response_model=list[dict])
