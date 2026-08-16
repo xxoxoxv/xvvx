@@ -32,6 +32,7 @@
 | 7 | الأمر التالي حرفيًّا |
 | 8 | ما لا يُفعَل بعد |
 | 9 | سجل نقاط التفتيش |
+| 10 | جولة استرداد الحالة وبداية E2.2-G |
 
 ---
 
@@ -42,7 +43,7 @@
 | Current Phase | E2.2 — Crown Root of Trust & Protection |
 | Current Subphase | E2.2-G — Full relevant suite across systems |
 | Current Objective | تشغيل الحِزَم الكاملة عبر الأنظمة (تاج + سيادة + دستور + حكامة + خدمات فدرالية) مع ruff والفحوص الساكنة ومسح الأسرار، وأي ارتداد = BLOCK |
-| Status | E2.2-A..F = VERIFIED محليًّا · E2.2-F مدفوعة · E2.2-G = NOT_STARTED |
+| Status | E2.2-A..F = VERIFIED (أُعيد التحقق من E2.2-F بتشغيل فعلي في 2026-08-16) · E2.2-G = IN_PROGRESS · **BLOCKED** على عيب حقيقي في وضع Postgres (انظر §5 و§10) |
 | Current Commit SHA | `b4deb5a` (E2.2-F — مدفوع ومؤكَّد) |
 | Last Verified Commit | `b4deb5a` — مؤكَّد على `origin/main` بـ`git ls-remote` |
 | Previous Checkpoint SHA | `b4deb5a` (E2.2-F) · `24cae55` (تثبيت حالة E2.2-E) · `891f6fe` (E2.2-E) · `3fed334` (E2.2-D) · `dae73f6` (E2.2-C) · `b13cd87` (E2.2-B) · `fb5ce9d` (E2.2-A) · `098beb3` (ما قبل التاج) |
@@ -356,6 +357,9 @@ E2.1 باقية كما هي.
   E2.2-D/E — ولا تُخفى ولا تُعطَّل بوابة.
 - قصّ ذيل سلسلة السجل لا يُكشَف من داخل الملف وحده (حدّ مُعلَن، لا عيب مخفي).
 - العتاد الإنتاجي والإجراءات البشرية غير منفَّذة بحكم طبيعتها.
+- **وضع Postgres في حزمة خدمات الاتحاد معطوب** — `AMOS_RUN_POSTGRES_TESTS=1` يُسقِط
+  اختبارات قائمة تفترض sqlite. التفصيل والتصنيف في §10.4 — ولا يُدّعى أنه محلول.
+- **بيانة اعتماد نافذة في `.env.example` المُلتزَم** — التدوير واجب، انظر §10.4.
 
 ## 6. ما تبقّى وترتيبه
 
@@ -367,7 +371,7 @@ E2.1 باقية كما هي.
 | E2.2-D | بوابات الهوية | **VERIFIED** (`3fed334`، البعيد مؤكَّد) — عيبان حقيقيان في الحُرّاس أنفسهم |
 | E2.2-E | تحقق الأسرار وحدود الثقة | **VERIFIED** (`891f6fe`، البعيد مؤكَّد) — 11 بوابة، وثلاثة حقن، وسرّ الملك خرج من الكود |
 | E2.2-F | إثبات الاستمرارية السيادية من الطرف إلى الطرف | **VERIFIED محليًّا** — مسار منفَّذ + إثبات تنفيذي + ثلاثة حقن · وعيب ادّعاء في اختبار قائم صُحِّح |
-| E2.2-G | الحِزَم الكاملة عبر الأنظمة | PENDING |
+| E2.2-G | الحِزَم الكاملة عبر الأنظمة | **IN_PROGRESS · BLOCKED** — كل البوابات والحِزَم المدعومة خضراء (§10.3)، ووضع Postgres يكشف عيبًا قائمًا (§10.4) |
 | E2.3-A | التحقق النهائي العابر للأنظمة | PENDING |
 | E2.3-B | تقرير الإثبات وإغلاق المرحلة | PENDING |
 
@@ -405,6 +409,107 @@ git push origin main && git ls-remote origin main   # وتحقق من التطا
 | E2.2-D | بوابات الهوية (وعيبان في الحُرّاس أنفسهم) | `3fed334` | مؤكَّد بـ`ls-remote` | VERIFIED |
 | E2.2-E | حدود الأسرار والثقة | `891f6fe` ثم `24cae55` | مؤكَّد بـ`ls-remote` | VERIFIED |
 | E2.2-F | الاستمرارية السيادية عبر مسار منفَّذ (وتصحيح ادّعاء في اختبار قائم) | `b4deb5a` | مؤكَّد بـ`ls-remote` | VERIFIED |
+
+## 10. جولة استرداد الحالة وبداية E2.2-G (2026-08-16)
+
+وكيل جديد استلم المستودع من نسخة نقية (`git clone`)، ولم يعتمد على ذاكرة محادثة
+ولا على عمل محلي سابق. ما يلي مخرجات أوامر شُغِّلت فعلًا في هذه الجولة.
+
+### 10.1 حالة المستودع عند الاستلام
+
+| الفحص | النتيجة |
+|---|---|
+| `git rev-parse HEAD` | `dd1f60c462752a74aad8775b538609d1770cae3b` |
+| `git ls-remote origin main` | `dd1f60c` — **مطابق تمامًا لـHEAD** |
+| `git status --porcelain -uall` | فارغ — لا تغيير محلي ولا ملف غير متتبَع |
+| `git branch --show-current` | `main` |
+| عمل محلي غير مدفوع | **لا شيء** — لا مرحلة جزئية مفقودة، ولا شيء حُرِف أو أُعيد ضبطه |
+
+الـcommit الأخير `dd1f60c` هو توثيق لا كود، والجوهر التنفيذي لـE2.2-F في `b4deb5a`.
+
+### 10.2 إعادة التحقق من E2.2-F — بالتشغيل لا بالوثيقة
+
+| الدليل | المقاس الآن | الموثَّق سابقًا | مطابق |
+|---|---|---|---|
+| `core/crown/sovereign_session.py` | موجود (310 أسطر، داخل `b4deb5a`) | موجود | ✓ |
+| `tests/crown/test_sovereign_continuity_e2e.py` | موجود (326 سطرًا) | موجود | ✓ |
+| `tools/crown/prove_sovereign_continuity.py` | موجود (319 سطرًا) | موجود | ✓ |
+| خطوة CI «بوابة 6ب» | `ci.yml:320-323` تُشغِّل أداة الإثبات | موجودة | ✓ |
+| `python tools/crown/prove_sovereign_continuity.py` | **PASS — رمز 0** | PASS · 18 ادّعاءً | ✓ |
+| `pytest tests/crown --cov-branch --cov-fail-under=90` | **332 passed · 94.48%** · `sovereign_session.py` 95% | 332 · 94.48% · 95.0% | ✓ |
+| `pytest tests/crown tests/sovereignty tests/constitutional tests/governance` | **729 passed** | 729 passed | ✓ |
+
+**حكم E2.2-F:** موجودة فعلًا على `origin/main`، وأرقامها أُعيد قياسها فطابقت الموثَّق
+حرفًا بحرف. لا ارتداد، ولا ادّعاء غير مسند.
+
+### 10.3 بوابات E2.2-G التي مرّت فعلًا
+
+| الأمر | النتيجة |
+|---|---|
+| `python -m ruff check .` | All checks passed — رمز 0 |
+| `tools/crown/verify_crown_root_of_trust.py` | 11/11 — رمز 0 |
+| `tools/crown/verify_secret_boundaries.py` | 11/11 — رمز 0 |
+| `python -m core.crown.cli crown-check` | `"passed": true` — رمز 0 |
+| `tools/crown/generate_crown_truth_matrix.py --check` | مطابقة للدليل — رمز 0 |
+| `tools/governance/generate_crown_threat_doc.py --check` | مطابقة للتنفيذ — رمز 0 |
+| بوابات الهوية الأربع | كلها رمز 0 · 45 إقليمًا مسجّلًا · صفر مخالفة |
+| `tools/governance/truth_audit.py . --ratchet` | **ثابت عند 106** — لا ارتداد |
+| `PYTHONPATH=src pytest tests` (خدمات الاتحاد، التركيب المدعوم) | **694 passed · 8 skipped** |
+| حالة الشجرة بعد كل البوابات | نقية — لا انحراف مولَّد |
+
+### 10.4 أول تشغيل حقيقي لـPostgres — وما كشفه
+
+الثمانية المتخطّاة في `tests/test_phase1_postgres.py` لم تُشغَّل قطّ من قبل — لا محليًا ولا في CI.
+وملاحظة `.env.example` تقول إن المضيف المباشر غير قابل للوصول. **وهي متقادمة جزئيًا:**
+`db.mqcfmwtdaymrmwvthqyw.supabase.co` لا يحمل سجل A إطلاقًا (IPv6 وحده)، لكن مجمّع الاتصال
+`aws-0-ap-northeast-1.pooler.supabase.com` يعمل على 5432 وعلى 6543 بمستخدم `postgres.<project_ref>`.
+
+| الأمر | النتيجة |
+|---|---|
+| اتصال `psycopg2` عبر المجمّع (5432 و 6543) | نجح — PostgreSQL 17.6، 36 جدولًا في `public`، RLS مُفعّل على كلّها |
+| `AMOS_RUN_POSTGRES_TESTS=1 pytest tests/test_phase1_postgres.py` | **8 passed** — أول إثبات تنفيذي لمسار الاستمرارية على Postgres حقيقي |
+| الحزمة الكاملة في وضع Postgres | **FAIL — عيب حقيقي، والقياس الكلي لم يُكمل بعد** |
+
+#### عيب حقيقي مكشوف (EXISTING — يسبق E2.2)
+
+`tests/conftest.py:21-25` يُحوّل **الحزمة بأكملها** إلى Postgres حين تُفعّل
+`AMOS_RUN_POSTGRES_TESTS=1`، بإسناد `AMOS_DATABASE_URL` إلى `AMOS_TEST_DATABASE_URL`. وسبعة
+اختبارات في `tests/test_common_branches.py` **تفترض أن الرابط sqlite دائمًا** فتسقط حتمًا:
+
+```
+test_get_database_url_uses_env       assert 'postgresql://...' .startswith('sqlite')
+test_is_postgres_false_for_sqlite    assert _is_postgres() is False   ← صار True
+test_pg_connect_args_sqlite_branch   {'sslmode':'require','connect_timeout':15} != {'check_same_thread': False}
+test_get_engine_returns_sqlite_engine  'sqlite' not in engine.url
+TestEventPublisher × 3               تكتب SQL بلهجة sqlite (علامة ?) على Postgres
+```
+
+ورُصدت أيضًا إخفاقات وأخطاء جماعية في `test_edge_branches.py` و`test_event_bus.py` و
+`test_expansion.py` و`test_federation.py` في الوضع نفسه — **وعددها النهائي غير
+مقاس بعد، ولا يُدّعى رقم لها**؛ الجولة تتجاوز الساعة لأن كل دورة تعبر الشبكة إلى طوكيو.
+
+**التصنيف:** `EXISTING` — ليس ارتدادًا من E2.2-F ولا من E2.2-G. التركيب المدعوم
+(Postgres معطّل) ما زال أخضر بـ694/8. لكن وضع Postgres المُعلَن في `conftest.py`
+**معطوب بنيوًّا**، ووجود مفتاح تشغيل لمسار لم يُجرَّب قطّ هو نفسه ثقة كاذبة.
+
+**ما لم يُفعل قصدًا:** لم تُعدّل ولا تُسكت ولا تُتخطّى أي من الاختبارات الساقطة، ولم
+يُرفع أي استثناء في `conftest.py`. الإصلاح في المصدر يحتاج قرارًا من مالك المشروع.
+
+#### خطر أمني مُعلَن (لا يُخفى)
+
+`.env.example` المُلتزَم يحمل **كلمة مرور postgres حقيقية نصًّا** لمشروع Supabase قائم،
+ومفتاح `sb_publishable_...`. المالك يعدّها قاعدة تجريبية، و`verify_secret_boundaries.py`
+يمرّ لأن `.env.example` ملف قالب. **ومع ذلك هي بيانة اعتماد نافذة في تاريخ عام،
+وتدويرها واجب قبل أي استخدام إنتاجي.** لم تُحذف هنا لأن حذفها لا يمحوها من التاريخ،
+والمعالجة الصادقة هي التدوير لا الإخفاء.
+
+### 10.5 الأمر التالي والمعوّقات
+
+| الحقل | القيمة |
+|---|---|
+| NEXT EXACT ACTION | قرار المالك في عيب وضع Postgres: (أ) إصلاح في المصدر — تعزيل الاختبارات السبعة عن البيئة المحيطة وتوحيد لهجة SQL في `events`؛ أم (ب) تجميد وضع Postgres وإعلانه غير مدعوم صراحة |
+| BLOCKERS | وضع Postgres في `conftest.py` يُسقِط اختبارات قائمة · القياس الكلي للحزمة في هذا الوضع غير مكتمل |
+| ممنوع | إغلاق E2.2-G وادّعاء PASS قبل حل ما سبق · E3 ما زالت مقفلة |
 
 ## المراجع
 - خارطة المرحلة: [`PHASE_E_ROADMAP.md`](PHASE_E_ROADMAP.md)
