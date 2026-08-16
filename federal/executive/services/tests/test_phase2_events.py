@@ -299,13 +299,20 @@ class TestEventWiring:
         assert event["data"]["quality_score"] == 0.85
 
     def test_full_event_chain(self):
-        """2.7: السلسلة الكاملة من task.created إلى experience.recorded.
+        """2.7: السلسلة الكاملة تمرّ بدورة الحياة القانونية لا بمحاكاة موازية.
 
-        بوابة الخروج: إرسال مهمة واحدة يُنتج سلسلة أحداث كاملة قابلة للتتبع.
+        بعد R2 لم تعد هذه الدالة تُنشئ صفّ مهمّة بنفسها ولا تكتب حالة `assigned`
+        مباشرةً: هي تُسلّم الأمر إلى النواة التنفيذية، فتقع الانتقالات بإذن
+        سيادي وتُنشَر على الناقل الدائم. لذلك يُتحقّق هنا من انتقالات حقيقية
+        على موضوع النواة، لا من أحداث `task.created` كان يُصدرها مُحاكٍ.
         """
         from amos_federation.common.event_wiring import run_full_event_chain
+        from amos_federation.services.executive_core.engine import TRANSITION_SUBJECT
 
         result = run_full_event_chain("مهمة اختبار السلسلة الكاملة")
         assert result["status"] in ["complete", "partial"]
         assert result["task_id"].startswith("task-")
-        assert "task.created" in " ".join(result["event_subjects"])
+        # الحالة النهائية حالة قانونية من آلة الحالات، لا وسمًا يخترعه مستهلك أحداث
+        assert result["final_state"] in {"completed", "failed", "cancelled"}
+        assert result["transitions"] >= 1
+        assert TRANSITION_SUBJECT in result["event_subjects"]

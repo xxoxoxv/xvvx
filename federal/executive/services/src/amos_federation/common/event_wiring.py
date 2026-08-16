@@ -1,45 +1,71 @@
 """
-AMOS-Federation Event Wiring — Phase 2
-الهدف: ربط 6 أنواع أحداث في سلسلة كاملة من task.created إلى experience.recorded
+AMOS-Federation Event Wiring — إسقاط دورة الحياة القانونية على أحداث النطاق
+الهدف: ناشرو أحداث النطاق ومُسقِط واحد يقرأ انتقالات النواة التنفيذية
 النطاق: common/event_wiring
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
+تاريخ آخر تعديل: 2026-08-16 (R2)
 
-السلسلة الكاملة:
-1. task.created → API Gateway ينشر عند إنشاء مهمة
-2. agent.assigned → Orchestrator يستهلك task.created وينشر agent.assigned
-3. tool.executed → Agent Runtime يستهلك agent.assigned وينشر tool.executed
-4. experience.recorded → بعد tool.executed تُسجّل الخبرة
-5. approval.signed → بوابة الموافقة على الترقيات
-6. agent.completed → إكمال المهمة
+ما كانت هذه الوحدة قبل R2، بالقياس لا بالوصف:
+
+    سلسلة **دورة حياة ثانية**. `OrchestratorConsumer` كان يستهلك
+    `task.created` ثم يخترع `agent-<uuid>` ويكتب `update_status(task_id,
+    "assigned")` مباشرةً في جدول المهام — حالة ليست في آلة الحالات، وكتابة بلا
+    إذن سيادي ولا انتقال ذرّي. و`AgentRuntimeConsumer` كان «ينفّذ» فيُصدر
+    `tool.executed` بنتيجة ثابتة و`experience.recorded` بـ`quality_score=0.85`
+    مُختلَقة، ثم يُعلن `agent.completed`. أي أن مهمّة يمكن أن «تكتمل» في
+    الأحداث ولم يقع تنفيذ، ولم تُسأل البوابة السيادية. و`run_full_event_chain`
+    كان يُنشئ صفّ مهمّة بنفسه (`_task_store.create`).
+
+بعد R2:
+
+- **لا كتابة حالة هنا إطلاقًا.** لا `create` ولا `update_status`؛ الوحدة لا
+  تستورد مخزن المهام. تحريك دورة الحياة بيد `executive_core.engine` وحدها.
+- المُستهلك الوحيد لدورة الحياة هو `CanonicalLifecycleProjector`: يقرأ حدث
+  الانتقال الدائم الذي تُصدره النواة، ويُسقطه على أحداث النطاق القديمة
+  (`agent.assigned` عند `dispatched`، و`agent.completed` عند `completed`)
+  بمعطيات **مقروءة من الانتقال نفسه** لا مُخترعة.
+- ما لا يُسقَط بقصد: `tool.executed` و`experience.recorded`. النواة لا تُصدر
+  حدثًا لكل أداة، والخبرة تحتاج حكمًا على الجودة — واختلاق أيٍّ منهما كذب.
+  هذه حدود مُعلَنة (PARTIAL) لا فراغ مُخفى.
+- ناشرو الأحداث (`publish_*`) باقون كما هم: هم واجهة النشر على الناقل الدائم
+  الموجود، ولم يُنشأ ناقل ثانٍ.
 """
 
 import contextlib
-import uuid
 from typing import Any
 
 from amos_federation.common.durable_event_bus import get_durable_event_bus
 from amos_federation.common.persistent import (
     PersistentAuditStore,
     PersistentExperienceStore,
-    PersistentTaskStore,
 )
 
-# مراجع للمخازن
-_task_store = PersistentTaskStore()
+# مراجع للمخازن — تدقيق وخبرات فقط. لا مخزن مهام: هذه الوحدة لا تكتب حالة مهمّة.
 _exp_store = PersistentExperienceStore()
 _audit_store = PersistentAuditStore()
 
 
+def _transition_subject() -> str:
+    """موضوع حدث الانتقال كما تُعلنه النواة — لا يُكرَّر نصُّه هنا.
+
+    الاستيراد متأخّر بقصد: `common` طبقة تحت `services`، فلا تستوردها عند
+    التحميل. المُسقِط يسأل النواة عن موضوعها لحظة التسجيل.
+    """
+    from amos_federation.services.executive_core.engine import TRANSITION_SUBJECT
+
+    return TRANSITION_SUBJECT
+
+
 # ========================
-# === 2.2: task.created ===
+# === ناشرو أحداث النطاق ===
 # ========================
 
 
 def publish_task_created(
     task_id: str, task_type: str, description: str, tenant_id: str = "default"
 ) -> dict[str, Any]:
-    """نشر حدث إنشاء مهمة — يُستهلك من قبل Orchestrator."""
+    """نشر حدث إنشاء مهمة — إعلان لا يُغيّر حالة."""
     bus = get_durable_event_bus()
     return bus.publish(
         subject="amos_federation.task.created",
@@ -53,13 +79,8 @@ def publish_task_created(
     )
 
 
-# ========================
-# === 2.3: agent.assigned ===
-# ========================
-
-
 def publish_agent_assigned(task_id: str, agent_id: str, plan: str = "") -> dict[str, Any]:
-    """نشر حدث تعيين وكيل — يُستهلك من قبل Agent Runtime."""
+    """نشر حدث تعيين وكيل — يُسقَط من انتقال `dispatched` القانوني."""
     bus = get_durable_event_bus()
     return bus.publish(
         subject="amos_federation.agent.assigned",
@@ -73,15 +94,10 @@ def publish_agent_assigned(task_id: str, agent_id: str, plan: str = "") -> dict[
     )
 
 
-# ========================
-# === 2.4: tool.executed ===
-# ========================
-
-
 def publish_tool_executed(
     tool_id: str, agent_id: str, result: dict[str, Any], task_id: str = ""
 ) -> dict[str, Any]:
-    """نشر حدث تنفيذ أداة — يُستهلك للتدقيق."""
+    """نشر حدث تنفيذ أداة — يُستدعى من يملك نتيجة أداة حقيقية، ولا يُسقَط تلقائيًّا."""
     bus = get_durable_event_bus()
     return bus.publish(
         subject="amos_federation.tool.executed",
@@ -95,11 +111,6 @@ def publish_tool_executed(
     )
 
 
-# ========================
-# === 2.5: experience.recorded ===
-# ========================
-
-
 def publish_experience_recorded(
     experience_id: str,
     exp_type: str,
@@ -107,7 +118,7 @@ def publish_experience_recorded(
     task_id: str = "",
     quality_score: float = 0.0,
 ) -> dict[str, Any]:
-    """نشر حدث تسجيل خبرة — يُستهلك من قبل Memory Service."""
+    """نشر حدث تسجيل خبرة — الدرجة تأتي من مُقيّم حقيقي، لا من هذه الوحدة."""
     bus = get_durable_event_bus()
     return bus.publish(
         subject="amos_federation.experience.recorded",
@@ -120,11 +131,6 @@ def publish_experience_recorded(
         },
         correlation_id=task_id or experience_id,
     )
-
-
-# ========================
-# === 2.6: approval.signed ===
-# ========================
 
 
 def publish_approval_signed(
@@ -147,128 +153,71 @@ def publish_approval_signed(
     )
 
 
-# ========================
-# === agent.completed ===
-# ========================
-
-
 def publish_agent_completed(
     agent_id: str,
     task_id: str,
     result: dict[str, Any],
-    quality_score: float = 0.0,
+    quality_score: float | None = None,
 ) -> dict[str, Any]:
-    """نشر حدث إكمال مهمة."""
+    """نشر حدث إكمال مهمة — تُحذف الدرجة إن لم يُقدّمها مُقيّم، ولا تُخترع صفرًا دالًّا."""
+    data: dict[str, Any] = {
+        "agent_id": agent_id,
+        "task_id": task_id,
+        "result": result,
+    }
+    if quality_score is not None:
+        data["quality_score"] = quality_score
     bus = get_durable_event_bus()
     return bus.publish(
         subject="amos_federation.agent.completed",
-        data={
-            "agent_id": agent_id,
-            "task_id": task_id,
-            "result": result,
-            "quality_score": quality_score,
-        },
+        data=data,
         correlation_id=task_id,
     )
 
 
 # ========================
-# === المستهلكات (Consumers) ===
+# === المُسقِط والمستهلكات ===
 # ========================
 
 
-class OrchestratorConsumer:
-    """مستهلك task.created → منتج agent.assigned.
+class CanonicalLifecycleProjector:
+    """يقرأ انتقالات النواة التنفيذية ويُسقطها على أحداث النطاق القديمة.
 
-    يحاكي دور Orchestrator: يستقبل مهام جديدة ويعين وكلاء لها.
+    مُسقِط لا مُنفِّذ: لا يعيّن وكيلًا، ولا يُنفّذ أداة، ولا يكتب حالة. كل قيمة
+    يُصدرها مقروءة من حمولة الانتقال الذي أصدرته النواة بعد إذن سيادي.
     """
+
+    CONSUMER_NAME = "legacy_domain_projection"
 
     def __init__(self) -> None:
         self._bus = get_durable_event_bus()
-        self._bus.subscribe("amos_federation.task.created", self._handle_task_created)
+        self._bus.subscribe(_transition_subject(), self._handle_transition)
 
-    def _handle_task_created(self, event: dict[str, Any]) -> None:
-        """معالجة حدث إنشاء مهمة — تعيين وكيل ونشر agent.assigned."""
+    def _handle_transition(self, event: dict[str, Any]) -> None:
         data = event["data"]
-        task_id = data["task_id"]
+        to_state = data.get("to_state")
+        task_id = data.get("task_id", "")
+        detail = data.get("detail") or {}
 
-        # تعيين وكيل (محاكاة بسيطة — في الإنتاج يختار من Population Registry)
-        agent_id = f"agent-{uuid.uuid4().hex[:8]}"
+        if to_state == "dispatched":
+            assignment = detail.get("assignment") or {}
+            agent_id = assignment.get("agent_id")
+            if agent_id:
+                publish_agent_assigned(task_id=task_id, agent_id=agent_id)
+            return
 
-        # تحديث حالة المهمة
-        with contextlib.suppress(Exception):
-            _task_store.update_status(task_id, "assigned")
-
-        # نشر حدث تعيين الوكيل
-        publish_agent_assigned(
-            task_id=task_id,
-            agent_id=agent_id,
-            plan=f"execute:{data.get('type', 'generic')}",
-        )
-
-        # تدقيق
-        _audit_store.append(
-            "task.assigned",
-            "orchestrator",
-            {
-                "task_id": task_id,
-                "agent_id": agent_id,
-            },
-        )
-
-
-class AgentRuntimeConsumer:
-    """مستهلك agent.assigned → منتج tool.executed + experience.recorded.
-
-    يحاكي دور Agent Runtime: يستقبل التعيينات وينفذ الأدوات.
-    """
-
-    def __init__(self) -> None:
-        self._bus = get_durable_event_bus()
-        self._bus.subscribe("amos_federation.agent.assigned", self._handle_agent_assigned)
-
-    def _handle_agent_assigned(self, event: dict[str, Any]) -> None:
-        """معالجة حدث تعيين وكيل — تنفيذ مهمة وتسجيل خبرة."""
-        data = event["data"]
-        task_id = data["task_id"]
-        agent_id = data["agent_id"]
-
-        # تنفيذ أداة (محاكاة — في الإنتاج يستخدم Sandbox)
-        tool_result = {"status": "completed", "output": "task executed successfully"}
-        publish_tool_executed(
-            tool_id="default_executor",
-            agent_id=agent_id,
-            result=tool_result,
-            task_id=task_id,
-        )
-
-        # تسجيل خبرة
-        exp_id = f"exp-{uuid.uuid4().hex[:12]}"
-        publish_experience_recorded(
-            experience_id=exp_id,
-            exp_type="task_completion",
-            agent_id=agent_id,
-            task_id=task_id,
-            quality_score=0.85,
-        )
-
-        # إكمال المهمة
-        publish_agent_completed(
-            agent_id=agent_id,
-            task_id=task_id,
-            result=tool_result,
-            quality_score=0.85,
-        )
-
-        # تدقيق
-        _audit_store.append(
-            "task.completed",
-            agent_id,
-            {
-                "task_id": task_id,
-                "result": "success",
-            },
-        )
+        if to_state == "completed":
+            agent_id = detail.get("agent_id")
+            if agent_id:
+                publish_agent_completed(
+                    agent_id=agent_id,
+                    task_id=task_id,
+                    result={
+                        "status": "completed",
+                        "steps": detail.get("steps"),
+                        "execution_fidelity": detail.get("execution_fidelity"),
+                    },
+                )
 
 
 class AuditConsumer:
@@ -320,47 +269,51 @@ _consumers_initialized = False
 
 
 def init_event_consumers() -> None:
-    """تهيئة كل المستهلكات — يُستدعى مرة واحدة عند الإقلاع."""
+    """تهيئة المُسقِط والمستهلكات — يُستدعى مرة واحدة عند الإقلاع."""
     global _consumers_initialized
     if _consumers_initialized:
         return
-    OrchestratorConsumer()
-    AgentRuntimeConsumer()
+    CanonicalLifecycleProjector()
     AuditConsumer()
     MemoryConsumer()
     _consumers_initialized = True
 
 
+def reset_event_consumers() -> None:
+    """السماح بإعادة التهيئة — للاختبارات التي تُبدّل قاعدة البيانات."""
+    global _consumers_initialized
+    _consumers_initialized = False
+
+
 # ========================
-# === السلسلة الكاملة (Smoke Test) ===
+# === السلسلة الكاملة عبر المسار القانوني ===
 # ========================
 
 
 def run_full_event_chain(task_description: str = "مهمة تجريبية") -> dict[str, Any]:
-    """تشغيل السلسلة الكاملة: task.created → agent.assigned → tool.executed → experience.recorded.
+    """تشغيل دورة الحياة القانونية كاملة وقراءة ما نشرته من أحداث دائمة.
 
-    يعيد تقريرًا بالأحداث المنشورة والنتيجة.
+    لا تُنشئ صفّ مهمّة بنفسها ولا تكتب حالة: تُسلّم الأمر إلى النواة التنفيذية
+    (`submit_and_run`)، فتقع الانتقالات بإذن سيادي وتُقيَّد وتُنشَر، ثم يُسقِطها
+    `CanonicalLifecycleProjector` على أحداث النطاق. النتيجة تقول الحالة النهائية
+    كما هي في القاعدة — بما فيها الفشل، إن لم يوجد وكيل مؤهَّل مثلًا.
     """
-    # تهيئة المستهلكات
+    from amos_federation.services.executive_core.engine import get_executive_core
+
     init_event_consumers()
 
-    # 1. إنشاء مهمة
-    task_id = f"task-{uuid.uuid4().hex[:12]}"
-    _task_store.create(task_id, "event_chain_test", task_description, "default")
+    outcome = get_executive_core().submit_and_run("generic", task_description)
+    task_id = outcome["task"]["id"]
 
-    # 2. نشر task.created → سيحفز السلسلة
-    event1 = publish_task_created(task_id, "event_chain_test", task_description)
-
-    # 3. التحقق من السلسلة
     bus = get_durable_event_bus()
-    events = bus.get_events(limit=20)
+    events = [event for event in bus.get_events(limit=200) if event["correlation_id"] == task_id]
 
-    chain = {
+    return {
         "task_id": task_id,
-        "task_created": event1["event_id"],
+        "final_state": outcome["final_state"],
+        "terminal": outcome["terminal"],
+        "transitions": len(outcome["transitions"]),
         "events_published": len(events),
-        "event_subjects": [e["subject"] for e in events],
-        "status": "complete" if events else "partial",
+        "event_subjects": sorted({event["subject"] for event in events}),
+        "status": "complete" if outcome["terminal"] else "partial",
     }
-
-    return chain

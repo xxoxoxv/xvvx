@@ -8,7 +8,7 @@
 [`tools/governance/verify_cross_system_suites.py`](../../tools/governance/verify_cross_system_suites.py)
 وأرقامها مقيسة لحظة التوليد. تحريرها يدويًّا لا يغيّر شيئًا في الواقع.
 
-آخر توليد: **2026-08-16 16:45 UTC**
+آخر توليد: **2026-08-16 18:00 UTC**
 
 بيئة PostgreSQL الحقيقية لحظة التوليد: **مُفعّلة** (`AMOS_RUN_POSTGRES_TESTS` + `AMOS_TEST_DATABASE_URL`)
 
@@ -16,9 +16,9 @@
 
 | الحزمة | اللهجة | ناجح | ساقط | مُتخطّى | ثوانٍ | الحال |
 |---|---|---|---|---|---|---|
-| `root-core` | `NONE` | 757 | 0 | 0 | 73.0 | **PASS** |
-| `services-sqlite` | `SQLITE` | 756 | 0 | 25 | 105.8 | **PASS** |
-| `services-postgres` | `POSTGRES` | 25 | 0 | 0 | 249.1 | **PASS** |
+| `root-core` | `NONE` | 757 | 0 | 0 | 38.0 | **PASS** |
+| `services-sqlite` | `SQLITE` | 799 | 0 | 25 | 118.5 | **PASS** |
+| `services-postgres` | `POSTGRES` | 25 | 0 | 0 | 248.5 | **PASS** |
 
 ## ما تعنيه كل حزمة
 
@@ -27,21 +27,21 @@
 - الغرض: نواة الدستور والسيادة والتاج والحكم — لا تمسّ طبقة SQL المزدوجة
 - المجلد: `.`
 - الهدف: `tests`
-- ملخّص pytest الفعلي: `757 passed in 72.51s (0:01:12)`
+- ملخّص pytest الفعلي: `757 passed in 37.61s`
 
 ### `services-sqlite`
 
 - الغرض: حزمة خدمات الاتحاد الكاملة على لهجة SQLite (التركيب الافتراضي)
 - المجلد: `federal/executive/services`
 - الهدف: `tests`
-- ملخّص pytest الفعلي: `756 passed, 25 skipped, 1 warning in 104.60s (0:01:44)`
+- ملخّص pytest الفعلي: `799 passed, 25 skipped, 1 warning in 117.59s (0:01:57)`
 
 ### `services-postgres`
 
 - الغرض: إثبات لهجة PostgreSQL على قاعدة حقيقية — لا تُقبل خضرة بالتخطّي
 - المجلد: `federal/executive/services`
 - الهدف: `tests/test_phase1_postgres.py` · `tests/test_phase1_postgres_events.py`
-- ملخّص pytest الفعلي: `25 passed in 248.63s (0:04:08)`
+- ملخّص pytest الفعلي: `25 passed in 248.04s (0:04:08)`
 - **التخطّي ممنوع في هذه الحزمة** — التخطّي يعني لهجة لم تُجرَّب.
 
 ## ما لا تُثبِته هذه الوثيقة
