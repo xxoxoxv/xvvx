@@ -1,10 +1,10 @@
----
-scope: supervisor_agent_implementation
-owner: agent_orchestration
-created: 2026-08-17
-last_modified: 2026-08-17
-purpose: Supervisor agent implementation for agent oversight and management
----
+# ---
+# scope: supervisor_agent_implementation
+# owner: agent_orchestration
+# created: 2026-08-17
+# last_modified: 2026-08-17
+# purpose: Supervisor agent implementation for agent oversight and management
+# ---
 
 """
 Supervisor Agent for AMOS Federation
