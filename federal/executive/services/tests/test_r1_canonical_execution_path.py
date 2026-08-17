@@ -40,6 +40,7 @@ from amos_federation.services.executive_core.http_errors import EXECUTION_BYPASS
 from amos_federation.services.executive_core.repository import ExecutiveTaskRepository
 from amos_federation.services.executive_core.states import TaskState
 from amos_federation.services.orchestrator.main import app as orchestrator_app
+from tests.conftest import purge_agents
 
 AUTH_HEADERS = {
     "Authorization": "Bearer "
@@ -58,7 +59,7 @@ def _fresh_state() -> None:
     session = get_session_factory()()
     try:
         session.execute(text("DELETE FROM tasks"))
-        session.execute(text("DELETE FROM agents"))
+        purge_agents(session)
         session.commit()
     finally:
         session.close()
@@ -160,7 +161,7 @@ def test_execution_fails_explicitly_when_no_eligible_agent() -> None:
     """بلا وكيل مؤهَّل: المهمّة تسقط صريحًا ولا تُنفَّذ بوكيل مُختَرع."""
     session = get_session_factory()()
     try:
-        session.execute(text("DELETE FROM agents"))
+        purge_agents(session)
         session.commit()
     finally:
         session.close()

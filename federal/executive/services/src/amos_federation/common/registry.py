@@ -90,6 +90,13 @@ SERVICES: dict[str, ServiceDefinition] = {
         "store": "PostgreSQL",
         "slo": "p99 < 100ms",
     },
+    "state-registry": {
+        "name": "state-registry",
+        "port": 8010,
+        "responsibility": "السجل الفدرالي: المؤسسات والإدارات والمسؤولون",
+        "store": "PostgreSQL",
+        "slo": "p99 < 200ms لكل قراءة",
+    },
     "control-console": {
         "name": "control-console",
         "port": 3000,

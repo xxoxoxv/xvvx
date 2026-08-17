@@ -34,6 +34,7 @@ from amos_federation.services.executive_core import (
 from amos_federation.services.executive_core.dispatcher import WILDCARD
 from amos_federation.services.executive_core.engine import TRANSITION_SUBJECT
 from amos_federation.services.executive_core.main import app
+from tests.conftest import purge_agents
 
 
 @pytest.fixture(autouse=True)
@@ -47,7 +48,7 @@ def _fresh_db() -> None:
     session = get_session_factory()()
     try:
         session.execute(text("DELETE FROM tasks"))
-        session.execute(text("DELETE FROM agents"))
+        purge_agents(session)
         session.commit()
     finally:
         session.close()

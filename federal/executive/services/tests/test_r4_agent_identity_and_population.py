@@ -60,6 +60,7 @@ from amos_federation.services.executive_core.dispatcher import (
     NoEligibleAgentError,
 )
 from amos_federation.services.executive_core.engine import reset_executive_core
+from tests.conftest import purge_agents
 
 _SERVICES_ROOT = Path(__file__).resolve().parents[1] / "src/amos_federation/services"
 _REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -72,7 +73,7 @@ def _fresh_state() -> None:
     session = get_session_factory()()
     try:
         session.execute(text("DELETE FROM tasks"))
-        session.execute(text("DELETE FROM agents"))
+        purge_agents(session)
         session.commit()
     finally:
         session.close()

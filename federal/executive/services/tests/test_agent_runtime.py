@@ -31,6 +31,7 @@ from amos_federation.services.agent_runtime.worker import WorkerAgent
 from amos_federation.services.executive_core.dispatcher import WILDCARD, register_agent
 from amos_federation.services.executive_core.engine import get_executive_core, reset_executive_core
 from amos_federation.services.executive_core.http_errors import EXECUTION_BYPASS_FORBIDDEN
+from tests.conftest import purge_agents
 
 client = TestClient(app)
 AUTH_HEADERS = {"Authorization": f"Bearer {create_access_token('tester', ['tasks:execute'])}"}
@@ -43,7 +44,7 @@ def _clean_state() -> None:
     session = get_session_factory()()
     try:
         session.execute(text("DELETE FROM tasks"))
-        session.execute(text("DELETE FROM agents"))
+        purge_agents(session)
         session.commit()
     finally:
         session.close()
