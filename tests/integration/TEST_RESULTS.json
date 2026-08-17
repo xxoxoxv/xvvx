@@ -1,3 +1,10 @@
+---
+scope: TEST_RESULTS_data
+owner: data_persistence
+created: 2026-08-17
+last_modified: 2026-08-17
+purpose: Persistent data storage for TEST_RESULTS
+---
 {
   "purpose": "Integration test results storage",
   "test_suite": "Integration + Red Team",

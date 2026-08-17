@@ -42,7 +42,7 @@ python -m pytest tests/ -q
 كل خدمة تعرض `GET /health` و`GET /ready`. تحمي بوابة API مسارات `/v1` برمز JWT Bearer موقع بمفتاح `AMOS_JWT_SECRET`.
 
 ## تاريخ آخر تعديل
-2026-08-15
+2026-08-17
 
 ## المحتويات
 - `.dockerignore` — استبعاد الملفات غير اللازمة من سياق البناء

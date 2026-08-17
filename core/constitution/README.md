@@ -35,7 +35,7 @@
 [`core/sovereignty/`](../sovereignty/README.md).
 
 ## تاريخ آخر تعديل
-2026-08-15
+2026-08-17
 
 ## المحتويات
 - `ARTICLE_SEALS.json` — بيانات مهيكلة
