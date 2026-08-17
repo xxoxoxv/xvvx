@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation.local/governance/schema-registry/task.created.schema.json",
+  "title": "Task Created Event",
+  "description": "عقد حدث إنشاء المهمة — يُصدر عند ولادة مهمة جديدة في الحلقة التنفيذية.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "timestamp", "event_type", "source", "data", "chain_hash"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "معرّف فريد للحدث"
+    },
+    "timestamp": {
+      "type": "string",
+      "minLength": 1,
+      "description": "طابع زمني ISO-8601"
+    },
+    "event_type": {
+      "const": "task.created",
+      "description": "نوع الحدث الثابت"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "مصدر إصدار الحدث"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "type", "description"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1},
+        "type": {"type": "string", "minLength": 1},
+        "description": {"type": "string"},
+        "priority": {"type": "string"},
+        "domain": {"type": "string"}
+      },
+      "description": "حمولة الحدث"
+    },
+    "chain_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "تاش السلسلة بصيغة sha256:hex64"
+    }
+  },
+  "x-amos": {
+    "domain": "federal",
+    "created": "2026-08-15",
+    "phase": "P9",
+    "status": "active",
+    "owner": "federal/executive/services"
+  }
+}

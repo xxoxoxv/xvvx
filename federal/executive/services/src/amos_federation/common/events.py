@@ -34,11 +34,98 @@ EVENT_SUBJECT_PREFIX = "amos_federation"
 # البصمة التأسيسية لأول حدث في السلسلة
 GENESIS_HASH = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
 
+# =============================================================================
+# السجل القانوني الواحد (canonical audit record) — قرار E2.2-G
+# =============================================================================
+# المواد الداخلة في البصمة هي أعمدة `audit_log` الجوهرية وحدها، لأن التحقق
+# لا يملك إلا الصف المحفوظ. أي حقل داخل البصمة يجب أن يكون قابلًا للاسترداد
+# من الصف حرفيًا، وإلا صار التحقق مستحيلًا بنيوًّا.
+# `prev_hash` يدخل في المادة المهشّمة كبادئة منفصلة، فيربط الصف بما قبله.
+CANONICAL_AUDIT_FIELDS: tuple[str, ...] = (
+    "event_id",
+    "timestamp",
+    "event_type",
+    "actor_type",
+    "actor_id",
+    "action",
+    "metadata",
+)
+
+
+def _canonical_timestamp(value: Any) -> str | None:
+    """توحيد الوقت إلى نص ISO بتوقيت UTC ليتطابق في اللهجتين."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        try:
+            parsed = datetime.fromisoformat(str(value))
+        except ValueError:
+            # نص غير قابل للتحليل يُأخذ كما هو بلا تأويل.
+            return str(value)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC).isoformat()
+
+
+def _canonical_metadata(value: Any) -> Any:
+    """توحيد الحمولة: JSONB يعود قاموسًا وTEXT يعود نصًا — والقانوني قاموس."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except (TypeError, ValueError):
+            return value
+    return value
+
+
+def canonical_audit_record(
+    *,
+    event_id: str,
+    timestamp: Any,
+    event_type: str | None,
+    actor_type: str | None,
+    actor_id: str | None,
+    action: str | None,
+    metadata: Any,
+) -> dict[str, Any]:
+    """بناء التمثيل القانوني الوحيد لسجل تدقيق.
+
+    هذه الدالة هي المصدر الوحيد للشكل المهشّم، ويستدعيها الإنشاء والتحقق معًا.
+    """
+    return {
+        "event_id": None if event_id is None else str(event_id),
+        "timestamp": _canonical_timestamp(timestamp),
+        "event_type": event_type,
+        "actor_type": actor_type,
+        "actor_id": actor_id,
+        "action": action,
+        "metadata": _canonical_metadata(metadata),
+    }
+
+
+def canonical_audit_record_from_row(row: Any) -> dict[str, Any]:
+    """بناء نفس التمثيل القانوني من صف `audit_log` محفوظ."""
+    return canonical_audit_record(
+        event_id=row["event_id"],
+        timestamp=row["timestamp"],
+        event_type=row["event_type"],
+        actor_type=row["actor_type"],
+        actor_id=row["actor_id"],
+        action=row["action"],
+        metadata=row["metadata"],
+    )
+
 
 def compute_chain_hash(prev_hash: str, event_data: dict[str, Any]) -> str:
     """
-    حساب بصمة SHA-256 للحدث الحالي.
-    chain_hash = SHA256(prev_hash + canonical_json(event_data))
+    حساب بصمة SHA-256 للسجل القانوني.
+    chain_hash = SHA256(prev_hash + ":" + canonical_json(canonical_audit_record))
+
+    الخوارزمية لم تتغير: مفاتيح مرتبة، وUTF-8 بلا هروب ASCII، وSHA-256،
+    و`prev_hash` بادئة داخلة في المادة المهشّمة.
     """
     canonical = json.dumps(event_data, sort_keys=True, ensure_ascii=False)
     combined = f"{prev_hash}:{canonical}"
@@ -49,7 +136,7 @@ def get_last_chain_hash() -> str:
     """الحصول على آخر بصمة في سلسلة التدقيق من قاعدة البيانات."""
     try:
         with db_cursor() as cur:
-            cur.execute("SELECT chain_hash FROM audit_log ORDER BY id DESC LIMIT 1")
+            cur.execute("SELECT chain_hash FROM audit_log ORDER BY seq DESC LIMIT 1")
             row = cur.fetchone()
             if row:
                 return row["chain_hash"]
@@ -59,26 +146,38 @@ def get_last_chain_hash() -> str:
 
 
 class EventPublisher:
-    """ناشر الأحداث — يربط NATS + Audit Log + Hash Chain"""
+    """ناشر الأحداث — يربط NATS JetStream (إن توفّر) أو EventBus المحلي + Audit Log + Hash Chain"""
 
     def __init__(self):
         self._nc = None
+        self._local_bus = None
 
     async def connect(self):
-        """الاتصال بـ NATS JetStream"""
-        self._nc = await nats.connect(settings.nats_url)
-        self._js = self._nc.jetstream()
-        with suppress(Exception):
-            await self._js.add_stream(
-                name=settings.nats_stream,
-                subjects=[f"{EVENT_SUBJECT_PREFIX}.>"],
-                max_age=settings.nats_retention_days * 86400,
-            )
-        logger.info("event_publisher.connected", nats_url=settings.nats_url)
+        """الاتصال بـ NATS JetStream أو EventBus المحلي"""
+        if _NATS_AVAILABLE:
+            try:
+                self._nc = await nats.connect(settings.nats_url)
+                self._js = self._nc.jetstream()
+                with suppress(Exception):
+                    await self._js.add_stream(
+                        name=settings.nats_stream,
+                        subjects=[f"{EVENT_SUBJECT_PREFIX}.>"],
+                        max_age=settings.nats_retention_days * 86400,
+                    )
+                logger.info("event_publisher.connected", nats_url=settings.nats_url)
+                return
+            except Exception as e:
+                logger.warning("event_publisher.nats_unavailable", error=str(e))
+
+        # Fallback: EventBus محلي دائم
+        from amos_federation.common.event_bus import get_event_bus
+
+        self._local_bus = get_event_bus()
+        logger.info("event_publisher.using_local_bus")
 
     async def close(self):
         """إغلاق الاتصال"""
-        if self._nc:
+        if self._nc:  # pragma: no branch - requires live NATS connection (production-only)
             await self._nc.drain()
             await self._nc.close()
 
@@ -115,19 +214,30 @@ class EventPublisher:
             "data": data,
         }
 
-        # حساب سلسلة البصمات
+        # حساب سلسلة البصمات من **نفس** التمثيل القانوني الذي يعيد التحقق بناءه.
+        # ملاحظة صريحة: `source` ليس من أعمدة `audit_log`، فلا يدخل في البصمة — لأنه
+        # غير محفوظ أصلًا فلا محل للتلاعب فيه، وأي تغطية له تقتضي تغيير المخطّط.
+        action = f"{event_type}"
+        record = canonical_audit_record(
+            event_id=event_id,
+            timestamp=timestamp,
+            event_type=event_type,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            action=action,
+            metadata=data,
+        )
         prev_hash = get_last_chain_hash()
-        chain_hash = compute_chain_hash(prev_hash, event)
+        chain_hash = compute_chain_hash(prev_hash, record)
 
         # إدراج في سجل التدقيق الملحق فقط عند توفر قاعدة البيانات.
-        action = f"{event_type}"
         try:
             with db_cursor() as cur:
                 cur.execute(
                     """INSERT INTO audit_log
                        (event_id, timestamp, event_type, actor_type, actor_id,
                         action, chain_hash, prev_hash, metadata)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         event_id,
                         timestamp,
@@ -148,12 +258,12 @@ class EventPublisher:
                 error=str(error),
             )
 
-        # نشر الحدث إلى NATS
+        # نشر الحدث إلى NATS أو EventBus المحلي
         subject = f"{EVENT_SUBJECT_PREFIX}.{event_type}"
         event_with_hash = {**event, "chain_hash": chain_hash}
-        payload = json.dumps(event_with_hash, ensure_ascii=False).encode("utf-8")
 
-        if self._nc:
+        if self._nc:  # pragma: no branch - requires live NATS connection (production-only)
+            payload = json.dumps(event_with_hash, ensure_ascii=False).encode("utf-8")
             await self._js.publish(subject, payload)
             logger.info(
                 "event.published",
@@ -162,8 +272,20 @@ class EventPublisher:
                 subject=subject,
                 chain_hash=chain_hash[:20] + "...",
             )
+        elif self._local_bus:  # pragma: no branch - requires connect() fallback (production-only)
+            self._local_bus.publish(subject, event_with_hash)
+            logger.info(
+                "event.published_local",
+                event_id=event_id,
+                event_type=event_type,
+                subject=subject,
+            )
         else:
-            logger.warning("event.not_published_no_connection", event_id=event_id)
+            # محاولة استخدام EventBus بدون اتصال صريح
+            from amos_federation.common.event_bus import get_event_bus
+
+            get_event_bus().publish(subject, event_with_hash)
+            logger.info("event.published_fallback", event_id=event_id, subject=subject)
 
         return event_id
 
@@ -172,12 +294,11 @@ class EventPublisher:
         التحقق من سلامة سلسلة الكتل في audit_log.
         يعيد True إذا كانت السلسلة سليمة، False إذا وُجد تلاعب.
         """
+        # الترتيب الأساسي للسلسلة هو `seq` — عمود متزايد رتيب، لا `id` ولا الوقت.
+        columns = ", ".join((*CANONICAL_AUDIT_FIELDS, "chain_hash", "prev_hash"))
         try:
             with db_cursor() as cur:
-                cur.execute(
-                    "SELECT event_id, chain_hash, prev_hash, metadata "
-                    "FROM audit_log ORDER BY id ASC"
-                )
+                cur.execute(f"SELECT {columns} FROM audit_log ORDER BY seq ASC")
                 rows = cur.fetchall()
         except Exception as e:
             logger.error("chain.verify_failed", error=str(e))
@@ -185,15 +306,18 @@ class EventPublisher:
 
         prev_hash = GENESIS_HASH
         for row in rows:
-            expected_hash = compute_chain_hash(
-                prev_hash,
-                {
-                    "event_id": row["event_id"],
-                    "metadata": row["metadata"]
-                    if isinstance(row["metadata"], dict)
-                    else json.loads(row["metadata"]),
-                },
-            )
+            # `prev_hash` المحفوظ يجب أن يطابق البصمة السابقة فعلًا، وإلا فالترتيب
+            # أو الربط تلاعَب بهما حتى لو كانت كل بصمة صحيحة في ذاتها.
+            if row["prev_hash"] != prev_hash:
+                logger.error(
+                    "chain.broken",
+                    event_id=row["event_id"],
+                    expected=prev_hash[:20] + "...",
+                    actual=str(row["prev_hash"])[:20] + "...",
+                    reason="prev_hash_mismatch",
+                )
+                return False
+            expected_hash = compute_chain_hash(prev_hash, canonical_audit_record_from_row(row))
             if row["chain_hash"] != expected_hash:
                 logger.error(
                     "chain.broken",

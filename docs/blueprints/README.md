@@ -15,3 +15,12 @@ Federal Council
 ## بصمة الهوية
 يخضع هذا المجلد لقانون هوية الملفات (المادة الدستورية 009).
 كل ملف داخله يجب أن يحتوي على ترويسة تعريفية.
+
+## تاريخ آخر تعديل
+2026-08-16
+
+## المحتويات
+- `AMOS-SE_Final_Blueprint.pplx.md` — AMOS-SE
+- `NUCLEUS.md` — المخططات — النواة
+- `README.md` — بطاقة هوية هذا المجلد (المادة التاسعة)
+- `amos-se-technical-implementation-plan.pplx.md` — AMOS-SE

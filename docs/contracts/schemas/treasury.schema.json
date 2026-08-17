@@ -1,0 +1,155 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/treasury.schema.json",
+  "title": "AMOS-Federation Treasury",
+  "description": "Financial transaction schema for the federal domain. Combines the `treasury_transactions`, `treasury_budgets`, and `treasury_reports` Supabase tables. Transactions are chained by SHA-256 hashes.",
+  "type": "object",
+  "required": ["id", "tx_type", "source", "amount"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Primary key. Unique transaction identifier (varchar)."
+    },
+    "tx_type": {
+      "type": "string",
+      "enum": ["income", "expense", "allocation", "transfer", "refund", "penalty"],
+      "description": "Type of financial transaction."
+    },
+    "source": {
+      "type": "string",
+      "description": "Source of the funds (institution id, agent id, or system)."
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Agent associated with the transaction, if any."
+    },
+    "amount": {
+      "type": "number",
+      "description": "Transaction amount.",
+      "minimum": 0
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the transaction."
+    },
+    "linked_event": {
+      "type": "string",
+      "description": "Event id that triggered this transaction."
+    },
+    "linked_ref": {
+      "type": "string",
+      "description": "Reference to a linked record (e.g. budget id, task id)."
+    },
+    "prev_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the previous transaction in the chain."
+    },
+    "hash": {
+      "type": "string",
+      "description": "SHA-256 hash of this transaction."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Transaction creation timestamp."
+    },
+    "budget": {
+      "type": "object",
+      "description": "Budget record from the `treasury_budgets` table.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Budget primary key."
+        },
+        "holder_type": {
+          "type": "string",
+          "enum": ["agent", "institution", "state", "project"],
+          "description": "Type of entity holding the budget."
+        },
+        "holder_id": {
+          "type": "string",
+          "description": "Identifier of the budget holder."
+        },
+        "allocated": {
+          "type": "number",
+          "description": "Total amount allocated to the holder.",
+          "minimum": 0
+        },
+        "spent": {
+          "type": "number",
+          "description": "Amount spent so far.",
+          "minimum": 0
+        },
+        "period": {
+          "type": "string",
+          "description": "Budget period (e.g. 2026-08, Q3-2026)."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Budget creation timestamp."
+        }
+      },
+      "additionalProperties": false
+    },
+    "report": {
+      "type": "object",
+      "description": "Treasury report from the `treasury_reports` table.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Report primary key."
+        },
+        "period": {
+          "type": "string",
+          "description": "Reporting period."
+        },
+        "report_type": {
+          "type": "string",
+          "enum": ["daily", "weekly", "monthly", "quarterly", "annual"],
+          "description": "Type of report."
+        },
+        "total_income": {
+          "type": "number",
+          "description": "Total income for the period."
+        },
+        "total_expense": {
+          "type": "number",
+          "description": "Total expense for the period."
+        },
+        "net_balance": {
+          "type": "number",
+          "description": "Net balance (income - expense) for the period."
+        },
+        "transactions_count": {
+          "type": "integer",
+          "description": "Number of transactions in the period.",
+          "minimum": 0
+        },
+        "breakdown": {
+          "type": "object",
+          "description": "Breakdown of the report by category.",
+          "additionalProperties": true
+        },
+        "chain_verified": {
+          "type": "boolean",
+          "description": "Whether the transaction chain was verified for this report.",
+          "default": false
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Report creation timestamp."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "federal",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}

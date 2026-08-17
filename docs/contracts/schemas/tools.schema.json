@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/tools.schema.json",
+  "title": "AMOS-Federation Tool",
+  "description": "Tool data schema defining tool inputs/outputs and registration metadata. Based on the `tools` Supabase table and blueprint section 8.3 (Tool Registration Protocol).",
+  "type": "object",
+  "required": ["id", "name", "input_schema", "output_schema"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Primary key. Unique tool identifier (varchar)."
+    },
+    "name": {
+      "type": "string",
+      "description": "Unique human-readable tool name."
+    },
+    "description": {
+      "type": "string",
+      "description": "What the tool does, shown to agents and reviewers."
+    },
+    "category": {
+      "type": "string",
+      "description": "Tool classification (e.g. data, code, network, document, chart)."
+    },
+    "keywords": {
+      "type": "array",
+      "description": "Search/discovery keywords for the tool registry.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "Invocation endpoint or handler reference for the tool."
+    },
+    "permissions_required": {
+      "type": "array",
+      "description": "Permissions an agent must hold to invoke this tool (e.g. data.read).",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sandbox_required": {
+      "type": "boolean",
+      "description": "Whether the tool must run inside an isolated sandbox.",
+      "default": true
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Tenant isolation key."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Registration timestamp."
+    },
+    "input_schema": {
+      "type": "object",
+      "description": "JSON Schema describing the tool's input arguments (blueprint 8.3).",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["object"],
+          "default": "object"
+        },
+        "properties": {
+          "type": "object",
+          "description": "Named input parameters."
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Required input parameter names."
+        },
+        "additionalProperties": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "output_schema": {
+      "type": "object",
+      "description": "JSON Schema describing the tool's output shape (blueprint 8.3).",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["object"],
+          "default": "object"
+        },
+        "properties": {
+          "type": "object",
+          "description": "Named output fields."
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Required output field names."
+        },
+        "additionalProperties": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "tools",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}

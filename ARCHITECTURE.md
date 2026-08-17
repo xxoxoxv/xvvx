@@ -1,0 +1,125 @@
+# ARCHITECTURE.md — دستور البنية
+
+> **نظام الحكم:** هذه الدولة **ملكية دستورية فدرالية**. الفدرالية تسري على كل فعل
+> وكل حركة، وللملك **السيادة المطلقة**؛ وهو الجهة الوحيدة المخوَّلة بتعديل الدستور
+> أو النظام. لا مؤسسة ولا فرع ولا وكيل ولا النظام نفسه يملك ذلك، ولا يملك تعديل
+> سلطة الملك أو تجاوزها — وهذا محروس تنفيذيًا في
+> [`core/sovereignty/`](core/sovereignty/README.md) بموجب
+> [المادة العاشرة](core/constitution/articles/010-royal-sovereignty.md)
+> ([المرسوم AMD-001](core/constitution/amendments/AMD-001-royal-sovereignty.md)).
+
+
+> **هذا هو أول ملف يقرأه أي وكيل جديد.** اقرأه كاملاً قبل أن تبدأ أي عمل.
+
+## ما هو هذا المشروع؟
+
+AMOS-Federation دولة رقمية فدرالية. ليست مجرد أكواد، بل منظومة متكاملة لها دستور وسلطات وولايات وسكان (وكلاء) وموارد (أدوات) وذاكرة وجيش (أمن) وخزانة. مصممة للبقاء 100 عام والتطور تحت حوكمة بشرية مطلقة.
+
+## كيف تقرأ هذا المشروع
+
+1. ابدأ من هنا (ARCHITECTURE.md)
+2. اقرأ `core/NUCLEUS.md` لفهم الدستور والقيم
+3. اذهب إلى المجلد الذي يخص مهمتك واقرأ `NUCLEUS.md` فيه
+4. كل ملف نواة يخبرك: الهدف، الواجهة، الحالة، الخطوات التالية، اختبار الدخان
+5. إذا الحالة `stub` — يمكنك البناء فوقه. إذا `prototype` — حسّنه. إذا `active` — حافظ عليه.
+6. اقرأ [`docs/governance/WORKING_PRINCIPLE.md`](docs/governance/WORKING_PRINCIPLE.md) — **المبدأ الملزم**. لا تكتب سطرًا قبله.
+7. اقرأ [`docs/audit/PHASE_E_ROADMAP.md`](docs/audit/PHASE_E_ROADMAP.md) — خطة السجل (E0–E24).
+8. اقرأ [`docs/audit/TRUTH_MATRIX.md`](docs/audit/TRUTH_MATRIX.md) — **الحقيقة المقاسة**. لا تصدّق أي ملف يقول عن نفسه إنه مكتمل قبل مراجعتها.
+9. `EXECUTION_PLAN.md` (P0–P9) سجل تاريخي فقط — لم يعد خطة السجل.
+
+## خريطة الأقاليم (12 مجالاً)
+
+| المجلد | الدور | الحالة |
+|---|---|---|
+| `core/` | الدستور: القيم، المبادئ، الذاكرة، الميثاق | stub |
+| `royal/` | واجهة المالك: الأمن، الحوكمة، المراسيم | stub |
+| `federal/` | الحكومة المركزية: التنسيق، الميزانية، السياسات | stub |
+| `states/` | الولايات: مالية، علم، صحة، قانون، بنية تحتية، ثقافة | stub |
+| `institutions/` | المؤسسات: بنوك، جامعات، محاكم، مصانع | stub |
+| `agents/` | الوكلاء: الهويات، التدريب، النشر، الاعتماد، التطور | stub |
+| `tools/` | الأدوات والنماذج: التوليد، التسجيل، الإتاحة | stub |
+| `interfaces/` | الواجهات: توليدها حسب احتياج المالك | stub |
+| `runtime/` | محرك التشغيل: تشغيل الوكلاء، المهام، الأحداث | stub |
+| `docs/` | التوثيق: المخططات، القرارات، الكتيبات | stub |
+| `ops/` | العمليات: المراقبة، النسخ الاحتياطي، الأزمات | stub |
+| `tests/` | الاختبارات: دخان خفيف لكل نواة | stub |
+
+## الدستور قابل للتنفيذ
+
+الدستور في هذه الدولة ليس نصًا مرجعيًا — إنه محرك. كل فعل يُعرض على
+[`core/constitutional_engine/`](core/constitutional_engine/) قبل تنفيذه، فيصدر
+`ALLOW` أو `DENY` مُعلَّلًا برقم المادة والبند، ويُقيَّد الحكم في سلسلة تجزئة
+لا يُحذف منها قيد. نص المواد مختوم بـ SHA-256 في
+[`core/constitution/ARTICLE_SEALS.json`](core/constitution/ARTICLE_SEALS.json)،
+وأي تعديل غير مصرح به يُفشل CI.
+
+```python
+from core.constitutional_engine import ActionRequest, Branch, ConstitutionalEngine
+ConstitutionalEngine().enforce(ActionRequest(Branch.EXECUTIVE, "legislate"))
+# ConstitutionalViolation: A003 · R-003-1 — الفصل بين السلطات
+```
+
+## قاعدة الحقيقة
+
+> `DONE = Capability Proven`
+
+لا يُقال «تم» لأن الملف موجود. حالة أي إقليم تُقرأ من [`TRUTH_MATRIX.md`](docs/audit/TRUTH_MATRIX.md) المولَّدة آليًا، لا من جدول مكتوب يدويًا.
+
+## قاعدة النواة
+
+كل مجلد يحتوي على `NUCLEUS.md` يحدد:
+- **الهدف** — ماذا يفعل ولماذا موجود
+- **الواجهة** — ماذا يقدم للآخرين
+- **الحالة** — stub / prototype / active (بصدق)
+- **الخطوات التالية** — ماذا يُبنى فوقه
+- **اختبار الدخان** — سطران يتأكدان أن الملف يعمل
+
+## قاعدة هوية الملفات
+
+يخضع هذا المستودع لقانون هوية الملفات (المادة الدستورية 009). كل ملف يجب أن يحتوي على ترويسة تعريفية.
+
+## قاعدة بيانات Supabase
+
+المشروع متصل بقاعدة بيانات Supabase (PostgreSQL 17) تحتوي على:
+
+| الجدول | الصفوف | المجلد المرتبط |
+|---|---|---|
+| `agent_population` | 342 | agents/ |
+| `event_store` | 157 | runtime/ |
+| `audit_entries` | 10 | ops/ |
+| `tools` | 10 | tools/ |
+| `royal_guards` | 7 | royal/ |
+| `institutions` | 8 | institutions/ |
+| `school_results` | 6 | agents/ |
+| `king_decrees` | 1 | royal/ |
+| `tasks` | 1 | runtime/ |
+| `memories` | 2 | core/ |
+| `experiences` | 1 | core/ |
+| `model_cache` | 2 | tools/ |
+| `model_cost_log` | 2 | tools/ |
+| `treasury_transactions` | 0 | federal/ |
+| `treasury_budgets` | 0 | federal/ |
+| `treasury_reports` | 0 | federal/ |
+| `agent_health_checks` | 0 | royal/ |
+| `agent_isolations` | 0 | royal/ |
+| `agent_treatments` | 0 | royal/ |
+| `interface_registry` | 0 | interfaces/ |
+| `tool_generation_queue` | 0 | tools/ |
+| `agent_training_queue` | 0 | agents/ |
+| `reviews` | 0 | royal/ |
+
+## خطة الفصل المستقبلية
+
+لا يُفصل أي جزء إلى مستودع منفصل إلا عندما يصبح منتجاً مستقلاً له نشره وإصداراته وحياته الخاصة. المرشحون المستقبليون:
+- `amos-runtime` — محرك تشغيل الوكلاء
+- `amos-interfaces` — واجهات منفصلة للنشر
+- `amos-agent-market` — سوق الوكلاء
+- `amos-infra` — البنية التحتية للإنتاج
+
+حتى ذلك الحين، كل شيء داخل هذا المستودع.
+
+## المالك
+المجلس التأسيسي — Driving H
+
+## تاريخ الإنشاء
+2026-08-15

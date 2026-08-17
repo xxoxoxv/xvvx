@@ -20,6 +20,13 @@ class ServiceDefinition(TypedDict):
 
 
 SERVICES: dict[str, ServiceDefinition] = {
+    "executive-core": {
+        "name": "executive-core",
+        "port": 8008,
+        "responsibility": "دورة حياة المهمة تحت البوابة السيادية",
+        "store": "PostgreSQL",
+        "slo": "p99 < 1s لكل انتقال حالة",
+    },
     "api-gateway": {
         "name": "api-gateway",
         "port": 8000,
@@ -82,5 +89,19 @@ SERVICES: dict[str, ServiceDefinition] = {
         "responsibility": "السياسات + Kill Switch",
         "store": "PostgreSQL",
         "slo": "p99 < 100ms",
+    },
+    "state-registry": {
+        "name": "state-registry",
+        "port": 8010,
+        "responsibility": "السجل الفدرالي: المؤسسات والإدارات والمسؤولون",
+        "store": "PostgreSQL",
+        "slo": "p99 < 200ms لكل قراءة",
+    },
+    "control-console": {
+        "name": "control-console",
+        "port": 3000,
+        "responsibility": "واجهة التحكم البشري",
+        "store": "—",
+        "slo": "p99 < 200ms",
     },
 }

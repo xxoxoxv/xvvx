@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/task.schema.json",
+  "title": "AMOS-Federation Task",
+  "description": "Task schema for the runtime domain. Based on the `tasks` Supabase table. A task is a unit of work assigned to an agent.",
+  "type": "object",
+  "required": ["id", "type", "description"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Primary key. Unique task identifier (varchar)."
+    },
+    "type": {
+      "type": "string",
+      "description": "Task type (e.g. analysis, generation, review, repair, gap)."
+    },
+    "description": {
+      "type": "string",
+      "description": "Natural-language description of the work to perform."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "assigned", "in_progress", "completed", "failed", "cancelled"],
+      "description": "Current lifecycle status of the task.",
+      "default": "pending"
+    },
+    "assigned_agent": {
+      "type": "string",
+      "description": "Identifier of the agent assigned to the task."
+    },
+    "plan": {
+      "type": "object",
+      "description": "Execution plan produced by the orchestrator for this task.",
+      "additionalProperties": true
+    },
+    "result": {
+      "type": "object",
+      "description": "Result produced by the agent upon task completion.",
+      "additionalProperties": true
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Tenant isolation key."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Task creation timestamp."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp."
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "normal", "high", "critical"],
+      "description": "Scheduling priority of the task.",
+      "default": "normal"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Domain the task belongs to (e.g. finance, science, health, law).",
+      "default": "general"
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "runtime",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}

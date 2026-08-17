@@ -1,0 +1,15 @@
+{
+  "updated_at": "2026-08-16T14:08:46+00:00",
+  "findings_total": 100,
+  "by_kind": {
+    "IN_MEMORY_STORE": 60,
+    "SILENT_FALLBACK": 29,
+    "HARDCODED_TRUTH": 10,
+    "SANDBOX_DISABLED": 1
+  },
+  "by_severity": {
+    "HIGH": 64,
+    "MEDIUM": 25,
+    "CRITICAL": 11
+  }
+}

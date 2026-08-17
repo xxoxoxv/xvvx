@@ -11,3 +11,12 @@ federal/executive/services
 
 ## تاريخ الإنشاء
 2026-08-15
+
+## تاريخ آخر تعديل
+2026-08-15
+
+## المحتويات
+- `README.md` — بطاقة هوية هذا المجلد (المادة التاسعة)
+- `__init__.py` — AMOS-Federation api gateway Package
+- `main.py` — AMOS-Federation API Gateway
+- `store.py` — AMOS-Federation Task Store

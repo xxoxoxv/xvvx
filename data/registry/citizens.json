@@ -1,0 +1,104 @@
+[
+  {
+    "id": "f587c148-c073-4149-a123-f7954bb328e7",
+    "national_id": "KING-001",
+    "full_name": "zoorooz",
+    "email": "sovereign@federal.state",
+    "phone": null,
+    "date_of_birth": null,
+    "place_of_birth": null,
+    "nationality": "Federal",
+    "status": "active",
+    "metadata": {
+      "roles": [
+        {
+          "role": "sovereign",
+          "granted_at": "2026-08-17T07:45:15.400170",
+          "granted_by": null
+        }
+      ]
+    },
+    "created_at": "2026-08-17T07:45:15.398622",
+    "updated_at": "2026-08-17T07:45:15.400175"
+  },
+  {
+    "id": "33587830-b0fc-44ff-aa51-165811b0cd77",
+    "national_id": "MIN-001",
+    "full_name": "Prime Minister",
+    "email": "pm@federal.state",
+    "phone": null,
+    "date_of_birth": null,
+    "place_of_birth": null,
+    "nationality": "Federal",
+    "status": "active",
+    "metadata": {
+      "roles": [
+        {
+          "role": "minister",
+          "granted_at": "2026-08-17T07:45:15.400507",
+          "granted_by": "f587c148-c073-4149-a123-f7954bb328e7"
+        }
+      ]
+    },
+    "created_at": "2026-08-17T07:45:15.398776",
+    "updated_at": "2026-08-17T07:45:15.400514"
+  },
+  {
+    "id": "348b6fbf-e037-4854-a581-cbd55475afa6",
+    "national_id": "JUD-001",
+    "full_name": "Chief Justice",
+    "email": "cj@federal.state",
+    "phone": null,
+    "date_of_birth": null,
+    "place_of_birth": null,
+    "nationality": "Federal",
+    "status": "active",
+    "metadata": {
+      "roles": [
+        {
+          "role": "judge",
+          "granted_at": "2026-08-17T07:45:15.400935",
+          "granted_by": "f587c148-c073-4149-a123-f7954bb328e7"
+        }
+      ]
+    },
+    "created_at": "2026-08-17T07:45:15.398952",
+    "updated_at": "2026-08-17T07:45:15.400942"
+  },
+  {
+    "id": "0817c7a1-0483-4c02-9614-c5f78b191a47",
+    "national_id": "LEG-001",
+    "full_name": "Speaker",
+    "email": "speaker@federal.state",
+    "phone": null,
+    "date_of_birth": null,
+    "place_of_birth": null,
+    "nationality": "Federal",
+    "status": "active",
+    "metadata": {
+      "roles": [
+        {
+          "role": "legislator",
+          "granted_at": "2026-08-17T07:45:15.401406",
+          "granted_by": "f587c148-c073-4149-a123-f7954bb328e7"
+        }
+      ]
+    },
+    "created_at": "2026-08-17T07:45:15.399389",
+    "updated_at": "2026-08-17T07:45:15.401414"
+  },
+  {
+    "id": "67750eca-cee4-415b-9a53-94f886efb8dd",
+    "national_id": "CIT-001",
+    "full_name": "John Citizen",
+    "email": "john@federal.state",
+    "phone": null,
+    "date_of_birth": null,
+    "place_of_birth": null,
+    "nationality": "Federal",
+    "status": "active",
+    "metadata": {},
+    "created_at": "2026-08-17T07:45:15.399878",
+    "updated_at": "2026-08-17T07:45:15.399880"
+  }
+]

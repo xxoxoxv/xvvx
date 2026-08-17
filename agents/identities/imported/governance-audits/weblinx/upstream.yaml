@@ -1,0 +1,20 @@
+# الهدف: تسجيل مصدر المواطن المستورد «WebLINX» وحالة سحبه وترخيصه وفحصه الأمني.
+# النطاق: هذا الوكيل وحده. لا يحمل كودًا ولا صلاحيات — بيانات تسجيل فقط.
+# المالك: agents/registry — تحت إشراف الحوكمة الفدرالية.
+# المجال المخصص: governance-audits
+# ملاحظة: هذا الملف مصدر الحقيقة لبطاقة README.md المولَّدة في هذا المجلد.
+#         بعد أي تعديل هنا، أعد تشغيل tools/governance/generate_identity_cards.py
+id: imported-governance-audits-weblinx
+name: WebLINX
+source_url: https://github.com/McGill-NLP/WebLINX
+source_type: github_repository
+original_category: أدوات تقييم واختبار
+assigned_place: governance/audits
+slug: weblinx
+import_status: registered
+integration_status: not_integrated
+license_status: pending_review
+security_status: pending_review
+pulled_at: '2026-08-15'
+notes: Imported as a candidate employee; not active until evaluation and governance
+  approval. Source code not vendored to avoid repo bloat.

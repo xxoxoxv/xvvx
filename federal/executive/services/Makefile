@@ -66,7 +66,7 @@ format:
 	$(PYTHON) -m ruff check --fix src/ tests/
 
 ci: lint test
-	$(PYTHON) ../../tools/governance/check_repository_identity.py ../
+	$(PYTHON) ../../../tools/governance/check_repository_identity.py ../../..
 	@echo "CI checks passed."
 
 clean:

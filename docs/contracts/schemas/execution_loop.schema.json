@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/execution_loop.schema.json",
+  "title": "AMOS-Federation Execution Loop",
+  "description": "Schema for a single complete execution loop: task → agent → tool → event → audit → memory. Aligns with runtime/specs/task_lifecycle.md and runtime/scenarios/single_task_execution.md.",
+  "type": "object",
+  "required": ["correlation_id", "task", "events"],
+  "properties": {
+    "correlation_id": {
+      "type": "string",
+      "description": "Root identifier shared by all events in the loop. Equals task.id."
+    },
+    "task": {
+      "type": "object",
+      "description": "The task at the center of the loop.",
+      "required": ["id", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "assigned", "in_progress", "completed", "failed", "cancelled"]
+        },
+        "assigned_agent": { "type": "string" },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "normal", "high", "critical"],
+          "default": "normal"
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "description": "Ordered causal chain of events in the loop.",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "timestamp"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": {
+            "type": "string",
+            "pattern": "^amos_federation\\.[a-z_]+\\.[a-z_]+$",
+            "description": "Event type following the amos_federation.<domain>.<action> naming."
+          },
+          "causation_id": { "type": ["string", "null"] },
+          "correlation_id": { "type": "string" },
+          "actor": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "description": "Audit entry created in the same transaction as task completion.",
+      "properties": {
+        "event_id": { "type": "string" },
+        "verdict": {
+          "type": "string",
+          "enum": ["approved", "flagged", "rejected"]
+        },
+        "reviewer": { "type": "string" }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "description": "Memory written after task completion.",
+      "properties": {
+        "task_id": { "type": "string" },
+        "event_id": { "type": "string" },
+        "audit_entry_id": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["fact", "lesson", "preference", "experience"]
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "runtime",
+    "created": "2026-08-15",
+    "phase": "P5",
+    "status": "spec"
+  }
+}

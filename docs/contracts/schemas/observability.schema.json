@@ -1,0 +1,184 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/observability.schema.json",
+  "title": "AMOS-Federation Observability",
+  "description": "Log and metric schema for the ops domain. Combines the `agent_health_checks`, `agent_isolations`, and `agent_treatments` Supabase tables. Health checks are chained by SHA-256 hashes.",
+  "type": "object",
+  "required": ["id", "agent_id"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Primary key. Unique health check identifier (varchar)."
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Agent being observed."
+    },
+    "check_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the health check was performed."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["healthy", "degraded", "critical", "unknown"],
+      "description": "Health status of the agent."
+    },
+    "performance_score": {
+      "type": "number",
+      "description": "Performance score (0-1).",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "resource_usage": {
+      "type": "object",
+      "description": "Resource usage metrics (cpu, memory, tokens).",
+      "additionalProperties": true
+    },
+    "policy_compliance": {
+      "type": "number",
+      "description": "Policy compliance score (0-1).",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "tool_success_rate": {
+      "type": "number",
+      "description": "Tool invocation success rate (0-1).",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "error_rate": {
+      "type": "number",
+      "description": "Error rate (0-1).",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "findings": {
+      "type": "object",
+      "description": "Structured findings from the health check.",
+      "additionalProperties": true
+    },
+    "recommendations": {
+      "type": "object",
+      "description": "Structured recommendations from the health check.",
+      "additionalProperties": true
+    },
+    "prev_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the previous health check in the chain."
+    },
+    "hash": {
+      "type": "string",
+      "description": "SHA-256 hash of this health check."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Health check creation timestamp."
+    },
+    "isolation": {
+      "type": "object",
+      "description": "Isolation record from the `agent_isolations` table.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Isolation primary key."
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Agent that was isolated."
+        },
+        "isolated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the agent was isolated."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for isolation."
+        },
+        "sandbox_id": {
+          "type": "string",
+          "description": "Sandbox the agent was confined to."
+        },
+        "actions_log": {
+          "type": "object",
+          "description": "Log of actions taken while isolated.",
+          "additionalProperties": true
+        },
+        "status": {
+          "type": "string",
+          "enum": ["isolated", "released", "quarantined"],
+          "description": "Isolation status."
+        },
+        "released_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the agent was released from isolation."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Isolation record creation timestamp."
+        }
+      },
+      "additionalProperties": false
+    },
+    "treatment": {
+      "type": "object",
+      "description": "Treatment record from the `agent_treatments` table.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Treatment primary key."
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Agent receiving treatment."
+        },
+        "treatment_type": {
+          "type": "string",
+          "description": "Type of treatment applied (e.g. retrain, rollback, restart)."
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the treatment started."
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the treatment completed."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "completed", "failed"],
+          "description": "Treatment status."
+        },
+        "details": {
+          "type": "object",
+          "description": "Structured treatment details.",
+          "additionalProperties": true
+        },
+        "result": {
+          "type": "object",
+          "description": "Structured treatment result.",
+          "additionalProperties": true
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Treatment record creation timestamp."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "ops",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}

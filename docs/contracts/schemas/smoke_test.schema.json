@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://amos-federation/docs/contracts/schemas/smoke_test.schema.json",
+  "title": "AMOS-Federation Smoke Test",
+  "description": "Smoke test schema for the tests domain. Defines a lightweight test result structure used to verify each of the 12 domains has a working nucleus. Smoke tests are fast, non-exhaustive checks.",
+  "type": "object",
+  "required": ["test_id", "domain", "test_name", "status", "timestamp"],
+  "properties": {
+    "test_id": {
+      "type": "string",
+      "description": "Unique identifier for the smoke test run."
+    },
+    "domain": {
+      "type": "string",
+      "enum": ["core", "royal", "federal", "states", "institutions", "agents", "tools", "interfaces", "runtime", "docs", "ops", "tests"],
+      "description": "Domain the smoke test covers (one of the 12 AMOS-Federation domains)."
+    },
+    "test_name": {
+      "type": "string",
+      "description": "Human-readable name of the smoke test."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pass", "fail", "skip"],
+      "description": "Outcome of the smoke test."
+    },
+    "message": {
+      "type": "string",
+      "description": "Summary message describing the result or failure reason."
+    },
+    "duration_ms": {
+      "type": "integer",
+      "description": "Duration of the test in milliseconds.",
+      "minimum": 0
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the smoke test was executed."
+    },
+    "assertions": {
+      "type": "array",
+      "description": "Individual assertions evaluated by the smoke test.",
+      "items": {
+        "type": "object",
+        "required": ["name", "passed"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the assertion."
+          },
+          "passed": {
+            "type": "boolean",
+            "description": "Whether the assertion passed."
+          },
+          "expected": {
+            "description": "Expected value for the assertion."
+          },
+          "actual": {
+            "description": "Actual value observed for the assertion."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "x-amos": {
+    "domain": "tests",
+    "created": "2026-08-15",
+    "phase": "P2",
+    "status": "stub"
+  }
+}

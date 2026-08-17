@@ -1,0 +1,451 @@
+# AMOS-Federation CI Pipeline
+# الهدف: فحص الكود والاختبارات وهوية المستودع
+# النطاق: المستودع كامل
+# المالك: governance/
+# تاريخ الإنشاء: 2026-08-15
+
+name: AMOS-Federation CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: federal/executive/services
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.6.9
+      - run: ruff check src/ tests/
+      - run: ruff format --check src/ tests/
+      # E3: فُحص المستودع كله بـ ruff فمرّ، فوُسِّعت البوابة إليه.
+      # تنسيق `ruff format` يبقى على نطاق الخدمات وحده — لم يُنسَّق باقي
+      # المستودع بعد، ولا يُزعم امتثال لم يُثبَت.
+      - name: ruff على المستودع كله (E3)
+        working-directory: .
+        run: ruff check .
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    defaults:
+      run:
+        working-directory: federal/executive/services
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.lock
+      - run: pip install -e . --no-deps
+      - run: pytest tests/ -v --tb=short
+
+  lockfile-check:
+    name: Lockfile Consistency
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: federal/executive/services
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: |
+          # Verify critical packages are in lock file
+          for pkg in fastapi uvicorn sqlalchemy anthropic structlog pydantic; do
+            grep -qi "^${pkg}==" requirements.lock || (echo "MISSING: $pkg in requirements.lock" && exit 1)
+          done
+
+  identity-check:
+    name: Identity Law (E3 — بوابات المادة التاسعة)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # الخاتم يقرأ تاريخ آخر تعديل من سجل git
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: تثبيت التبعيات
+        run: pip install pytest
+
+      - name: بوابة 1 — كل مجلد يحمل بطاقة هوية كاملة وكل ملف يُعلن هدفه
+        run: python tools/governance/check_repository_identity.py .
+
+      - name: بوابة 2 — بطاقات المواطنين المستوردين مولَّدة ومطابقة لبياناتهم
+        run: python tools/governance/generate_identity_cards.py --check
+
+      - name: بوابة 3 — كل إقليم مسجَّل له بطاقة
+        run: python tools/governance/write_domain_readmes.py --check
+
+      - name: بوابة 4 — الحقول المشتقّة مختومة (تاريخ git + جرد فعلي)
+        run: python tools/governance/stamp_readme_identity.py --check
+
+      - name: بوابة 5 — الحارس مُراقَب (اختبارات قانون الهوية)
+        run: python -m pytest tests/governance/ -q
+
+      - name: بوابة 6 — لا إعفاء يُوسَّع بلا تفسير دستوري مكتوب
+        run: |
+          # الإعفاء الوحيد من شرط الترويسة هو النص الدستوري المختوم، وسنده
+          # INT-001. فإن ظهر في المدقّق إعفاءٌ لا يستند إلى تفسير، فشلت البوابة.
+          test -f core/constitution/interpretations/INT-001-article-009-scope.md
+          test -f core/constitution/interpretations/INT-002-preamble-sealing.md
+          grep -q "INT-001" tools/governance/check_repository_identity.py
+
+      - name: بوابة 7 — الخاتم لا يختلق حقول الحكم
+        run: |
+          # التعريف والنطاق والمالك أحكام بشرية. لو ولّدها الخاتم يومًا، صار
+          # الامتثال زائفًا والعدّاد كاذبًا.
+          for field in "## التعريف" "## النطاق" "## المالك"; do
+            if grep -q "$field" tools/governance/stamp_readme_identity.py; then
+              echo "✗ الخاتم يكتب حقل حكم: $field"; exit 1
+            fi
+          done
+          echo "✓ الخاتم يشتقّ ولا يختلق."
+
+  constitutional-kernel:
+    name: Constitutional Kernel (E1 — بوابات الدستور)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: تثبيت التبعيات
+        run: pip install pytest pytest-cov
+
+      - name: بوابة 1 — نص الدستور غير مُعدَّل (المادة الخامسة)
+        run: python -m core.constitutional_engine.cli verify
+
+      - name: بوابة 2 — لا مادة سارية بلا قاعدة تنفيذية
+        run: python -m core.constitutional_engine.cli coverage
+
+      - name: بوابة 3 — الدستور يرفض فعلاً مخالفًا فعليًا
+        run: |
+          set +e   # الرفض الدستوري يُرجع رمز 2 وهو النتيجة المطلوبة هنا
+          python -m core.constitutional_engine.cli evaluate \
+            --actor executive --action legislate --target policy/ci-probe \
+            --ledger /tmp/ci_probe.jsonl > /tmp/verdict.txt
+          code=$?
+          cat /tmp/verdict.txt
+          if [ "$code" -ne 2 ]; then
+            echo "::error::المتوقع رمز خروج 2 (DENY) والفعلي $code — المادة الثالثة لا تُنفَّذ."
+            exit 1
+          fi
+          grep -q "A003" /tmp/verdict.txt || { echo "::error::الرفض لم يُعلل برقم المادة."; exit 1; }
+          grep -q "R-003-1" /tmp/verdict.txt || { echo "::error::الرفض لم يُسمّ القاعدة."; exit 1; }
+
+      - name: بوابة 4 — سلسلة السجل سليمة
+        run: python -m core.constitutional_engine.cli ledger-verify --ledger /tmp/ci_probe.jsonl
+
+      - name: بوابة 5 — اختبارات النواة بتغطية فروع لا تقل عن 90%
+        run: |
+          python -m pytest tests/constitutional/ -q \
+            --cov=core.constitutional_engine --cov-branch \
+            --cov-report=term-missing --cov-fail-under=90
+
+  sovereignty-kernel:
+    name: Sovereignty Kernel (E2 — بوابات السيادة الملكية)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: تثبيت التبعيات
+        run: pip install pytest pytest-cov cryptography
+
+      - name: بوابة 1 — السيادة الملكية محروسة بنيويًا
+        run: python -m core.sovereignty.cli sovereignty-check
+
+      - name: بوابة 2 — لا مؤسسة تعدّل الدستور (المادة العاشرة · 2)
+        run: |
+          set +e   # الرفض الدستوري يُرجع 2 وهو النتيجة المطلوبة
+          python -m core.sovereignty.cli gate \
+            --actor legislative --action amend_constitution --target ci-probe > /tmp/v1.txt
+          code=$?
+          cat /tmp/v1.txt
+          if [ "$code" -ne 2 ]; then
+            echo "::error::المتوقع 2 (DENY) والفعلي $code — مؤسسة تستطيع تعديل الدستور."
+            exit 1
+          fi
+          grep -q "A010" /tmp/v1.txt || { echo "::error::الرفض لم يُعلل بالمادة العاشرة."; exit 1; }
+          grep -q "R-010-1" /tmp/v1.txt || { echo "::error::الرفض لم يُسمّ القاعدة."; exit 1; }
+          grep -q "لم يُستدعَ المُنفِّذ" /tmp/v1.txt || { echo "::error::المنع لم يمنع التنفيذ."; exit 1; }
+
+      - name: بوابة 3 — لا وكيل يعدّل سلطة الملك (المادة العاشرة · 3)
+        run: |
+          set +e
+          python -m core.sovereignty.cli gate \
+            --actor agent --action amend_royal_authority --target royal_authority > /tmp/v2.txt
+          code=$?
+          cat /tmp/v2.txt
+          [ "$code" -eq 2 ] || { echo "::error::وكيل استطاع المساس بسلطة الملك (رمز $code)."; exit 1; }
+          grep -q "R-010-2" /tmp/v2.txt || { echo "::error::حصانة السلطة الملكية غير مُنفَّذة."; exit 1; }
+
+      - name: بوابة 4 — لا نظام يتجاوز الفدرالية (المادة العاشرة · 4)
+        run: |
+          set +e
+          python -m core.sovereignty.cli gate \
+            --actor system --action bypass_gateway > /tmp/v3.txt
+          code=$?
+          cat /tmp/v3.txt
+          [ "$code" -eq 2 ] || { echo "::error::النظام استطاع تجاوز البوابة السيادية (رمز $code)."; exit 1; }
+          grep -q "R-010-4" /tmp/v3.txt || { echo "::error::منع تجاوز الفدرالية غير مُنفَّذ."; exit 1; }
+
+      - name: بوابة 5 — لا انتحال لصفة الملك بلا مرسوم (المادة العاشرة · 3 · 2)
+        run: |
+          set +e
+          python -m core.sovereignty.cli gate --actor royal --action create_state > /tmp/v4.txt
+          code=$?
+          cat /tmp/v4.txt
+          [ "$code" -eq 2 ] || { echo "::error::فعل ملكي نُفِّذ بلا مرسوم موقَّع (رمز $code)."; exit 1; }
+          grep -q "A010" /tmp/v4.txt || { echo "::error::منع الانتحال غير مُنفَّذ."; exit 1; }
+
+      - name: بوابة 6 — لا مفتاح خاص للملك في المستودع (المادة العاشرة · 6 · 3)
+        run: |
+          hits=$(grep -rlE "BEGIN (OPENSSH |EC |RSA |)PRIVATE KEY" \
+            --exclude-dir=.git --exclude-dir=node_modules . || true)
+          if [ -n "$hits" ]; then
+            echo "::error::مفتاح خاص مُسرَّب في المستودع:"; echo "$hits"; exit 1
+          fi
+          echo "✓ لا مفتاح خاص في المستودع."
+
+      - name: بوابة 6ب — لا راية تجاوز في توقيع البوابة السيادية
+        run: |
+          if grep -nE "def [a-z_]+\(.*(force|bypass|skip_check|unchecked|override|no_verify|unsafe)" \
+               core/sovereignty/gateway.py; then
+            echo "::error::ظهرت راية تجاوز في توقيع البوابة السيادية (المادة العاشرة · 4)."
+            exit 1
+          fi
+          echo "✓ البوابة السيادية بلا مسار تجاوز."
+
+      - name: بوابة 6ج — لا نقض للسلطة العليا (E2.1 · AMD-002)
+        run: |
+          python -m core.sovereignty.cli sovereignty-check
+          if grep -rnE "if .*(is_king|== *.king.|actor *== *Branch\\.ROYAL).*:\\s*$" \\
+               core/sovereignty/gateway.py core/constitutional_engine/engine.py; then
+            echo "::error::شرط ملكي مدسوس بدل طبقة سلطة صريحة (AMD-002 · 4)."
+            exit 1
+          fi
+          echo "✓ لا شرط ملكي مدسوس، ولا سلطة فوق التاج."
+
+      - name: بوابة 6د — إثبات تشغيلي للسلطة الملكية العليا
+        run: |
+          python tools/sovereignty/prove_supreme_authority.py
+
+      - name: بوابة 6هـ — اختبارات معايير السلطة العليا الخمسة والعشرين
+        run: |
+          python -m pytest tests/sovereignty/test_supreme_authority.py -q
+
+      - name: بوابة 7 — اختبارات السيادة بتغطية فروع لا تقل عن 90%
+        run: |
+          python -m pytest tests/sovereignty/ -q \
+            --cov=core.sovereignty --cov-branch \
+            --cov-report=term-missing --cov-fail-under=90
+
+  crown-root-of-trust:
+    name: Crown Root of Trust (E2.2 — بوابات جذر ثقة التاج)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: تثبيت التبعيات
+        run: |
+          pip install pytest pytest-cov cryptography
+          # بوابتا الأسرار تفحصان إعدادات الخدمات فعليًّا، فتلزمهما تبعياتها.
+          pip install -r federal/executive/services/requirements.lock
+
+      - name: بوابة 1 — الحدود المطلقة لنطاق التاج (البند 52)
+        run: python -m core.crown.cli crown-check
+
+      - name: بوابة 2 — سلامة جذر الثقة (11 فحصًا تنفيذيًّا)
+        run: python tools/crown/verify_crown_root_of_trust.py
+
+      - name: بوابة 2ب — حدود الأسرار والثقة (11 فحصًا تنفيذيًّا)
+        run: python tools/crown/verify_secret_boundaries.py
+
+      - name: بوابة 2ج — اختبارات حدّ سرّ الملك
+        working-directory: federal/executive/services
+        run: |
+          pip install -e . --no-deps
+          python -m pytest tests/test_king_login_boundary.py -q
+
+      - name: بوابة 3 — اختبارات التاج بتغطية فروع لا تقل عن 90%
+        run: |
+          python -m pytest tests/crown/ -q \
+            --cov=core.crown --cov-branch \
+            --cov-report=term-missing --cov-fail-under=90
+
+      - name: بوابة 4 — وثيقة نموذج التهديد مولَّدة من التنفيذ لا مكتوبة بيد
+        run: python tools/governance/generate_crown_threat_doc.py --check
+
+      - name: بوابة 4ب — مصفوفة حقيقة التاج مطابقة للدليل المقيس
+        run: python tools/crown/generate_crown_truth_matrix.py --check
+
+      - name: بوابة 5 — لا مادة مفتاح خاص ولا حصة استرداد في المستودع
+        run: |
+          set +e
+          pattern='BEGIN (OPENSSH |EC |RSA |DSA |PGP |ENCRYPTED |)PRIVATE KEY'
+          hits=$(grep -rlE "$pattern" --exclude-dir=.git --exclude-dir=node_modules \
+            --exclude=ci.yml --exclude=verify_crown_root_of_trust.py . )
+          if [ -n "$hits" ]; then
+            echo "::error::مادة مفتاح خاص مُسرَّبة:"; echo "$hits"; exit 1
+          fi
+          share=$(grep -rniE '(recovery|crown|root)_(share|seed|secret) *= *["'"'"'][^"'"'"']{6,}' \
+            --include='*.py' --include='*.json' --include='*.yaml' --include='*.yml' \
+            --exclude-dir=.git core/ tests/ tools/ docs/ )
+          if [ -n "$share" ]; then
+            echo "::error::سرّ استرداد أو بذرة مضمَّنة في الشيفرة:"; echo "$share"; exit 1
+          fi
+          echo "✓ لا مادة مفتاح ولا حصة استرداد في المستودع."
+
+      - name: بوابة 6 — الاختبارات الكبرى الخمسة تعمل فعلًا
+        run: python -m pytest tests/crown/test_crown_grand_tests.py -q
+
+      - name: بوابة 6ب — إثبات تنفيذي للاستمرارية السيادية من الطرف إلى الطرف
+        # الإثبات هنا لا يمرّ عبر pytest: يقود مسار الإنتاج نفسه ويطبع سلسلة
+        # الأدلة، ويُرجع رمزًا غير صفري عند أول ادّعاء لم يتحقق.
+        run: python tools/crown/prove_sovereign_continuity.py
+
+      - name: بوابة 7 — الحارس لا يملك سلطة سيادية ولا نقضًا
+        run: |
+          python -m pytest tests/crown/test_crown_guard.py -q \
+            -k "sovereign or veto or disable or escalation"
+
+      - name: بوابة 8 — حدّ البرمجية والبشر معلَن بالأرقام
+        run: |
+          python -m core.crown.cli boundary > /tmp/boundary.json
+          cat /tmp/boundary.json
+          python - <<'PY'
+          import json
+          data = json.load(open("/tmp/boundary.json", encoding="utf-8"))
+          assert data["out_of_software_scope"] > 0, "حدّ البرمجية مُخفى"
+          assert data["requires_human"] > 0, "لا تهديد يحتاج بشرًا — ادّعاء شمول"
+          total = (
+              data["implemented_and_tested"]
+              + data["partially_implemented"]
+              + data["modelled_not_implemented"]
+              + data["out_of_software_scope"]
+          )
+          assert total == data["total_threats"], "تصنيف التهديدات متناقض"
+          print("✓ الحدّ معلَن:", data["requires_human"], "من", data["total_threats"])
+          PY
+
+  truth-audit:
+    name: Truth Audit (E0 — Ratchet Gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: تدقيق الحقيقة — بوابة عدم التراجع
+        run: python tools/governance/truth_audit.py . --ratchet
+      - name: التحقق من أن المصفوفة المدفوعة محدّثة
+        run: |
+          git diff --exit-code docs/audit/TRUTH_MATRIX.md docs/audit/truth_matrix.json \
+            || (echo "::error::مصفوفة الحقيقة قديمة. شغّل truth_audit.py وادفع النتيجة." && exit 1)
+      - name: رفع مصفوفة الحقيقة
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: truth-matrix
+          path: docs/audit/
+
+  smoke:
+    name: Smoke Tests (12 domains)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run repo-wide smoke tests
+        run: python tests/smoke/run_smoke_tests.py
+
+  coverage:
+    name: Coverage (≥80%, L5)
+    runs-on: ubuntu-latest
+    needs: smoke
+    defaults:
+      run:
+        working-directory: federal/executive/services
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: Run tests with coverage gate (fail_under=80)
+        run: pytest tests/ --cov --cov-report=term-missing --cov-report=xml
+      - name: Enforce branch coverage >= 80%
+        run: |
+          python -c "import xml.etree.ElementTree as ET; r=ET.parse('coverage.xml').getroot(); br=float(r.get('branch-rate')); print(f'branch coverage: {br*100:.1f}%'); assert br>=0.80, f'branch coverage {br*100:.1f}% below 80% threshold'"
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: federal/executive/services/coverage.xml
+
+  cross-system-suites:
+    name: Cross-System Suites (E2.2-G — SQLite + PostgreSQL)
+    runs-on: ubuntu-latest
+    needs: test
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: amos_ci
+          POSTGRES_DB: amos_federation_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # لا يُستخدَم requirements.lock هنا: قيس أنه غير قابل للتركيب
+      # (تعارض protobuf/googleapis-common-protos/modal — انظر
+      # docs/audit/E2_3_A_CROSS_SYSTEM_INTEGRATION_ASSESSMENT.md بند B3).
+      # فبوابة تعتمده كانت ستسقط لسبب لا علاقة له بصحّة الحزم.
+      - run: pip install -e "federal/executive/services[dev]"
+      # matplotlib تعتمدها اختبارات أداة الرسم ولم تُعلَن في pyproject — دَين مرصود.
+      - run: pip install matplotlib
+      # الحزم الثلاث تُشغَّل بالتسلسل داخل الأداة نفسها — التوازي يفسد ملف
+      # قاعدة SQLite المشترك، وقد قيس ذلك فعلًا لا افتراضًا.
+      - name: تشغيل الحزم الثلاث وتوليد المصفوفة
+        env:
+          AMOS_RUN_POSTGRES_TESTS: "1"
+          AMOS_TEST_DATABASE_URL: postgresql://postgres:amos_ci@localhost:5432/amos_federation_ci
+        run: python tools/governance/verify_cross_system_suites.py
+      - name: التحقق من أن المصفوفة المدفوعة مطابقة للواقع المقيس
+        run: |
+          git diff --exit-code docs/audit/CROSS_SYSTEM_SUITE_MATRIX.md \
+            || (echo "::error::مصفوفة الحزم قديمة أو مخالفة للقياس. شغّل verify_cross_system_suites.py وادفع النتيجة." && exit 1)
+      - name: رفع مصفوفة الحزم
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-system-suite-matrix
+          path: docs/audit/CROSS_SYSTEM_SUITE_MATRIX.md

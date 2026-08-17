@@ -4,11 +4,25 @@ AMOS-Federation API Gateway
 النطاق: خدمة api-gateway على المنفذ 8000
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-15
+تاريخ آخر تعديل: 2026-08-16
+
+R1 — توحيد مسار التنفيذ الخارجي:
+
+قبل R1 كانت `POST /v1/tasks` تكتب صفًّا في `tasks` بحالة نصّية `pending` — وهي
+حالة لا وجود لها في آلة حالات النواة التنفيذية — ثم تنشر إخطارًا وتنسى المهمّة.
+لا إذن سيادي، ولا قيد تدقيق، ولا حدث دائم. أي طلب خارجي كان يدخل الدولة من باب
+لا يمرّ بالبوابة.
+
+بعد R1: القبول كله عبر `ExecutiveCore.submit` — هو من يستأذن البوابة السيادية،
+ويكتب الصفّ داخل الإذن، ويقيّد في سلسلة التدقيق، وينشر الحدث الدائم. هذه الوحدة
+لا تحتفظ بنسخة من ذلك المنطق: تترجم HTTP وتفوّض.
+
+الإخطار القديم `task.created` على ناقل `common/events` باقٍ كإخطار فقط (لا يُشغّل
+تنفيذًا)، ويُنشَر **بعد** نجاح القبول القانوني لا قبله.
 """
 
 from datetime import UTC, datetime
 from typing import Annotated
-from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -23,10 +37,23 @@ from amos_federation.common.schemas import (
     ToolManifestModel,
 )
 from amos_federation.common.service import create_service_app
-from amos_federation.services.api_gateway.store import InMemoryTaskStore, TaskStore
+from amos_federation.services.api_gateway.store import DatabaseTaskStore, TaskStore
+from amos_federation.services.executive_core.engine import get_executive_core
+from amos_federation.services.executive_core.http_errors import to_http_exception
 
 router = APIRouter(prefix="/v1", tags=["api-gateway"])
-task_store: TaskStore = InMemoryTaskStore()
+
+# مصدر الحقيقة الدائم للمهام هو طبقة قاعدة البيانات (`TaskModel`) — لا بديل ذاكرة
+# تلقائي، ولا تحويل حقول يدوي هنا: التحويل كله في `store.py`.
+task_store: TaskStore = DatabaseTaskStore()
+
+# تصنيف الإخطار القديم فقط — لا يُشتقّ منه أي قرار تنفيذي.
+_EVENT_TYPE_BY_TASK_TYPE = {
+    "analysis": "analysis",
+    "report": "generation",
+    "data": "transformation",
+    "generic": "research",
+}
 agents: dict[str, AgentManifestModel] = {}
 tools: dict[str, ToolManifestModel] = {}
 
@@ -35,33 +62,44 @@ tools: dict[str, ToolManifestModel] = {}
 async def create_task(
     task_request: TaskRequest, token: Annotated[dict[str, object], Depends(require_auth)]
 ) -> TaskAccepted:
-    """قبول مهمة جديدة ونشر حدث task.created دون اشتراط توفر البنية الخارجية."""
+    """قبول مهمة جديدة عبر النواة التنفيذية — لا كتابة مباشرة في الجدول.
+
+    الحالة المُعادة هي حالة آلة الحالات الحقيقية (`created`) لا كلمة `pending`
+    التي كانت خارج الآلة. الطلب الذي لا تأذن به البوابة لا يُقبَل هنا أصلًا.
+    """
     tenant_id = task_request.tenant_id or token.get("tenant_id")
-    now = datetime.now(UTC)
-    task = TaskDetails(
-        **task_request.model_dump(exclude={"tenant_id"}),
-        task_id=f"task-{uuid4()}",
-        tenant_id=str(tenant_id) if tenant_id else None,
-        status="pending",
-        created_at=now,
+    core = get_executive_core()
+    try:
+        task = core.submit(
+            task_request.type,
+            task_request.description,
+            priority=task_request.priority,
+            domain=task_request.domain or "general",
+            tenant_id=str(tenant_id) if tenant_id else "default",
+        )
+    except Exception as exc:
+        raise to_http_exception(exc) from exc
+
+    accepted_at = task.get("created_at") or datetime.now(UTC)
+    if isinstance(accepted_at, str):
+        accepted_at = datetime.fromisoformat(accepted_at)
+
+    # إخطار الطبقة القديمة — إعلان لا تشغيل، وبعد القبول القانوني لا قبله.
+    await event_publisher.publish(
+        "task.created",
+        "api-gateway",
+        {
+            "task_id": task["id"],
+            "type": _EVENT_TYPE_BY_TASK_TYPE[task_request.type],
+            "description": task["description"],
+            "priority": task["priority"],
+            "domain": task["domain"],
+            "tenant_id": task["tenant_id"],
+            "canonical_state": task["status"],
+            "audit_id": task["submission"]["audit_id"],
+        },
     )
-    task_store.create(task)
-    event_type = {
-        "analysis": "analysis",
-        "report": "generation",
-        "data": "transformation",
-        "generic": "research",
-    }
-    event_data = {
-        "task_id": task.task_id,
-        "type": event_type[task.type],
-        "description": task.description,
-        "priority": task.priority,
-        "domain": task.domain or "federal",
-        "tenant_id": task.tenant_id,
-    }
-    await event_publisher.publish("task.created", "api-gateway", event_data)
-    return TaskAccepted(task_id=task.task_id, status=task.status, accepted_at=now)
+    return TaskAccepted(task_id=task["id"], status=task["status"], accepted_at=accepted_at)
 
 
 @router.get("/tasks/{task_id}", response_model=TaskDetails)
