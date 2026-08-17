@@ -1,3 +1,10 @@
+---
+scope: r4_evidenced_population_backup_data
+owner: data_persistence
+created: 2026-08-17
+last_modified: 2026-08-17
+purpose: Persistent data storage for r4_evidenced_population_backup
+---
 {
   "purpose": "نسخة احتياطية للصفوف المتأثرة قبل تطبيق ترحيل R4 (OPTION 2) على القاعدة الحقيقية",
   "database": "supabase project mqcfmwtdaymrmwvthqyw (PostgreSQL 17.6.1.155)",

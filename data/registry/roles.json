@@ -1,3 +1,10 @@
+---
+scope: roles_data
+owner: data_persistence
+created: 2026-08-17
+last_modified: 2026-08-17
+purpose: Persistent data storage for roles
+---
 {
   "purpose": "Registry storage for role definitions",
   "sovereign": {

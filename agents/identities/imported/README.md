@@ -44,4 +44,5 @@ agents/registry/generate_imported.py      # مولّد المجلدات والس
 يتوفر في `imported_citizens.yaml` تحت `domain_distribution`. كل مجال يطابق بنية المستودع الفدرالية (federal/executive، states/infrastructure، memory، security، ...).
 
 ## تاريخ آخر تعديل
-2026-08-15
+2026-08-17
+

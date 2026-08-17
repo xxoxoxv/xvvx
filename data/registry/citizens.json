@@ -1,3 +1,10 @@
+---
+scope: citizens_data
+owner: data_persistence
+created: 2026-08-17
+last_modified: 2026-08-17
+purpose: Persistent data storage for citizens
+---
 [
   {
     "id": "f587c148-c073-4149-a123-f7954bb328e7",
