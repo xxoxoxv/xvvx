@@ -1,3 +1,5 @@
+"""Coordinator agent implementation for multi-agent task coordination"""
+
 """
 AMOS Federal State - Coordinator Agent Framework
 الوكلاء المنسقون - الطبقة العليا من الهرمية

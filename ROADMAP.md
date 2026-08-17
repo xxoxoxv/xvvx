@@ -1,3 +1,7 @@
+---
+purpose: Project roadmap and milestone planning
+---
+
 # 🗺️ ROADMAP — AMOS-Fedration
 # خارطة الطريق السيادية: من البناء إلى السيادة الكاملة
 

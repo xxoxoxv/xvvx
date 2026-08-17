@@ -1,3 +1,5 @@
+-- Database schema definition for PostgreSQL
+
 -- AMOS Federal State - Complete Database Schema
 -- Owner: zoorooz (Sovereign)
 -- Project: https://zwuhhjjoyvhqndiruodh.supabase.co

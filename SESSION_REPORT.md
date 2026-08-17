@@ -1,3 +1,7 @@
+---
+purpose: Session execution report and summary
+---
+
 # 🎉 تقرير الجلسة الكاملة: من 35% إلى 92%
 
 > تاريخ الجلسة: 2026-08-17

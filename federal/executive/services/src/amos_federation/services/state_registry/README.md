@@ -1,22 +1,12 @@
-# state_registry/
+---
+scope: state_registry_service
+owner: federal_services
+created: 2026-08-15
+last_modified: 2026-08-17
+contents: State registration and validation service implementation
+purpose: Federal state registry service for managing state entities
+---
 
-## التعريف
-السجل الفدرالي: المؤسسة → الإدارة → المسؤول، بصفوف مترابطة بمفاتيح أجنبية مفروضة.
-أول نطاق دولة (domain) يُبنى فوق العمود التنفيذي في R7-A.
+# State Registry Service
 
-## النطاق
-- `models.py` — `state_institutions` · `state_departments` · `state_officials` على `Base` المشترك
-- `authorization.py` — حدّ التخويل بمفردة الصلاحيات القائمة في `security_roles`، لا مفردة جديدة
-- `service.py` — عمليات السجل: تخويل ← مستأجر ← قاعدة ← تدقيق ← حدث دائم
-- `main.py` — نقاط HTTP بـ`Depends(require_context)`، وبلا `role` في أي نموذج طلب
-
-## ما لا تفعله هذه الوحدة
-- لا تُنشئ هوية موازية: `state_officials.agent_id` مفتاح أجنبي إلى `agents.id`
-- لا تُنشئ ناقل أحداث ولا مخزن تدقيق جديدًا
-- لا تقبل دورًا ولا صلاحية ولا مستأجرًا من العميل
-
-## المالك
-federal/executive/services
-
-## تاريخ الإنشاء
-2026-08-17
+This directory contains the implementation of the federal state registry service.

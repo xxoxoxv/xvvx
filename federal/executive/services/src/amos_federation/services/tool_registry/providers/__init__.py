@@ -1,3 +1,5 @@
+"""Tool provider adapters package initialization"""
+
 """طبقة مزوِّدات الصندوق الرملي — العقد وحده هو ما يُستورَد من خارجها.
 
 النطاق: services/tool_registry/providers

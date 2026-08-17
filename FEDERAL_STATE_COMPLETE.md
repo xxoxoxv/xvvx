@@ -1,3 +1,7 @@
+---
+purpose: Federal state completion documentation
+---
+
 # 🏛️ AMOS Federal State - تقرير الإنجاز الكامل
 
 ## نسبة الإنجاز الإجمالية: **85%**

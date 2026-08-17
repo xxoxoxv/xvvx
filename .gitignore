@@ -1,1 +1,41 @@
-Nothing needs to be added to the .gitignore file since the changes only include Python source files (__init__.py) which are part of the normal project structure and should be tracked by git.
+```
+# Dependencies
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.env
+.env.local
+.env.
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Logs
+*.log
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+```
