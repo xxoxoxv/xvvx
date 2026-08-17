@@ -1,0 +1,27 @@
+{
+  "id": "aeffa1eb-50b1-4f8a-97d9-4f92e5e1d982",
+  "name": "FederalWorker",
+  "agent_type": "worker",
+  "status": "busy",
+  "capabilities": [
+    {
+      "name": "task_execution",
+      "description": "Execute assigned tasks using available tools",
+      "version": "1.0.0",
+      "enabled": true
+    },
+    {
+      "name": "tool_usage",
+      "description": "Use registered tools to accomplish tasks",
+      "version": "1.0.0",
+      "enabled": true
+    }
+  ],
+  "current_task": {
+    "id": "task-001",
+    "title": "Compute",
+    "description": "Calculate expression",
+    "task_type": "compute",
+    "priority": "normal",
+    "status": "pending",
+    "assigned_at": 

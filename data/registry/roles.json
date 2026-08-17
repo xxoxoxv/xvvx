@@ -1,0 +1,37 @@
+{
+  "sovereign": {
+    "name": "sovereign",
+    "description": "Absolute ruler of the state",
+    "level": "sovereign"
+  },
+  "royal": {
+    "name": "royal",
+    "description": "Member of royal family",
+    "level": "royal"
+  },
+  "minister": {
+    "name": "minister",
+    "description": "Government minister",
+    "level": "executive"
+  },
+  "judge": {
+    "name": "judge",
+    "description": "Judicial officer",
+    "level": "judicial"
+  },
+  "legislator": {
+    "name": "legislator",
+    "description": "Member of legislature",
+    "level": "legislative"
+  },
+  "official": {
+    "name": "official",
+    "description": "Government official",
+    "level": "executive"
+  },
+  "citizen": {
+    "name": "citizen",
+    "description": "Regular citizen",
+    "level": "citizen"
+  }
+}
