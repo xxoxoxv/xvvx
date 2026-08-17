@@ -1,3 +1,5 @@
+"""Federal government institution implementation"""
+
 """
 AMOS Federal State - Institutions Framework
 المؤسسات الفدرالية الكاملة

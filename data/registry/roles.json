@@ -1,4 +1,5 @@
 {
+  "purpose": "Registry storage for role definitions",
   "sovereign": {
     "name": "sovereign",
     "description": "Absolute ruler of the state",

@@ -1,4 +1,5 @@
 {
+  "purpose": "Agent state persistence for agent 16e128aa-1e99-4c82-b564-5b720c372576",
   "id": "16e128aa-1e99-4c82-b564-5b720c372576",
   "name": "FederalWorker",
   "agent_type": "worker",

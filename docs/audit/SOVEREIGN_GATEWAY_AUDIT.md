@@ -1,3 +1,7 @@
+---
+purpose: Sovereign Gateway security audit report
+---
+
 # 📊 تقرير جرد البوابة السيادية (Sovereign Gateway Audit)
 
 > تاريخ الجرد: 2026-08-17

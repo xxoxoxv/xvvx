@@ -1,3 +1,5 @@
+"""Supervisor agent implementation for oversight and management"""
+
 """
 AMOS Federal State - Supervisor Agent Framework
 الوكلاء المشرفون - الطبقة العليا من هرمية الوكلاء

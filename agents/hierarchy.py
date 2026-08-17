@@ -1,3 +1,5 @@
+"""Agent hierarchy and organizational structure definitions"""
+
 """
 AMOS Federal State - Agent Hierarchy Management
 إدارة هرمية الوكلاء

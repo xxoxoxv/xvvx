@@ -1,3 +1,5 @@
+"""Multi-provider sandbox integration tests"""
+
 """اختبارات R5 — صندوق رملي متعدّد المزوِّدات.
 
 النطاق: services/tool_registry/providers + authorized_execution
