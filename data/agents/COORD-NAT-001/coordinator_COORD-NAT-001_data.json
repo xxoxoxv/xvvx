@@ -1,0 +1,16 @@
+{
+  "supervisors": {
+    "SUP-001": {
+      "id": "SUP-001",
+      "name": "مشرف الأمن العام",
+      "department": "GENERAL",
+      "type": "SupervisorAgent",
+      "added_at": "2026-08-17T08:33:06.144162",
+      "status": "active"
+    }
+  },
+  "plans": {},
+  "initiatives": {},
+  "decisions": [],
+  "updated_at": "2026-08-17T08:33:06.144177"
+}

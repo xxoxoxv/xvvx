@@ -1,0 +1,13 @@
+{
+  "workers": {
+    "WORKER-001": "عامل أمن 1"
+  },
+  "metrics": {
+    "tasks_assigned": 0,
+    "tasks_completed": 0,
+    "tasks_failed": 0,
+    "avg_completion_time": 0.0,
+    "team_efficiency": 1.0
+  },
+  "updated_at": "2026-08-17T08:33:06.143704"
+}

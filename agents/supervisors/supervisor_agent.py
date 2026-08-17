@@ -198,6 +198,16 @@ class SupervisorAgent(BaseAgent):
             "generated_at": datetime.now().isoformat()
         }
     
+    def get_capabilities(self) -> List[str]:
+        """الحصول على قدرات المشرف"""
+        return [
+            "task_distribution",
+            "team_management",
+            "performance_monitoring",
+            "conflict_resolution",
+            "reporting"
+        ]
+    
     async def execute(self, instruction: str) -> dict:
         """تنفيذ تعليمات الإشراف"""
         self.log_event("info", f"مشرف يتلقى تعليمات: {instruction[:50]}...")

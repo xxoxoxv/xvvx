@@ -191,5 +191,9 @@ class BaseAgent(ABC):
         self._log_action("TERMINATED", {})
         self._save_state()
     
+    def log_event(self, level: str, message: str):
+        """تسجيل حدث في سجل الوكيل"""
+        self._log_action(f"EVENT_{level.upper()}", {"message": message})
+    
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self.name} ({self.citizen_id})>"

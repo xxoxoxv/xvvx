@@ -1,0 +1,10 @@
+{
+  "citizen_id": "WORKER-001",
+  "name": "عامل أمن 1",
+  "description": "Agent عامل أمن 1",
+  "status": "ACTIVE",
+  "created_at": "2026-08-17T08:33:06.143325",
+  "tasks_completed": 0,
+  "tasks_failed": 0,
+  "performance_log": []
+}
