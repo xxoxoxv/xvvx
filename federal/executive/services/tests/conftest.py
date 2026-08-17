@@ -77,6 +77,27 @@ def postgres_url(monkeypatch: pytest.MonkeyPatch) -> str:
     database.reset_engine()
 
 
+# ── تنظيف الوكلاء مع رسمهم المرجعي (R7-A) ────────────────────────────────
+# منذ R7 صار في القاعدة رسمٌ مرجعي مفروض فعلًا: `state_officials.agent_id`
+# يشير إلى `agents.id` بـ`ON DELETE RESTRICT`، والفرض مُشغَّل في SQLite أيضًا.
+# فـ`DELETE FROM agents` المجرَّد لم يعد يمرّ حين يكون هناك مسؤولٌ مُقلَّد —
+# وهذا هو القيد يعمل، لا عيبًا فيه. الحلّ حذف التابع قبل المتبوع، من مكان واحد،
+# حتى لا يُكرَّر الترتيب في ثمانية ملفات وينساه تاسعٌ غدًا.
+AGENT_DEPENDENT_TABLES: tuple[str, ...] = ("state_officials",)
+
+
+def purge_agents(session) -> None:  # noqa: ANN001 — Session من SQLAlchemy
+    """احذف الوكلاء وما يشير إليهم بالترتيب الذي يقبله قيدٌ مرجعي مفروض."""
+    from sqlalchemy import inspect as sa_inspect
+    from sqlalchemy import text as sa_text
+
+    inspector = sa_inspect(session.get_bind())
+    for table in AGENT_DEPENDENT_TABLES:
+        if inspector.has_table(table):
+            session.execute(sa_text(f"DELETE FROM {table}"))  # noqa: S608 — أسماء ثابتة
+    session.execute(sa_text("DELETE FROM agents"))
+
+
 def _cleanup_test_db(workspace: Path) -> None:
     """Remove only the test database file, never production files."""
     for db_file in workspace.glob(TEST_DB_FILE):

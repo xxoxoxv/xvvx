@@ -225,6 +225,58 @@ EVENT_CONTRACTS = {
         "required_fields": ["policy_name", "allowed"],
         "optional_fields": ["violations"],
     },
+    # === السجل الفدرالي (R7-A) ===
+    #
+    # كل عقد هنا يُلزم معرّف الكيان و`actor`، لأن حدث دولة بلا فاعل أثرٌ لا
+    # يُحاسَب عليه أحد. و`correlation_id` و`timestamp` عمودان في `EventRecord`
+    # يضيفهما الناقل، فلا يُطلبان في الحمولة.
+    "amos_federation.registry.institution_registered": {
+        "required_fields": ["institution_id", "code", "kind", "actor"],
+        "optional_fields": [
+            "branch",
+            "tenant_id",
+            "parent_institution_id",
+            "actor_role",
+            "session_id",
+            "audit_id",
+        ],
+    },
+    "amos_federation.registry.institution_status_changed": {
+        "required_fields": ["institution_id", "from_status", "to_status", "actor"],
+        "optional_fields": ["code", "reason", "tenant_id", "actor_role", "session_id", "audit_id"],
+    },
+    "amos_federation.registry.department_created": {
+        "required_fields": ["department_id", "institution_id", "code", "actor"],
+        "optional_fields": [
+            "institution_code",
+            "tenant_id",
+            "actor_role",
+            "session_id",
+            "audit_id",
+        ],
+    },
+    "amos_federation.registry.official_appointed": {
+        "required_fields": ["official_id", "agent_id", "institution_id", "actor"],
+        "optional_fields": [
+            "department_id",
+            "title",
+            "is_head",
+            "tenant_id",
+            "actor_role",
+            "session_id",
+            "audit_id",
+        ],
+    },
+    "amos_federation.registry.official_revoked": {
+        "required_fields": ["official_id", "agent_id", "reason", "actor"],
+        "optional_fields": [
+            "institution_id",
+            "tenant_id",
+            "actor_role",
+            "session_id",
+            "audit_id",
+        ],
+    },
 }
 
 

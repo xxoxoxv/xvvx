@@ -30,6 +30,7 @@ from amos_federation.services.executive_core.dispatcher import WILDCARD, registe
 from amos_federation.services.executive_core.engine import reset_executive_core
 from amos_federation.services.executive_core.repository import ExecutiveTaskRepository
 from amos_federation.services.orchestrator.main import app as orchestrator_app
+from tests.conftest import purge_agents
 
 orchestrator_client = TestClient(orchestrator_app)
 agent_client = TestClient(agent_app)
@@ -47,7 +48,7 @@ def _clean_state() -> None:
     session = get_session_factory()()
     try:
         session.execute(text("DELETE FROM tasks"))
-        session.execute(text("DELETE FROM agents"))
+        purge_agents(session)
         session.commit()
     finally:
         session.close()

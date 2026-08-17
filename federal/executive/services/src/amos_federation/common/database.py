@@ -22,6 +22,7 @@ from sqlalchemy import (
     String,
     Text,
     create_engine,
+    event,
 )
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
@@ -213,6 +214,32 @@ _engine = None
 _SessionLocal = None
 
 
+def _enforce_sqlite_foreign_keys(engine) -> None:
+    """شغِّل فرض المفاتيح الأجنبية على SQLite — وإلا كان القيد زخرفة.
+
+    SQLite يقبل `REFERENCES` في المخطَّط ثم **لا يفرضه** إلا إذا رُفع
+    `PRAGMA foreign_keys` لكل اتصال. وحتى R6 لم يكن في المستودع أي
+    `ForeignKey` في طبقة ORM (`grep` = صفر)، فلم يظهر الفرق. وR7 أدخلت أول
+    روابط مرجعية حقيقية (`state_officials.agent_id → agents.id`)، فلو بقي
+    الفرض مُطفأً لكان الادّعاء بوجود قيود مرجعية كذبًا: الصفوف اليتيمة تُكتب
+    بنجاح.
+
+    والفرض هنا على محرك `common/database` وحده. الوحدات التي تُنشئ محركًا
+    خاصًّا بها (`treasury`, `RBACSystem`, `DurableEventBus`) لا يشملها هذا،
+    وهو دَينٌ قائم مُسجَّل — لكن جداول R7 كلها على هذا المحرك.
+    """
+    if db_dialect(str(engine.url)) != DIALECT_SQLITE:
+        return
+
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_pragma(dbapi_connection, _connection_record):  # pragma: no cover - callback
+        cursor = dbapi_connection.cursor()
+        try:
+            cursor.execute("PRAGMA foreign_keys=ON")
+        finally:
+            cursor.close()
+
+
 def get_engine():
     """الحصول على محرك قاعدة البيانات (Singleton)."""
     global _engine
@@ -225,6 +252,7 @@ def get_engine():
             pool_pre_ping=True,
             **_pool_settings(),
         )
+        _enforce_sqlite_foreign_keys(_engine)
     return _engine
 
 
