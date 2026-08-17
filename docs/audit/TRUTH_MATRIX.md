@@ -19,18 +19,18 @@
 |---|---:|
 | الأقاليم المفحوصة | 12 |
 | الأقاليم بحالة PROVEN | 0 |
-| إجمالي المخالفات | 116 |
-| ملفات بلا ترويسة هوية (المادة 009) | 25 |
+| إجمالي المخالفات | 121 |
+| ملفات بلا ترويسة هوية (المادة 009) | 47 |
 | منها CRITICAL | 18 |
 | منها HIGH | 63 |
-| منها MEDIUM | 35 |
+| منها MEDIUM | 40 |
 
 ### توزيع المخالفات حسب النوع
 
 | النوع | العدد | المعنى |
 |---|---:|---|
 | IN_MEMORY_STORE | 60 | مخزن ذاكرة يُستخدم بديلًا عن تخزين دائم |
-| SILENT_FALLBACK | 38 | استثناء يُبتلع بلا تسجيل ولا رفع |
+| SILENT_FALLBACK | 43 | استثناء يُبتلع بلا تسجيل ولا رفع |
 | HARDCODED_TRUTH | 10 | قيمة ثابتة تُقدَّم كحقيقة تشغيلية بدل قاعدة البيانات |
 | HARDCODED_SECRET | 7 | سر/كلمة مرور مكتوبة داخل الكود أو الإعداد |
 | SANDBOX_DISABLED | 1 | أداة خطرة مسجّلة بلا عزل |
@@ -46,10 +46,10 @@
 | `federal/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ❌ | ✅ | ✅ | **❌** | `UNIT_TESTED` |
 | `states/` | ✅ | ❌ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
 | `institutions/` | ✅ | ✅ | ✅ | ⚠️ | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `UNIT_TESTED` |
-| `agents/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
+| `agents/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | **❌** | `DEPLOYED` |
 | `tools/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | **❌** | `DEPLOYED` |
 | `interfaces/` | ✅ | ❌ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `SPECIFIED` |
-| `runtime/` | ✅ | ✅ | ✅ | ⚠️ | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
+| `runtime/` | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | **❌** | `DEPLOYED` |
 | `docs/` | ✅ | ❌ | ❌ | — | ❌ | ✅ | ✅ | ❌ | ✅ | **❌** | `DEPLOYED` |
 | `ops/` | ✅ | ✅ | ✅ | — | ❌ | ✅ | ✅ | ❌ | ❌ | **❌** | `INTEGRATED` |
 | `tests/` | ✅ | ✅ | ✅ | — | ❌ | ✅ | ✅ | ✅ | ✅ | **❌** | `DEPLOYED` |
@@ -62,18 +62,18 @@
 
 | الإقليم | md | py | yaml | أسطر كود | نوى | بلا ترويسة هوية | حالات النوى |
 |---|---:|---:|---:|---:|---:|---:|---|
-| `core/` | 65 | 32 | 0 | 9186 | 14 | 2 | unspecified=14 |
+| `core/` | 66 | 32 | 0 | 9186 | 14 | 4 | unspecified=14 |
 | `royal/` | 51 | 2 | 1 | 92 | 14 | 3 | unspecified=14 |
-| `federal/` | 53 | 164 | 3 | 31087 | 7 | 2 | unspecified=7 |
+| `federal/` | 54 | 164 | 3 | 31089 | 7 | 4 | unspecified=7 |
 | `states/` | 47 | 2 | 0 | 32 | 7 | 2 | unspecified=7 |
-| `institutions/` | 19 | 2 | 0 | 89 | 6 | 2 | unspecified=6 |
-| `agents/` | 601 | 4 | 283 | 549 | 11 | 3 | unspecified=11 |
+| `institutions/` | 20 | 3 | 0 | 119 | 6 | 4 | unspecified=6 |
+| `agents/` | 603 | 7 | 283 | 644 | 11 | 8 | unspecified=11 |
 | `tools/` | 39 | 15 | 2 | 3800 | 12 | 3 | unspecified=12 |
 | `interfaces/` | 14 | 2 | 0 | 30 | 4 | 2 | unspecified=4 |
-| `runtime/` | 20 | 2 | 0 | 71 | 7 | 2 | unspecified=7 |
-| `docs/` | 57 | 2 | 0 | 47 | 7 | 2 | unspecified=7 |
+| `runtime/` | 20 | 7 | 0 | 1638 | 7 | 7 | unspecified=7 |
+| `docs/` | 58 | 2 | 0 | 47 | 7 | 6 | unspecified=7 |
 | `ops/` | 38 | 2 | 0 | 93 | 12 | 1 | unspecified=12 |
-| `tests/` | 14 | 24 | 0 | 6946 | 5 | 1 | unspecified=5 |
+| `tests/` | 14 | 26 | 0 | 6958 | 5 | 3 | unspecified=5 |
 
 ---
 
@@ -90,12 +90,12 @@
 | `core/stubs/memory_check.py:34` | HARDCODED_TRUTH | CRITICAL | `EXPERIENCES` بيانات ثابتة بديلة عن قاعدة البيانات |
 | `federal/executive/services/src/amos_federation/common/principal.py:59` | HARDCODED_SECRET | CRITICAL | `TOKEN_VERIFIED` قيمة سرية افتراضية مكتوبة داخل الكود |
 | `federal/executive/services/src/amos_federation/services/governance/expansion.py:108` | HARDCODED_TRUTH | CRITICAL | `FULL_POPULATION_CATEGORIES` بيانات ثابتة بديلة عن قاعدة البيانات |
-| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:555` | HARDCODED_SECRET | CRITICAL | مفتاح `JWT_SECRET` بقيمة سرية ثابتة |
-| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:555` | HARDCODED_SECRET | CRITICAL | مفتاح `KING_LOGIN_SECRET` بقيمة سرية ثابتة |
-| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:555` | HARDCODED_SECRET | CRITICAL | مفتاح `GITHUB_TOKEN` بقيمة سرية ثابتة |
-| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:555` | HARDCODED_SECRET | CRITICAL | مفتاح `MODAL_TOKEN_SECRET` بقيمة سرية ثابتة |
-| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:555` | HARDCODED_SECRET | CRITICAL | مفتاح `E2B_API_KEY` بقيمة سرية ثابتة |
-| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:555` | HARDCODED_SECRET | CRITICAL | مفتاح `CLAUDE_API_KEY` بقيمة سرية ثابتة |
+| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:556` | HARDCODED_SECRET | CRITICAL | مفتاح `JWT_SECRET` بقيمة سرية ثابتة |
+| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:556` | HARDCODED_SECRET | CRITICAL | مفتاح `KING_LOGIN_SECRET` بقيمة سرية ثابتة |
+| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:556` | HARDCODED_SECRET | CRITICAL | مفتاح `GITHUB_TOKEN` بقيمة سرية ثابتة |
+| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:556` | HARDCODED_SECRET | CRITICAL | مفتاح `MODAL_TOKEN_SECRET` بقيمة سرية ثابتة |
+| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:556` | HARDCODED_SECRET | CRITICAL | مفتاح `E2B_API_KEY` بقيمة سرية ثابتة |
+| `federal/executive/services/tests/test_r5_multi_provider_sandbox.py:556` | HARDCODED_SECRET | CRITICAL | مفتاح `CLAUDE_API_KEY` بقيمة سرية ثابتة |
 | `institutions/stubs/registry_check.py:18` | HARDCODED_TRUTH | CRITICAL | `INSTITUTIONS` بيانات ثابتة بديلة عن قاعدة البيانات |
 | `runtime/stubs/task_event_check.py:31` | HARDCODED_TRUTH | CRITICAL | `EVENT_COUNT = 156` عدّاد ثابت يُقدَّم كحقيقة تشغيلية |
 | `runtime/stubs/task_event_check.py:34` | HARDCODED_TRUTH | CRITICAL | `EVENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات |
@@ -170,7 +170,7 @@
 | `federal/executive/services/tests/test_training.py:98` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة |
 | `federal/executive/services/tests/test_training.py:110` | IN_MEMORY_STORE | HIGH | مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة |
 
-### MEDIUM (35)
+### MEDIUM (40)
 
 | الموقع | النوع | الخطورة | التفصيل |
 |---|---|---|---|
@@ -206,6 +206,11 @@
 | `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:119` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py:248` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `federal/executive/services/src/amos_federation/services/tool_registry/store.py:58` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
+| `runtime/engine/sandbox/__init__.py:116` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
+| `runtime/engine/sandbox/__init__.py:166` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
+| `runtime/engine/sandbox/__init__.py:261` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
+| `runtime/memory/__init__.py:203` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
+| `runtime/memory/__init__.py:351` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `tools/governance/truth_audit.py:243` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `tools/governance/truth_audit.py:271` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |
 | `tools/governance/truth_audit.py:348` | SILENT_FALLBACK | MEDIUM | استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة |

@@ -1,10 +1,10 @@
----
-scope: coordinator_agent_implementation
-owner: agent_orchestration
-created: 2026-08-17
-last_modified: 2026-08-17
-purpose: Coordinator agent implementation for multi-agent task orchestration
----
+# ---
+# scope: coordinator_agent_implementation
+# owner: agent_orchestration
+# created: 2026-08-17
+# last_modified: 2026-08-17
+# purpose: Coordinator agent implementation for multi-agent task orchestration
+# ---
 
 """
 Coordinator Agent for AMOS Federation

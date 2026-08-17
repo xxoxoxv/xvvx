@@ -4,7 +4,7 @@
   "domains": {
     "core": {
       "domain": "core",
-      "md_files": 65,
+      "md_files": 66,
       "py_files": 32,
       "yaml_files": 0,
       "code_lines": 9186,
@@ -20,7 +20,7 @@
       "observed_hits": 3,
       "api_routes": 0,
       "test_refs": 191,
-      "identity_violations": 2,
+      "identity_violations": 4,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -74,10 +74,10 @@
     },
     "federal": {
       "domain": "federal",
-      "md_files": 53,
+      "md_files": 54,
       "py_files": 164,
       "yaml_files": 3,
-      "code_lines": 31087,
+      "code_lines": 31089,
       "nucleus_count": 7,
       "nucleus_status": {
         "unspecified": 7
@@ -90,7 +90,7 @@
       "observed_hits": 114,
       "api_routes": 153,
       "test_refs": 79,
-      "identity_violations": 2,
+      "identity_violations": 4,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -144,10 +144,10 @@
     },
     "institutions": {
       "domain": "institutions",
-      "md_files": 19,
-      "py_files": 2,
+      "md_files": 20,
+      "py_files": 3,
       "yaml_files": 0,
-      "code_lines": 89,
+      "code_lines": 119,
       "nucleus_count": 6,
       "nucleus_status": {
         "unspecified": 6
@@ -160,7 +160,7 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 5,
-      "identity_violations": 2,
+      "identity_violations": 4,
       "deployed": false,
       "columns": {
         "DOCUMENTED": true,
@@ -179,10 +179,10 @@
     },
     "agents": {
       "domain": "agents",
-      "md_files": 601,
-      "py_files": 4,
+      "md_files": 603,
+      "py_files": 7,
       "yaml_files": 283,
-      "code_lines": 549,
+      "code_lines": 644,
       "nucleus_count": 11,
       "nucleus_status": {
         "unspecified": 11
@@ -192,10 +192,10 @@
       "fake_hits": 3,
       "in_memory_hits": 0,
       "secret_hits": 0,
-      "observed_hits": 0,
+      "observed_hits": 5,
       "api_routes": 0,
       "test_refs": 135,
-      "identity_violations": 3,
+      "identity_violations": 8,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -205,7 +205,7 @@
         "INTEGRATED": true,
         "TESTED": true,
         "SECURED": true,
-        "OBSERVED": false,
+        "OBSERVED": true,
         "DEPLOYED": true,
         "PROVEN": false
       },
@@ -285,41 +285,41 @@
     "runtime": {
       "domain": "runtime",
       "md_files": 20,
-      "py_files": 2,
+      "py_files": 7,
       "yaml_files": 0,
-      "code_lines": 71,
+      "code_lines": 1638,
       "nucleus_count": 7,
       "nucleus_status": {
         "unspecified": 7
       },
       "has_readme": true,
-      "real_source_hits": 1,
+      "real_source_hits": 3,
       "fake_hits": 2,
       "in_memory_hits": 0,
       "secret_hits": 0,
-      "observed_hits": 0,
+      "observed_hits": 68,
       "api_routes": 0,
       "test_refs": 51,
-      "identity_violations": 2,
+      "identity_violations": 7,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
         "IMPLEMENTED": true,
         "REAL_SOURCE": true,
         "FAKE_OR_CACHED": true,
-        "INTEGRATED": false,
+        "INTEGRATED": true,
         "TESTED": true,
         "SECURED": true,
-        "OBSERVED": false,
+        "OBSERVED": true,
         "DEPLOYED": true,
         "PROVEN": false
       },
       "maturity": "DEPLOYED",
-      "findings_count": 2
+      "findings_count": 7
     },
     "docs": {
       "domain": "docs",
-      "md_files": 57,
+      "md_files": 58,
       "py_files": 2,
       "yaml_files": 0,
       "code_lines": 47,
@@ -335,7 +335,7 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 8,
-      "identity_violations": 2,
+      "identity_violations": 6,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -390,9 +390,9 @@
     "tests": {
       "domain": "tests",
       "md_files": 14,
-      "py_files": 24,
+      "py_files": 26,
       "yaml_files": 0,
-      "code_lines": 6946,
+      "code_lines": 6958,
       "nucleus_count": 5,
       "nucleus_status": {
         "unspecified": 5
@@ -404,8 +404,8 @@
       "secret_hits": 0,
       "observed_hits": 21,
       "api_routes": 0,
-      "test_refs": 91,
-      "identity_violations": 1,
+      "test_refs": 98,
+      "identity_violations": 3,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -426,16 +426,93 @@
   "findings": [
     {
       "kind": "HARDCODED_TRUTH",
+      "path": "runtime/stubs/task_event_check.py",
+      "line": 31,
+      "detail": "`EVENT_COUNT = 156` عدّاد ثابت يُقدَّم كحقيقة تشغيلية",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "runtime/stubs/task_event_check.py",
+      "line": 34,
+      "detail": "`EVENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "runtime/memory/__init__.py",
+      "line": 203,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "runtime/memory/__init__.py",
+      "line": 351,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "runtime/engine/sandbox/__init__.py",
+      "line": 166,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "runtime/engine/sandbox/__init__.py",
+      "line": 261,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "runtime/engine/sandbox/__init__.py",
+      "line": 116,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "agents/stubs/registry_check.py",
+      "line": 18,
+      "detail": "`AGENT_COUNT = 342` عدّاد ثابت يُقدَّم كحقيقة تشغيلية",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "agents/stubs/registry_check.py",
+      "line": 21,
+      "detail": "`AGENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "agents/registry/imported_agents_data.py",
+      "line": 15,
+      "detail": "`AGENTS` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
       "path": "institutions/stubs/registry_check.py",
       "line": 18,
       "detail": "`INSTITUTIONS` بيانات ثابتة بديلة عن قاعدة البيانات",
       "severity": "CRITICAL"
     },
     {
-      "kind": "SANDBOX_DISABLED",
-      "path": "tools/registry/tool-index.yaml",
-      "line": 49,
-      "detail": "أداة مسجّلة بلا عزل (sandbox=false)",
+      "kind": "HARDCODED_TRUTH",
+      "path": "core/stubs/memory_check.py",
+      "line": 19,
+      "detail": "`MEMORIES` بيانات ثابتة بديلة عن قاعدة البيانات",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_TRUTH",
+      "path": "core/stubs/memory_check.py",
+      "line": 34,
+      "detail": "`EXPERIENCES` بيانات ثابتة بديلة عن قاعدة البيانات",
       "severity": "CRITICAL"
     },
     {
@@ -467,60 +544,11 @@
       "severity": "MEDIUM"
     },
     {
-      "kind": "HARDCODED_TRUTH",
-      "path": "runtime/stubs/task_event_check.py",
-      "line": 31,
-      "detail": "`EVENT_COUNT = 156` عدّاد ثابت يُقدَّم كحقيقة تشغيلية",
+      "kind": "SANDBOX_DISABLED",
+      "path": "tools/registry/tool-index.yaml",
+      "line": 49,
+      "detail": "أداة مسجّلة بلا عزل (sandbox=false)",
       "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "runtime/stubs/task_event_check.py",
-      "line": 34,
-      "detail": "`EVENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/tests/test_training.py",
-      "line": 12,
-      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/tests/test_training.py",
-      "line": 68,
-      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/tests/test_training.py",
-      "line": 77,
-      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/tests/test_training.py",
-      "line": 86,
-      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/tests/test_training.py",
-      "line": 98,
-      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/tests/test_training.py",
-      "line": 110,
-      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
     },
     {
       "kind": "IN_MEMORY_STORE",
@@ -733,48 +761,6 @@
       "severity": "HIGH"
     },
     {
-      "kind": "HARDCODED_SECRET",
-      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
-      "line": 555,
-      "detail": "مفتاح `JWT_SECRET` بقيمة سرية ثابتة",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_SECRET",
-      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
-      "line": 555,
-      "detail": "مفتاح `KING_LOGIN_SECRET` بقيمة سرية ثابتة",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_SECRET",
-      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
-      "line": 555,
-      "detail": "مفتاح `GITHUB_TOKEN` بقيمة سرية ثابتة",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_SECRET",
-      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
-      "line": 555,
-      "detail": "مفتاح `MODAL_TOKEN_SECRET` بقيمة سرية ثابتة",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_SECRET",
-      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
-      "line": 555,
-      "detail": "مفتاح `E2B_API_KEY` بقيمة سرية ثابتة",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_SECRET",
-      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
-      "line": 555,
-      "detail": "مفتاح `CLAUDE_API_KEY` بقيمة سرية ثابتة",
-      "severity": "CRITICAL"
-    },
-    {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_edge_branches.py",
       "line": 13,
@@ -817,6 +803,48 @@
       "severity": "HIGH"
     },
     {
+      "kind": "HARDCODED_SECRET",
+      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
+      "line": 556,
+      "detail": "مفتاح `JWT_SECRET` بقيمة سرية ثابتة",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_SECRET",
+      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
+      "line": 556,
+      "detail": "مفتاح `KING_LOGIN_SECRET` بقيمة سرية ثابتة",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_SECRET",
+      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
+      "line": 556,
+      "detail": "مفتاح `GITHUB_TOKEN` بقيمة سرية ثابتة",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_SECRET",
+      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
+      "line": 556,
+      "detail": "مفتاح `MODAL_TOKEN_SECRET` بقيمة سرية ثابتة",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_SECRET",
+      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
+      "line": 556,
+      "detail": "مفتاح `E2B_API_KEY` بقيمة سرية ثابتة",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "HARDCODED_SECRET",
+      "path": "federal/executive/services/tests/test_r5_multi_provider_sandbox.py",
+      "line": 556,
+      "detail": "مفتاح `CLAUDE_API_KEY` بقيمة سرية ثابتة",
+      "severity": "CRITICAL"
+    },
+    {
       "kind": "IN_MEMORY_STORE",
       "path": "federal/executive/services/tests/test_common_branches.py",
       "line": 39,
@@ -829,6 +857,76 @@
       "line": 258,
       "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
       "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/tests/test_training.py",
+      "line": 12,
+      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/tests/test_training.py",
+      "line": 68,
+      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/tests/test_training.py",
+      "line": 77,
+      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/tests/test_training.py",
+      "line": 86,
+      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/tests/test_training.py",
+      "line": 98,
+      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/tests/test_training.py",
+      "line": 110,
+      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "HARDCODED_SECRET",
+      "path": "federal/executive/services/src/amos_federation/common/principal.py",
+      "line": 59,
+      "detail": "`TOKEN_VERIFIED` قيمة سرية افتراضية مكتوبة داخل الكود",
+      "severity": "CRITICAL"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/common/event_schemas.py",
+      "line": 53,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/common/event_schemas.py",
+      "line": 57,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/common/event_schemas.py",
+      "line": 61,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
     },
     {
       "kind": "SILENT_FALLBACK",
@@ -887,13 +985,6 @@
       "severity": "MEDIUM"
     },
     {
-      "kind": "HARDCODED_SECRET",
-      "path": "federal/executive/services/src/amos_federation/common/principal.py",
-      "line": 59,
-      "detail": "`TOKEN_VERIFIED` قيمة سرية افتراضية مكتوبة داخل الكود",
-      "severity": "CRITICAL"
-    },
-    {
       "kind": "SILENT_FALLBACK",
       "path": "federal/executive/services/src/amos_federation/common/service.py",
       "line": 25,
@@ -911,202 +1002,6 @@
       "kind": "SILENT_FALLBACK",
       "path": "federal/executive/services/src/amos_federation/common/tracing.py",
       "line": 36,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/common/event_schemas.py",
-      "line": 53,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/common/event_schemas.py",
-      "line": 57,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/common/event_schemas.py",
-      "line": 61,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/training/data_pipeline.py",
-      "line": 31,
-      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/training/model_registry.py",
-      "line": 30,
-      "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/training/main.py",
-      "line": 22,
-      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/training/main.py",
-      "line": 23,
-      "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/training/main.py",
-      "line": 36,
-      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/training/main.py",
-      "line": 37,
-      "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/critic/store.py",
-      "line": 32,
-      "detail": "مخزن ذاكرة `InMemoryCriticStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/memory_service/store.py",
-      "line": 50,
-      "detail": "مخزن ذاكرة `InMemoryVectorStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/executive_core/subsystem_boundary.py",
-      "line": 165,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/api_gateway/store.py",
-      "line": 14,
-      "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/api_gateway/store.py",
-      "line": 102,
-      "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/evaluation/store.py",
-      "line": 33,
-      "detail": "مخزن ذاكرة `InMemoryExperienceStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/evaluation/benchmark.py",
-      "line": 170,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/tool_registry/store.py",
-      "line": 31,
-      "detail": "مخزن ذاكرة `InMemoryToolStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/tool_registry/store.py",
-      "line": 58,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/tool_registry/authorized_execution.py",
-      "line": 135,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/tool_registry/authorized_execution.py",
-      "line": 416,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py",
-      "line": 119,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py",
-      "line": 248,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "MEDIUM"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/model_gateway/main.py",
-      "line": 29,
-      "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/model_gateway/main.py",
-      "line": 47,
-      "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/model_gateway/shadow.py",
-      "line": 28,
-      "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "IN_MEMORY_STORE",
-      "path": "federal/executive/services/src/amos_federation/services/model_gateway/shadow.py",
-      "line": 142,
-      "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/governance/federation.py",
-      "line": 250,
-      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
-      "severity": "HIGH"
-    },
-    {
-      "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/governance/federation.py",
-      "line": 298,
       "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
       "severity": "MEDIUM"
     },
@@ -1146,6 +1041,20 @@
       "severity": "MEDIUM"
     },
     {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/services/governance/federation.py",
+      "line": 250,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/services/governance/federation.py",
+      "line": 298,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
       "kind": "HARDCODED_TRUTH",
       "path": "federal/executive/services/src/amos_federation/services/governance/expansion.py",
       "line": 108,
@@ -1160,23 +1069,170 @@
       "severity": "MEDIUM"
     },
     {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/critic/store.py",
+      "line": 32,
+      "detail": "مخزن ذاكرة `InMemoryCriticStore` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/memory_service/store.py",
+      "line": 50,
+      "detail": "مخزن ذاكرة `InMemoryVectorStore` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/training/main.py",
+      "line": 22,
+      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/training/main.py",
+      "line": 23,
+      "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/training/main.py",
+      "line": 36,
+      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/training/main.py",
+      "line": 37,
+      "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/training/model_registry.py",
+      "line": 30,
+      "detail": "مخزن ذاكرة `InMemoryModelRegistry` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/training/data_pipeline.py",
+      "line": 31,
+      "detail": "مخزن ذاكرة `InMemoryDataPipeline` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
       "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/tool_registry/providers/network.py",
-      "line": 110,
+      "path": "federal/executive/services/src/amos_federation/services/tool_registry/authorized_execution.py",
+      "line": 135,
       "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
       "severity": "MEDIUM"
     },
     {
       "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/tool_registry/providers/e2b_provider.py",
-      "line": 100,
+      "path": "federal/executive/services/src/amos_federation/services/tool_registry/authorized_execution.py",
+      "line": 416,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/tool_registry/store.py",
+      "line": 31,
+      "detail": "مخزن ذاكرة `InMemoryToolStore` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/services/tool_registry/store.py",
+      "line": 58,
       "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
       "severity": "MEDIUM"
     },
     {
       "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/tool_registry/providers/e2b_provider.py",
-      "line": 103,
+      "path": "federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py",
+      "line": 119,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/services/tool_registry/sandbox.py",
+      "line": 248,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/services/evaluation/benchmark.py",
+      "line": 170,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/evaluation/store.py",
+      "line": 33,
+      "detail": "مخزن ذاكرة `InMemoryExperienceStore` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/model_gateway/main.py",
+      "line": 29,
+      "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/model_gateway/main.py",
+      "line": 47,
+      "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/model_gateway/shadow.py",
+      "line": 28,
+      "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/model_gateway/shadow.py",
+      "line": 142,
+      "detail": "مخزن ذاكرة `InMemoryShadowStore` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/api_gateway/store.py",
+      "line": 14,
+      "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "IN_MEMORY_STORE",
+      "path": "federal/executive/services/src/amos_federation/services/api_gateway/store.py",
+      "line": 102,
+      "detail": "مخزن ذاكرة `InMemoryTaskStore` يُستخدم كمصدر حقيقة",
+      "severity": "HIGH"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/services/executive_core/subsystem_boundary.py",
+      "line": 165,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
+    },
+    {
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/services/tool_registry/providers/selection.py",
+      "line": 232,
       "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
       "severity": "MEDIUM"
     },
@@ -1196,61 +1252,40 @@
     },
     {
       "kind": "SILENT_FALLBACK",
-      "path": "federal/executive/services/src/amos_federation/services/tool_registry/providers/selection.py",
-      "line": 232,
+      "path": "federal/executive/services/src/amos_federation/services/tool_registry/providers/e2b_provider.py",
+      "line": 100,
       "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
       "severity": "MEDIUM"
     },
     {
-      "kind": "HARDCODED_TRUTH",
-      "path": "core/stubs/memory_check.py",
-      "line": 19,
-      "detail": "`MEMORIES` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/services/tool_registry/providers/e2b_provider.py",
+      "line": 103,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
     },
     {
-      "kind": "HARDCODED_TRUTH",
-      "path": "core/stubs/memory_check.py",
-      "line": 34,
-      "detail": "`EXPERIENCES` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "agents/registry/imported_agents_data.py",
-      "line": 15,
-      "detail": "`AGENTS` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "agents/stubs/registry_check.py",
-      "line": 18,
-      "detail": "`AGENT_COUNT = 342` عدّاد ثابت يُقدَّم كحقيقة تشغيلية",
-      "severity": "CRITICAL"
-    },
-    {
-      "kind": "HARDCODED_TRUTH",
-      "path": "agents/stubs/registry_check.py",
-      "line": 21,
-      "detail": "`AGENTS_SAMPLE` بيانات ثابتة بديلة عن قاعدة البيانات",
-      "severity": "CRITICAL"
+      "kind": "SILENT_FALLBACK",
+      "path": "federal/executive/services/src/amos_federation/services/tool_registry/providers/network.py",
+      "line": 110,
+      "detail": "استثناء يُبتلع بلا تسجيل ولا رفع — يخفي فشل مصدر الحقيقة",
+      "severity": "MEDIUM"
     }
   ],
   "summary": {
     "domains_total": 12,
     "domains_proven": 0,
-    "findings_total": 116,
-    "identity_violations": 25,
+    "findings_total": 121,
+    "identity_violations": 47,
     "by_severity": {
       "CRITICAL": 18,
-      "MEDIUM": 35,
+      "MEDIUM": 40,
       "HIGH": 63
     },
     "by_kind": {
       "HARDCODED_TRUTH": 10,
+      "SILENT_FALLBACK": 43,
       "SANDBOX_DISABLED": 1,
-      "SILENT_FALLBACK": 38,
       "IN_MEMORY_STORE": 60,
       "HARDCODED_SECRET": 7
     }

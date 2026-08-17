@@ -134,8 +134,7 @@ class IntegrationTestSuite:
     
     def test_single_agent_full_lifecycle(self) -> None:
         """اختبار دورة حياة وكيل واحد كاملة"""
-        logger.info("
-🧪 Test 1: وكيل واحد يستخدم كل المكونات")
+        logger.info("🧪 Test 1: وكيل واحد يستخدم كل المكونات")
         start = time.time()
         
         try:
@@ -223,8 +222,7 @@ class IntegrationTestSuite:
     
     def test_two_agents_cooperation(self) -> None:
         """اختبار تعاون وكيلين"""
-        logger.info("
-🧪 Test 2: وكيلان يتواصلان ويتعاونان")
+        logger.info("🧪 Test 2: وكيلان يتواصلان ويتعاونان")
         start = time.time()
         
         try:
@@ -308,8 +306,7 @@ class IntegrationTestSuite:
     
     def test_red_team_attack_suite(self) -> None:
         """تشغيل جميع هجمات Red Team"""
-        logger.info("
-🧪 Test 3: Red Team يهاجم النظام (14 هجوم)")
+        logger.info("🧪 Test 3: Red Team يهاجم النظام (14 هجوم)")
         start = time.time()
         
         try:
@@ -476,8 +473,7 @@ class IntegrationTestSuite:
     
     def test_ledger_integrity(self) -> None:
         """اختبار سلامة Ledger"""
-        logger.info("
-🧪 Test 4: سلامة Ledger")
+        logger.info("🧪 Test 4: سلامة Ledger")
         start = time.time()
         
         try:
@@ -518,8 +514,7 @@ class IntegrationTestSuite:
     
     def run_all_tests(self) -> Dict[str, Any]:
         """تشغيل جميع الاختبارات"""
-        logger.info("
-🚀 تشغيل جميع الاختبارات...")
+        logger.info("🚀 تشغيل جميع الاختبارات...")
         
         self.test_single_agent_full_lifecycle()
         self.test_two_agents_cooperation()

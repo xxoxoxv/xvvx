@@ -1,10 +1,10 @@
----
-scope: agent_hierarchy_definitions
-owner: agent_orchestration
-created: 2026-08-17
-last_modified: 2026-08-17
-purpose: Agent hierarchy and organizational structure definitions
----
+# ---
+# scope: agent_hierarchy_definitions
+# owner: agent_orchestration
+# created: 2026-08-17
+# last_modified: 2026-08-17
+# purpose: Agent hierarchy and organizational structure definitions
+# ---
 
 """
 Agent Hierarchy for AMOS Federation

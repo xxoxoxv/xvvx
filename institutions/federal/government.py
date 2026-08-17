@@ -1,10 +1,10 @@
----
-scope: federal_government_implementation
-owner: federal_governance
-created: 2026-08-17
-last_modified: 2026-08-17
-purpose: Federal government structure and institutional framework
----
+# ---
+# scope: federal_government_implementation
+# owner: federal_governance
+# created: 2026-08-17
+# last_modified: 2026-08-17
+# purpose: Federal government structure and institutional framework
+# ---
 
 """
 Federal Government for AMOS Federation
