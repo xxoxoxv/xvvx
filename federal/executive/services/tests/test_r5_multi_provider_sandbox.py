@@ -1,10 +1,9 @@
-"""Multi-provider sandbox integration tests"""
-
-"""اختبارات R5 — صندوق رملي متعدّد المزوِّدات.
+"""Multi-provider sandbox integration tests — R5 Multi-Provider Sandbox Tests
 
 النطاق: services/tool_registry/providers + authorized_execution
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-17
+الغرض: اختبار عقد مزودات الصندوق الرملي، اختيار المزوِّد، دورة الحياة، المهلة، التخويل، وسياسة الشبكة
 
 ما تفحصه هذه الحزمة وما لا تفحصه — يُقال هنا لا في التقرير:
 
