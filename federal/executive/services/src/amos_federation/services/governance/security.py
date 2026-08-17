@@ -23,11 +23,13 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine
+from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine, inspect, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from amos_federation.common.database import get_database_url
 from amos_federation.common.persistent import PersistentAuditStore
+from amos_federation.common.principal import DEFAULT_TENANT
 
 
 class SecurityBase(DeclarativeBase):
@@ -59,6 +61,11 @@ class UserSessionModel(SecurityBase):
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     expires_at = Column(DateTime, nullable=True)
     ip_address = Column(String, nullable=True)
+    # R6.1: مستأجر الجلسة. كان الجدول قبله بلا مستأجر إطلاقًا، فكان كل مبدأ
+    # مُتحقَّق من جلسة يخرج إلى طبقة التخويل بمستأجر `default` — فلا عزل بين
+    # جلستين مهما اختلف مستأجراهما. و`nullable=False` مقصود: جلسة بلا مستأجر
+    # تُقرأ لاحقًا على أنها «أيّ مستأجر»، وذلك عكس المراد.
+    tenant_id = Column(String, nullable=False, default=DEFAULT_TENANT, index=True)
 
 
 class SecretVaultModel(SecurityBase):
@@ -144,8 +151,47 @@ class RBACSystem:
             else {},
         )
         SecurityBase.metadata.create_all(self._engine)
+        self._migrate_session_tenant()
         self._Session = sessionmaker(bind=self._engine, autoflush=False, expire_on_commit=False)
         self._init_roles()
+
+    def _migrate_session_tenant(self) -> None:
+        """R6.1: أضف `security_sessions.tenant_id` إلى جدول قائم إن غاب.
+
+        `create_all` تُنشئ الجداول المفقودة و**لا تُضيف أعمدة إلى جدول موجود**.
+        ولا نطام هجرة (alembic) في المستودع، فقاعدة قائمة من قبل R6.1 كانت
+        ستكسر كل استعلام جلسة بـ`OperationalError: no such column`. وهذا ليس
+        توسيع نطاق بل شرط لأن تعمل الميزة على قاعدة قائمة.
+
+        إضافية وحدها: `ADD COLUMN` لا تُسقط شيئًا ولا تُعيد بناء جدول، والصفوف
+        القائمة تأخذ `default` — وهو وصفٌ صادق لها: أُنشئت حين لم يكن للنشر
+        إلا مستأجر واحد.
+        """
+        try:
+            inspector = inspect(self._engine)
+            if "security_sessions" not in inspector.get_table_names():
+                return
+            columns = {column["name"] for column in inspector.get_columns("security_sessions")}
+            if "tenant_id" in columns:
+                return
+            with self._engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "ALTER TABLE security_sessions "
+                        f"ADD COLUMN tenant_id VARCHAR DEFAULT '{DEFAULT_TENANT}'"
+                    )
+                )
+                connection.execute(
+                    text(
+                        "UPDATE security_sessions "
+                        f"SET tenant_id = '{DEFAULT_TENANT}' WHERE tenant_id IS NULL"
+                    )
+                )
+        except SQLAlchemyError:
+            # الهجرة محاولة حسنة النيّة: فشلها يظهر فورًا عند أول استعلام جلسة
+            # بخطأ واضح، ولا يُسكَت عنه بإدراج مستأجر وهمي. وإسقاط النظام كلّه
+            # عند الإنشاء لأجل قاعدة لا تدعم ALTER أقسى من اللازم.
+            pass
 
     def _init_roles(self) -> None:
         session = self._Session()
@@ -167,8 +213,21 @@ class RBACSystem:
         finally:
             session.close()
 
-    def create_session(self, username: str, role_id: str, ip: str = "") -> dict[str, Any]:
-        """إنشاء جلسة مستخدم."""
+    def create_session(
+        self,
+        username: str,
+        role_id: str,
+        ip: str = "",
+        *,
+        tenant_id: str | None = None,
+    ) -> dict[str, Any]:
+        """إنشاء جلسة مستخدم.
+
+        Args:
+            tenant_id: مستأجر الجلسة. يُملأ عند المصادقة من مصدر موثوق
+                (سجلّ المستخدمين أو مُوفّر الهوية)، لا من جسم طلب تسجيل الدخول.
+                وغيابه يعني `default` تحديدًا، لا «أيّ مستأجر».
+        """
         session = self._Session()
         try:
             role = session.query(RoleModel).filter(RoleModel.role_id == role_id).first()
@@ -182,6 +241,7 @@ class RBACSystem:
                 username=username,
                 role_id=role_id,
                 ip_address=ip,
+                tenant_id=(tenant_id or DEFAULT_TENANT),
                 expires_at=datetime.now(UTC) + timedelta(hours=24),
             )
             session.add(user_session)
@@ -191,6 +251,7 @@ class RBACSystem:
                 "username": username,
                 "role_id": role_id,
                 "level": role.level,
+                "tenant_id": (tenant_id or DEFAULT_TENANT),
             }
         finally:
             session.close()

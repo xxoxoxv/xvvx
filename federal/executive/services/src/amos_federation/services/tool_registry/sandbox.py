@@ -314,22 +314,26 @@ PROVIDER_BACKED_TOOLS: frozenset[str] = frozenset({"python_execute"})
 def execute_tool_with_governance(
     tool_id: str,
     params: dict[str, Any],
-    role: str = "user",
     *,
-    principal: AuthorizationContext | None = None,
+    principal: AuthorizationContext,
 ) -> dict[str, Any]:
     """نفِّذ أداة بعد التخويل — ولا يُنشأ صندوق قبله بحال.
 
+    **لا معامل دور في هذه الدالّة بعد R6.1.** كان فيها `role: str = "user"`
+    يقوله المُستدعي عن نفسه؛ فكان لطبقة التخويل مسارا ثقة: واحد يلزمه إثبات
+    وواحد يقبل ادّعاءً. أُزيل المعامل، وصار `principal` **لازمًا**: من أراد
+    التنفيذ فليأتِ بسياق، ومن لم يأتِ به فلا نداء له أصلًا — والفشل عند حدّ
+    التوقيع لا داخل الدالّة.
+
+    ومن بقي عنده نداء ما قبل R6 لم يُهاجَر فله مُهاجر واحد موسوم:
+    `deprecated_role_path.execute_tool_with_declared_role`، وهو يبني سياق
+    `UNVERIFIED` صريحًا ويرفع في الإنتاج.
+
     Args:
-        role: **مسار ما قبل R6، مُهمَل.** دورٌ يقوله المُستدعي عن نفسه بلا أي
-            إثبات. يُلَفّ في سياق `UNVERIFIED` صريح، ويُرفَض في بيئة إنتاجية.
-            يُقبل هنا في التطوير والاختبار وحدهما، وكل نتيجة تُعلِن
-            `principal_verification = "UNVERIFIED"` فلا يُقرأ كتخويل.
-        principal: سياق التخويل الكانوني. إن وُجد فهو المصدر، ويُهمَل `role`
-            إهمالًا تامًّا — لا دمج ولا «الأوسع يفوز».
+        principal: سياق التخويل الكانوني — المصدر الوحيد للدور والصلاحيات
+            والمستأجر. ولا يُقرأ شيء من `params` في قرار التخويل.
     """
     from amos_federation.common.event_bus import get_event_bus
-    from amos_federation.common.principal import unverified_context
     from amos_federation.services.tool_registry.authorized_execution import (
         AuthorizationDenied,
         authorize,
@@ -338,13 +342,8 @@ def execute_tool_with_governance(
     agent_id = params.get("agent_id")
     scope = "AGENT_CHAIN" if agent_id else "ROLE_ONLY"
 
-    # المبدأ: إمّا سياق مُتحقَّق منه مُمرَّر صراحةً، أو دورٌ مُدّعىً يُوسَم كذلك.
-    # `unverified_context` ترفع في الإنتاج، فلا يمرّ الادّعاء هناك بحال.
-    context = principal or unverified_context(
-        f"دور مُدّعىً من المُستدعي عبر معامل role='{role}' — لا جلسة ولا رمز",
-        claimed_role=role,
-    )
-    effective_role = context.role or role
+    context = principal
+    effective_role = context.role or ""
 
     if agent_id:
         # السلسلة الكاملة. الرفض يُرجَع قاموسًا للتوافُق مع النداءات القائمة،
@@ -395,6 +394,8 @@ def execute_tool_with_governance(
                 "principal_verification": context.verification.value,
                 "principal_id": context.principal_id,
             }
+        # لا حلقة `tenant` هنا: عزل المستأجر يُقارن سياق المبدأ بمستأجر مورد،
+        # ولا مورد مُسمّى في هذا الفرع (لا وكيل). فلا تُدرَج مُجتازةً.
         stages = ["principal", "role", "tool"]
 
     # 3. التنفيذ — الآن فقط يُنشأ صندوق.

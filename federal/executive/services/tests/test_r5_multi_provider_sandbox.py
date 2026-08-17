@@ -491,10 +491,13 @@ def test_authorization_denial_fails_closed_before_any_sandbox_exists() -> None:
     #
     # R6 أضافت `principal` و`session` إلى مقدّمة السلسلة: قبلها كانت تبدأ
     # من `agent`، أي أن أوّل سؤال كان «أيّ وكيل؟» لا «من يطلب؟».
+    # وR6.1 أدخلت `tenant` بعد `agent`: بعد أن يُعرَف الوكيل يُسأل «أفي مستأجري؟»
+    # قبل أن يُسأل عن دوره — فحدُّ المستأجر أوسع من حدّ الدور ويُقدَّم عليه.
     assert AUTHORIZATION_CHAIN == (
         "principal",
         "session",
         "agent",
+        "tenant",
         "role",
         "capability",
         "permission",
@@ -504,6 +507,7 @@ def test_authorization_denial_fails_closed_before_any_sandbox_exists() -> None:
     # المبدأ قبل الوكيل، والوكيل قبل الأداة — لا يُعاد الترتيب.
     assert AUTHORIZATION_CHAIN.index("principal") < AUTHORIZATION_CHAIN.index("agent")
     assert AUTHORIZATION_CHAIN.index("permission") < AUTHORIZATION_CHAIN.index("sandbox")
+    assert AUTHORIZATION_CHAIN.index("tenant") < AUTHORIZATION_CHAIN.index("role")
     # القرار يبدأ رفضًا لا سماحًا.
     assert AuthorizationDecision().allowed is False
 

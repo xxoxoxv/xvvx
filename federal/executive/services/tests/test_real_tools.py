@@ -166,24 +166,43 @@ def test_text_summary_real() -> None:
 # === 4.9: Policy Check قبل التنفيذ ===
 
 
+# R6.1: هذه الاختبارات كانت تُمرّر دورًا مُدّعىً كمعامل فيُصدَّق. أُزيل المعامل من
+# دالّة الإنتاج، فصارت تبني سياقًا من سجلّ جلسة — والدور من الخادم لا من النداء.
+def _ctx(role_id: str):
+    """سياق مُتحقَّق منه بدور من سجلّ الجلسات."""
+    from amos_federation.common.principal import AuthorizationContext, Principal
+
+    return AuthorizationContext.from_principal(
+        Principal.from_session_record(
+            session_id="real-tools-session",
+            username="real-tools-tester",
+            role_id=role_id,
+            permissions=("execute:tools",),
+            expires_at=None,
+        )
+    )
+
+
 def test_execute_with_governance_allows_safe_tool() -> None:
     """أداة آمنة تنفذ بنجاح."""
     result = execute_tool_with_governance(
-        "chart_generate", {"data": {"a": 1, "b": 2}}, role="admin"
+        "chart_generate", {"data": {"a": 1, "b": 2}}, principal=_ctx("official")
     )
     assert "error" not in result or result.get("error") != "policy_denied"
 
 
 def test_execute_with_governance_denies_dangerous_for_user() -> None:
     """أداة خطيرة مرفوضة للمستخدم العادي."""
-    result = execute_tool_with_governance("python_execute", {"code": "print(1)"}, role="user")
+    result = execute_tool_with_governance(
+        "python_execute", {"code": "print(1)"}, principal=_ctx("citizen")
+    )
     assert result.get("error") == "policy_denied"
 
 
 def test_execute_with_governance_allows_dangerous_for_admin() -> None:
     """أداة خطيرة مسموحة للمشرف."""
     result = execute_tool_with_governance(
-        "python_execute", {"code": "print('hello')"}, role="admin"
+        "python_execute", {"code": "print('hello')"}, principal=_ctx("official")
     )
     assert result.get("returncode") == 0
     assert "hello" in result.get("stdout", "")
@@ -195,7 +214,9 @@ def test_execute_with_governance_kill_switch_halt() -> None:
 
     activate_kill_switch("halt", "اختبار", "tester")
     with pytest.raises(Exception, match="."):  # HTTPException — Kill Switch halt يمنع التنفيذ
-        execute_tool_with_governance("chart_generate", {"data": {"a": 1}}, role="admin")
+        execute_tool_with_governance(
+            "chart_generate", {"data": {"a": 1}}, principal=_ctx("official")
+        )
 
 
 def test_execute_with_governance_publishes_event() -> None:
@@ -204,7 +225,9 @@ def test_execute_with_governance_publishes_event() -> None:
 
     bus = get_event_bus()
     initial = bus.count("amos_federation.tool.executed")
-    execute_tool_with_governance("chart_generate", {"data": {"a": 1, "b": 2}}, role="admin")
+    execute_tool_with_governance(
+        "chart_generate", {"data": {"a": 1, "b": 2}}, principal=_ctx("official")
+    )
     assert bus.count("amos_federation.tool.executed") > initial
 
 

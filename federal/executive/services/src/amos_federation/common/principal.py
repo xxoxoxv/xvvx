@@ -7,13 +7,13 @@ AMOS-Federation Principal & Authorization Context
 
 ## المشكلة التي تُصلحها هذه الوحدة
 
-قبل R6 كان `actor_role` معاملًا عاديًّا يُمرَّر إلى طبقة التخويل:
+قبل R6 كان `actor_role` معاملًا عاديًّا يُمرَّر إلى طبقة التخويل، فمن يستدعي يقول
+«أنا admin» وتُصدَّق كلمته. لا نظام مصادقة كان يشهد لها.
 
-    execute_tool_with_governance(tool_id, params, role="admin")
+(ولا يُكتَب هنا مثالٌ على ذلك النداء: R6.1 تحرس **غياب** معامل الدور من المصدر،
+وحرسٌ يبحث عن نصّ يعثر عليه في مثالٍ يشرح الثغرة كما يعثر عليه في شيفرة تفتحها.)
 
-فمن يستدعي يقول «أنا admin» وتُصدَّق كلمته. لا نظام مصادقة كان يشهد لها.
-
-R6 تنقل الدور إلى **مصدر موثوق**: سجلّ الجلسات المُخزَّن (`security_sessions`)
+R6 نقلت الدور إلى **مصدر موثوق**: سجلّ الجلسات المُخزَّن (`security_sessions`)
 وجدول الأدوار (`security_roles`)، أو مطالبات رمز JWT مُوقَّع. وما لم يثبت مصدر،
 فالمبدأ غير مُتحقَّق منه — ويُقال ذلك ولا يُموَّه.
 
@@ -157,6 +157,14 @@ class PrincipalUnverifiedError(PermissionError):  # noqa: N818 — رفض هوي
 
 class SessionInvalidError(PermissionError):  # noqa: N818 — جلسة باطلة، لا عطل
     """رمز الجلسة غير موجود أو منتهي أو دوره غير معروف."""
+
+
+class TenantIsolationError(PermissionError):  # noqa: N818 — رفض حدود، لا عطل
+    """سياق مستأجر يحاول موردَ مستأجر آخر.
+
+    منفصلة عن `PrincipalUnverifiedError` عمدًا: الأولى «من أنت؟» بلا جواب،
+    وهذه «أنت معروف، والمورد ليس لك». وخلطهما يُخفي أيّهما وقع.
+    """
 
 
 def _is_production() -> bool:
@@ -329,6 +337,14 @@ class AuthorizationContext:
     capabilities: tuple[str, ...] = ()
     session_id: str | None = None
     tenant_id: str | None = None
+    #: انتهاء الجلسة التي اشتُقّ منها السياق — R6.1.
+    #
+    # كان السياق يُسقط هذا الحقل، فكانت مدّة الجلسة مفروضةً **عند الحلّ وحده**:
+    # `resolve_principal` تفحص `expires_at` ثم يُبنى سياق لا يحمله، فمن أمسك
+    # سياقًا في عملية طويلة بقي مُخوَّلًا بعد موت جلسته. و`Principal.assert_trusted`
+    # تفحص الانتهاء بينما `AuthorizationContext.assert_authorizable` لا تفحصه —
+    # أي أن الفحص كان في الطبقة التي لا تُستدعى في التخويل.
+    expires_at: datetime | None = None
     correlation_id: str = field(default="")
     reason: str = ""
 
@@ -339,7 +355,26 @@ class AuthorizationContext:
 
     @property
     def is_trusted(self) -> bool:
+        """هل يجوز التخويل؟ الانتهاء يُسقط الثقة، لا يُفحَص على جنبٍ.
+
+        وُضع الفحص في `is_trusted` نفسها لا في `assert_authorizable` وحدها،
+        لأن `has_permission` و`tenant_matches` وترجمة الدور في محرِّك السياسة
+        كلها تسأل `is_trusted`. فلو كان الانتهاء فحصًا منفصلًا لبقيت جلسةٌ ميّتة
+        تُجيب «نعم» على كل واحد من هذه الأسئلة.
+        """
+        if self.is_expired:
+            return False
         return self.verification.value in TRUSTED_VERIFICATIONS
+
+    @property
+    def is_expired(self) -> bool:
+        """جلسة السياق منتهية؟ غياب الانتهاء يعني بلا أجل لا منتهيًا."""
+        if self.expires_at is None:
+            return False
+        expiry = self.expires_at
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=UTC)
+        return expiry <= datetime.now(UTC)
 
     def assert_no_secrets(self) -> None:
         """ارفض قيمة تحمل اسم سرّ — السياق يُسجَّل في التدقيق."""
@@ -353,6 +388,10 @@ class AuthorizationContext:
 
     def assert_authorizable(self) -> None:
         """ارفع خطأً إن لم يجز التخويل على هذا السياق — fail closed."""
+        if self.is_expired:
+            raise SessionInvalidError(
+                f"جلسة السياق '{self.session_id}' منتهية — لا تخويل على جلسة ميّتة"
+            )
         if not self.is_trusted:
             raise PrincipalUnverifiedError(
                 f"سياق تخويل غير مُتحقَّق منه ({self.verification.value}): {self.reason}"
@@ -382,6 +421,7 @@ class AuthorizationContext:
             capabilities=capabilities,
             session_id=principal.session_id,
             tenant_id=principal.tenant_id,
+            expires_at=principal.expires_at,
             correlation_id=correlation_id,
             reason=principal.reason,
         )
@@ -398,6 +438,7 @@ class AuthorizationContext:
             "correlation_id": self.correlation_id,
             "principal_verification": self.verification.value,
             "principal_kind": self.principal_kind.value,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
         }
 
 
@@ -423,6 +464,21 @@ DEFAULT_TENANT = "default"
 #: مستأجر التاج: يعبر حدود المستأجرين. ويلزمه سياق موثوق دائمًا.
 FEDERAL_TENANT = "federal"
 
+#: وضع الإيجار الفعلي للنظام — تصنيف لا طموح.
+#
+# المخطَّط **قادر** على تعدُّد المستأجرين: `common/database.py` يحمل عمود
+# `tenant_id` على خمسة جداول، وهويات الوكلاء تحمل مستأجرًا، و`security_sessions`
+# صار يحمله في R6.1. وطبقة التخويل **تفرض** العزل فعلًا عند حدّ تنفيذ الأدوات.
+#
+# لكن النظام كما يُنشَر اليوم **مستأجر واحد**: لا سجلّ مستأجرين، ولا توفير
+# (provisioning)، ولا تسجيل يُنشئ مستأجرًا، وكل صفوف الإنتاج على `default`. فمن
+# قال «multi-tenant» عن هذا فقد زاد على الدليل. والتصنيف الصادق:
+# **SINGLE_TENANT في النشر، مع حدّ تخويل واعٍ بالمستأجر**.
+TENANCY_MODE = "SINGLE_TENANT"
+
+#: الأوضاع الممكنة — تُفحَص في الاختبارات ضدّ ترفيع التصنيف بلا دليل.
+TENANCY_MODES: tuple[str, ...] = ("SINGLE_TENANT", "MULTI_TENANT")
+
 
 def tenant_matches(context: AuthorizationContext, resource_tenant: str | None) -> bool:
     """هل يملك السياق حق الوصول إلى مستأجر المورد؟
@@ -431,12 +487,15 @@ def tenant_matches(context: AuthorizationContext, resource_tenant: str | None) -
     `default` تحديدًا — مستأجرًا واحدًا معلومًا. فسياق بلا مستأجر يصل إلى موارد
     `default` وحدها، ويُرفَض على مورد مستأجر آخر.
 
-    حدٌّ يُقال ولا يُخفى: جدول `security_sessions` لا يحمل عمود مستأجر (فيه
-    `username` و`role_id` و`expires_at` ولا شيء عن المستأجر). فالمبدأ المُتحقَّق
-    من جلسة يخرج بمستأجر `None`، أي `default`. والعزل الحقيقي بين مستأجرين
-    متعدِّدين على مستوى الجلسة يحتاج تعديل مخطَّط — دَينٌ مُسجَّل في وثيقة R6، ولم
-    يُنفَّذ هنا ولم يُزعم تنفيذه. والعزل يعمل فعلًا اليوم للسياقات التي **تُسمّي**
-    مستأجرها (رمز JWT فيه مطالبة `tenant_id`، أو نداء داخلي مُسمّى).
+    ومصدر مستأجر السياق ثلاثة، **ولا رابع، وليس فيها جسم الطلب**:
+
+    1. عمود `security_sessions.tenant_id` — أُضيف في R6.1 بعد أن كان الجدول بلا
+       مستأجر إطلاقًا (وكان ذلك سبب خروج كل جلسة بمستأجر `default`).
+    2. مطالبة `tenant_id` في رمز JWT — موقَّعة، فلا يُلفّقها من لا يملك السرّ.
+    3. نداء داخلي مُسمّى (`Principal.system`).
+
+    وعبور حدود المستأجرين محصور بـ`FEDERAL_TENANT`، وهو نفسه لا يُنال إلا من
+    أحد هذه الثلاثة — أي بتوقيع أو بسجلّ خادم، لا بحقل يُرسله العميل.
     """
     if not context.is_trusted:
         return False
@@ -444,3 +503,16 @@ def tenant_matches(context: AuthorizationContext, resource_tenant: str | None) -
     if holder == FEDERAL_TENANT:
         return True
     return holder == (resource_tenant or DEFAULT_TENANT)
+
+
+def assert_tenant(context: AuthorizationContext, resource_tenant: str | None) -> None:
+    """ارفع إن لم يملك السياق مستأجر المورد — للمُستدعي الذي يريد استثناءً لا قيمة.
+
+    Raises:
+        TenantIsolationError: عبور حدود المستأجرين.
+    """
+    if not tenant_matches(context, resource_tenant):
+        raise TenantIsolationError(
+            f"عزل المستأجر: سياق '{context.tenant_id or DEFAULT_TENANT}' "
+            f"لا يملك مورد '{resource_tenant or DEFAULT_TENANT}'"
+        )

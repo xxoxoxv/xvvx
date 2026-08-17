@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from amos_federation.common.principal import (
+    DEFAULT_TENANT,
     AuthorizationContext,
     policy_role,
     tenant_matches,
@@ -51,6 +52,7 @@ AUTHORIZATION_CHAIN: tuple[str, ...] = (
     "principal",
     "session",
     "agent",
+    "tenant",
     "role",
     "capability",
     "permission",
@@ -87,6 +89,9 @@ class AuthorizationDecision:
     session_id: str | None = None
     principal_verification: str = "UNVERIFIED"
     principal_kind: str | None = None
+    #: مستأجر المُخوِّل ومستأجر المورد — يُقرأ القرار بعدهما لا يُخمَّن.
+    tenant_id: str | None = None
+    resource_tenant_id: str | None = None
     correlation_id: str | None = None
     tool_id: str | None = None
     lifecycle_state: str | None = None
@@ -105,6 +110,8 @@ class AuthorizationDecision:
             "session_id": self.session_id,
             "principal_verification": self.principal_verification,
             "principal_kind": self.principal_kind,
+            "tenant_id": self.tenant_id,
+            "resource_tenant_id": self.resource_tenant_id,
             "correlation_id": self.correlation_id,
             "tool_id": self.tool_id,
             "lifecycle_state": self.lifecycle_state,
@@ -145,13 +152,17 @@ def authorize(
     agent_id: str | None,
     tool_id: str,
     system_state: str | None = None,
-    tenant_id: str | None = None,
     principal: AuthorizationContext | None = None,
 ) -> AuthorizationDecision:
     """اجتَز سلسلة التخويل كاملة أو ارفع `AuthorizationDenied`.
 
     لا يُنشأ صندوق في هذه الدالّة بحال — هي فحص محض، وهذا ما يجعل «لا صندوق قبل
     التخويل» قابلًا للحراسة ساكنًا.
+
+    **ولا معامل مستأجر أيضًا بعد R6.1.** كان فيها `tenant_id` يُمرّره المُستدعي
+    ويُستعمل في قراءة الهوية — وهو حقل من المُستدعي يدخل قرار تخويل، أي نفس عيب
+    `actor_role` في صورة أخفّ. فحُذِف: مستأجر المُخوِّل من `principal` وحده، ومستأجر
+    المورد من الهوية الكانونية المُخزَّنة.
 
     **لا معامل دور في هذه الدالّة، ولا معامل صلاحيات.** هذا مقصود ومحروس ساكنًا:
     قبل R6 كان `actor_role="admin"` كافيًا ليصير المُستدعي مديرًا. الآن الدور
@@ -179,7 +190,17 @@ def authorize(
     decision.session_id = context.session_id
     decision.principal_verification = context.verification.value
     decision.principal_kind = context.principal_kind.value
+    decision.tenant_id = context.tenant_id or DEFAULT_TENANT
     decision.correlation_id = context.correlation_id
+    # الانتهاء يُرفَض في **كل** بيئة لا في الإنتاج وحده: تسامُح التطوير مُبرَّرٌ
+    # لمُستدعٍ لم يُهاجَر بعد، ولا مُبرَّر له في جلسة كانت صحيحة ثم ماتت — تلك
+    # ليست حالة توافُق بل بيان مدّة يُتجاهَل. R6.1.
+    if context.is_expired:
+        raise _deny(
+            decision,
+            "principal",
+            f"جلسة السياق '{context.session_id}' منتهية — لا تخويل على جلسة ميّتة",
+        )
     if not context.is_trusted and _is_production_env():
         raise _deny(
             decision,
@@ -200,23 +221,36 @@ def authorize(
     try:
         from amos_federation.services.executive_core.agent_identity import get_identity
 
-        identity = get_identity(agent_id, tenant_id=tenant_id)
+        # القراءة بالمعرّف وحده (وهو مفتاح أولي فريد)، والمستأجر يُفحَص بعدها
+        # صراحةً. ولو رُشّحت القراءة بمستأجر السياق لصار عبور الحدود يُردّ بـ«لا
+        # هوية للوكيل» — وهذا رفضٌ بسبب كاذب، يُخفي أن الواقع عزل مستأجر.
+        identity = get_identity(agent_id)
     except Exception as exc:  # noqa: BLE001 — تعذُّر القراءة = رفض
         raise _deny(decision, "agent", f"تعذّر قراءة الهوية الكانونية: {exc}") from exc
     if identity is None:
         raise _deny(decision, "agent", f"لا هوية كانونية للوكيل '{agent_id}'")
     passed.append("agent")
 
-    # 1أ. Tenant — عزل المستأجر قبل أي فحص صلاحية.
+    # 3. Tenant — عزل المستأجر قبل أي فحص صلاحية، وفي حلقة مُسمّاة لا مدموجة في
+    # حلقة الوكيل — أُفرِدت في R6.1 ليُقرأ سبب الرفض على وجهه لا مخلوطًا بـ«لا
+    # هوية للوكيل».
     #
     # مستأجر غير مُسمّى في السياق لا يعني «كل المستأجرين». وسياق مستأجر «أ» لا
     # يُخوَّل على وكيل مستأجر «ب» ولو كان دوره king.
-    if context.is_trusted and not tenant_matches(context, identity.tenant_id):
-        raise _deny(
-            decision,
-            "agent",
-            f"عزل المستأجر: سياق '{context.tenant_id}' لا يملك وكيل '{identity.tenant_id}'",
-        )
+    #
+    # والسياق غير الموثوق لا تُحسَب له هذه الحلقة مُجتازة: من لم تثبت هويته لا
+    # مستأجر له يُقارن، والإنتاج رفضه في الحلقة 0 أصلًا. وغيابها من `stages_passed`
+    # يُقرأ في النتيجة، فلا يُدّعى عزلٌ لم يُفحَص.
+    decision.resource_tenant_id = identity.tenant_id or DEFAULT_TENANT
+    if context.is_trusted:
+        if not tenant_matches(context, identity.tenant_id):
+            raise _deny(
+                decision,
+                "tenant",
+                f"عزل المستأجر: سياق '{context.tenant_id or DEFAULT_TENANT}' "
+                f"لا يملك وكيل '{identity.tenant_id or DEFAULT_TENANT}'",
+            )
+        passed.append("tenant")
 
     # 2. Role — من الهوية للوكيل، ومن المبدأ المُتحقَّق منه للسياسة.
     role = identity.role
@@ -338,7 +372,6 @@ def execute_authorized_tool(
     task_id: str | None = None,
     correlation_id: str | None = None,
     spec: SandboxSpec | None = None,
-    tenant_id: str | None = None,
     provider: Any = None,
     principal: AuthorizationContext | None = None,
 ) -> ExecutionResult:
@@ -347,10 +380,11 @@ def execute_authorized_tool(
     `authorize()` تُستدعى قبل أي `create_sandbox`؛ ورفضها يرفع
     `AuthorizationDenied` فلا يُنشأ صندوق ولا تُستهلَك موارد مزوِّد.
     """
+    # لا معامل مستأجر يُمرَّر: مستأجر المُخوِّل من `principal`، ومستأجر المورد من
+    # الهوية المُخزَّنة. حُذِف في R6.1 لأنه كان حقلًا من المُستدعي يدخل قرار تخويل.
     decision = authorize(
         agent_id=agent_id,
         tool_id=tool_id,
-        tenant_id=tenant_id,
         principal=principal,
     )
 
