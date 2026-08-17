@@ -88,6 +88,9 @@ def resolve_principal(session_token: str, *, rbac: RBACSystem | None = None) -> 
             role_id=str(record.role_id),
             permissions=permissions,
             expires_at=expires_at,
+            # R6.1: المستأجر من عمود الجلسة لا من المُستدعي. وقبل إضافة العمود
+            # كان هذا الموضع يُمرّر `None` دائمًا، فتساوت كل الجلسات على `default`.
+            tenant_id=(str(record.tenant_id) if record.tenant_id else None),
         )
     finally:
         session.close()

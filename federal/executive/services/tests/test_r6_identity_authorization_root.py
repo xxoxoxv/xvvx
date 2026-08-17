@@ -108,14 +108,29 @@ def test_02_missing_principal_fails_closed_on_canonical_entry() -> None:
 def test_02b_missing_principal_fails_closed_in_production(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """وفي بيئة إنتاجية يُرفَض المسار القديم نفسه — لا ادّعاء دور هناك."""
-    monkeypatch.setenv("AMOS_ENVIRONMENT", "production")
-    with pytest.raises(PrincipalUnverifiedError):
-        execute_tool_with_governance("python_execute", {"code": "print(1)"}, role="admin")
+    """المسار القديم يُرفَض في الإنتاج — وصار رفضه عند حدٍّ أبعد بعد R6.1.
 
-    # وفي التطوير يمرّ لكن موسومًا `UNVERIFIED` صراحةً — لا يُقرأ تخويلًا.
+    كان هذا الاختبار يستدعي `execute_tool_with_governance(..., role="admin")`،
+    أي أن دالّة الإنتاج نفسها كانت تقبل دورًا مُدّعىً. R6.1 أزالت المعامل، فلم
+    يبقَ للادّعاء إلا المُهاجر المُهمَل، وهو يرفع في الإنتاج قبل أي عمل.
+    """
+    from amos_federation.services.tool_registry.deprecated_role_path import (
+        DeprecatedRolePathUnavailableError,
+        execute_tool_with_declared_role,
+    )
+
+    monkeypatch.setenv("AMOS_ENVIRONMENT", "production")
+    with pytest.raises(DeprecatedRolePathUnavailableError):
+        execute_tool_with_declared_role("python_execute", {"code": "print(1)"}, "admin")
+
+    # ودالّة الإنتاج بلا مبدأ ترفض في كل بيئة — الآن عند حدّ التوقيع نفسه.
+    with pytest.raises(TypeError):
+        execute_tool_with_governance("python_execute", {"code": "print(1)"})  # type: ignore[call-arg]
+
+    # وفي التطوير يمرّ المُهاجر لكن موسومًا `UNVERIFIED` صراحةً — لا يُقرأ تخويلًا.
     monkeypatch.setenv("AMOS_ENVIRONMENT", "test")
-    result = execute_tool_with_governance("python_execute", {"code": "print(1)"}, role="admin")
+    with pytest.warns(DeprecationWarning):
+        result = execute_tool_with_declared_role("python_execute", {"code": "print(1)"}, "admin")
     assert result["principal_verification"] == "UNVERIFIED"
 
 
@@ -129,8 +144,15 @@ def test_03_forged_role_cannot_escalate() -> None:
     فلو طُبِّقت الترجمة على المُدّعى لصار كل مُستدعٍ ملكًا بكلمة. فالترجمة على
     الموثوق وحده.
     """
+    from amos_federation.services.tool_registry.deprecated_role_path import (
+        execute_tool_with_declared_role,
+    )
+
     for claimed in ("king", "royal", "royal_guard", "official"):
-        result = execute_tool_with_governance("python_execute", {"code": "print(1)"}, role=claimed)
+        with pytest.warns(DeprecationWarning):
+            result = execute_tool_with_declared_role(
+                "python_execute", {"code": "print(1)"}, claimed
+            )
         assert result.get("error") == "policy_denied", f"ادّعاء '{claimed}' مرّ"
         assert result["principal_verification"] == "UNVERIFIED"
 
@@ -149,6 +171,9 @@ def test_03b_forged_role_does_not_override_canonical_identity() -> None:
         DuplicateAgentIdentityError,
         register_identity,
     )
+    from amos_federation.services.tool_registry.deprecated_role_path import (
+        execute_tool_with_declared_role,
+    )
 
     agent_id = "r6-forged-role-agent"
     with contextlib.suppress(DuplicateAgentIdentityError):
@@ -164,11 +189,12 @@ def test_03b_forged_role_does_not_override_canonical_identity() -> None:
         )
 
     # المُستدعي يقول admin، وهوية الوكيل الكانونية citizen.
-    result = execute_tool_with_governance(
-        "python_execute",
-        {"code": "print(1)", "agent_id": agent_id},
-        role="admin",
-    )
+    with pytest.warns(DeprecationWarning):
+        result = execute_tool_with_declared_role(
+            "python_execute",
+            {"code": "print(1)", "agent_id": agent_id},
+            "admin",
+        )
     # الادّعاء لم يُصدَّق: دور الهوية `citizen` هو ما رآه محرِّك السياسة.
     assert result.get("error") in {"policy_denied", "authorization_denied"}
 
@@ -342,7 +368,11 @@ def test_08_tenant_isolation_denies_cross_tenant() -> None:
 
     with pytest.raises(AuthorizationDenied) as denial:
         authorize(agent_id=agent_id, tool_id="python_execute", principal=king_of_a)
-    assert denial.value.stage == "agent"
+    # R6.1: صار الرفض عند حلقة `tenant` لا `agent`. والفرق في الصدق لا في المكان:
+    # قبلها كان البحث عن الهوية مُقيَّدًا بمستأجر يُمرَّره المُستدعي، فالمحاولة
+    # عبر المستأجرين تُرَدّ بـ«لا هوية بهذا الاسم» وهي جملة كاذبة — الهوية موجودة
+    # وإنما في مستأجر آخر. الآن تُقرأ الهوية ثم يُرفَض عبورها الحدّ باسمه.
+    assert denial.value.stage == "tenant"
     assert "المستأجر" in denial.value.reason
 
 
@@ -585,13 +615,24 @@ def test_12_static_guards_against_bypass() -> None:
     )
     assert "if trusted else" in enforce_source, "ترجمة الدور تُطبَّق بلا شرط ثقة — ثغرة ترفيع صلاحية"
 
-    # 12ط. المدخل القديم لا يزال موجودًا لكنه لا يُخوَّل في الإنتاج.
+    # 12ط. R6.1: المدخل القديم لم يبقَ في دالّة الإنتاج بحال.
+    #
+    # كان هذا الحرس يؤكّد أن `sandbox.py` **تلفّ** الدور المُدّعى في سياق غير
+    # مُتحقَّق منه — أي أنه كان يحرس جودة المسار الثاني بدل أن ينكر وجوده.
+    # بعد R6.1 المسار الثاني خارج دالّة الإنتاج، فانقلب الحرس: لا لفَّ هنا ولا
+    # ادّعاء، والادّعاء كلُّه في وحدة واحدة موسومة تفشل مغلقةً في الإنتاج.
     sandbox_source = _strip_comments(
         (SRC / "services" / "tool_registry" / "sandbox.py").read_text(encoding="utf-8")
     )
     assert (
-        "unverified_context" in sandbox_source
-    ), "المسار القديم لا يلفّ الدور المُدّعى في سياق غير مُتحقَّق منه"
+        "unverified_context" not in sandbox_source
+    ), "دالّة الإنتاج ما زالت تبني سياقًا غير مُتحقَّق منه من ادّعاء المُستدعي"
+
+    deprecated_source = _strip_comments(
+        (SRC / "services" / "tool_registry" / "deprecated_role_path.py").read_text(encoding="utf-8")
+    )
+    assert "unverified_context" in deprecated_source
+    assert "PRODUCTION_ENVIRONMENTS" in deprecated_source
 
 
 def test_12b_no_service_bypasses_governance_entry_point() -> None:

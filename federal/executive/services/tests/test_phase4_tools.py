@@ -8,6 +8,21 @@ import os
 import tempfile
 
 
+def _phase4_ctx(role_id: str):
+    """سياق مُتحقَّق منه من سجلّ جلسة — أُضيف في R6.1 بدل تمرير الدور نصًّا."""
+    from amos_federation.common.principal import AuthorizationContext, Principal
+
+    return AuthorizationContext.from_principal(
+        Principal.from_session_record(
+            session_id="phase4-session",
+            username="phase4-tester",
+            role_id=role_id,
+            permissions=("execute:tools",),
+            expires_at=None,
+        )
+    )
+
+
 class TestPythonExecute:
     """4.2: python_execute داخل container آمن."""
 
@@ -213,10 +228,11 @@ class TestGovernedExecution:
         """4.9: Policy Engine يرفض python_execute للمواطن."""
         from amos_federation.services.tool_registry.sandbox import execute_tool_with_governance
 
+        # R6.1: الدور من سجلّ جلسة لا من النداء — والمواطن يبقى مواطنًا.
         result = execute_tool_with_governance(
             "python_execute",
             {"code": "print('hello')"},
-            role="citizen",
+            principal=_phase4_ctx("citizen"),
         )
         assert (
             "policy_denied" in str(result.get("error", ""))
@@ -230,6 +246,6 @@ class TestGovernedExecution:
         result = execute_tool_with_governance(
             "text_summary",
             {"text": "Test sentence for summary."},
-            role="citizen",
+            principal=_phase4_ctx("citizen"),
         )
         assert "policy_denied" not in str(result)
