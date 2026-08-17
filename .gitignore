@@ -1,15 +1,55 @@
-```gitignore
-# Python compiled files
+```
+# Compiled and build artifacts
 *.pyc
 __pycache__/
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
 
-# Test results
-tests/integration/TEST_RESULTS.json
+# Dependencies
+.venv/
+venv/
+.env
+.env.local
+*.env.*
 
-# Data files that might be temporary
-data/agents/*/state.json
-data/registry/*.json
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
 
-# Backup files
-docs/audit/backups/*
+# Coverage reports
+.coverage
+coverage/
+htmlcov/
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build and distribution
+dist/
+build/
+target/
+.gradle/
+
+# Python specific
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+.Pytest_cache/
+
+# OS generated files
+.DS_Store
+Thumbs.db
 ```

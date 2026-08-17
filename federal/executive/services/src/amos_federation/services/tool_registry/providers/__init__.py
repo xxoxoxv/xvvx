@@ -1,10 +1,9 @@
-"""Tool provider adapters package initialization"""
-
 """طبقة مزوِّدات الصندوق الرملي — العقد وحده هو ما يُستورَد من خارجها.
 
 النطاق: services/tool_registry/providers
 المالك: federal/executive/services
 تاريخ الإنشاء: 2026-08-17
+الغرض: تكييف مزودات الصندوق الرملي (E2B، Modal، محلي) مع عقد موحدة للتنفيذ الآمن
 
 المستورِد من خارج هذه الحزمة يأخذ `SandboxProvider` و`SandboxSpec` و
 `ExecutionRequest` و`execute_in_sandbox`. ولا يستورد `modal` ولا `e2b` — هما
