@@ -20,7 +20,7 @@
 | الأقاليم المفحوصة | 12 |
 | الأقاليم بحالة PROVEN | 0 |
 | إجمالي المخالفات | 121 |
-| ملفات بلا ترويسة هوية (المادة 009) | 47 |
+| ملفات بلا ترويسة هوية (المادة 009) | 49 |
 | منها CRITICAL | 18 |
 | منها HIGH | 63 |
 | منها MEDIUM | 40 |
@@ -66,14 +66,14 @@
 | `royal/` | 51 | 2 | 1 | 92 | 14 | 3 | unspecified=14 |
 | `federal/` | 54 | 164 | 3 | 31089 | 7 | 4 | unspecified=7 |
 | `states/` | 47 | 2 | 0 | 32 | 7 | 2 | unspecified=7 |
-| `institutions/` | 20 | 3 | 0 | 119 | 6 | 4 | unspecified=6 |
-| `agents/` | 603 | 7 | 283 | 644 | 11 | 8 | unspecified=11 |
+| `institutions/` | 20 | 3 | 0 | 112 | 6 | 4 | unspecified=6 |
+| `agents/` | 603 | 7 | 283 | 623 | 11 | 8 | unspecified=11 |
 | `tools/` | 39 | 15 | 2 | 3800 | 12 | 3 | unspecified=12 |
 | `interfaces/` | 14 | 2 | 0 | 30 | 4 | 2 | unspecified=4 |
 | `runtime/` | 20 | 7 | 0 | 1638 | 7 | 7 | unspecified=7 |
-| `docs/` | 58 | 2 | 0 | 47 | 7 | 6 | unspecified=7 |
+| `docs/` | 62 | 2 | 0 | 47 | 7 | 8 | unspecified=7 |
 | `ops/` | 38 | 2 | 0 | 93 | 12 | 1 | unspecified=12 |
-| `tests/` | 14 | 26 | 0 | 6958 | 5 | 3 | unspecified=5 |
+| `tests/` | 14 | 26 | 0 | 6952 | 5 | 3 | unspecified=5 |
 
 ---
 

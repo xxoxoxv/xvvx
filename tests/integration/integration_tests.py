@@ -542,8 +542,7 @@ class IntegrationTestSuite:
             'results': self.test_results
         }
         
-        logger.info("
-" + "=" * 80)
+        logger.info("=" * 80)
         logger.info("📊 ملخص النتائج:")
         logger.info(f"  إجمالي الاختبارات: {total}")
         logger.info(f"  ناجحة: {passed}")

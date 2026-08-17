@@ -147,7 +147,7 @@
       "md_files": 20,
       "py_files": 3,
       "yaml_files": 0,
-      "code_lines": 119,
+      "code_lines": 112,
       "nucleus_count": 6,
       "nucleus_status": {
         "unspecified": 6
@@ -182,7 +182,7 @@
       "md_files": 603,
       "py_files": 7,
       "yaml_files": 283,
-      "code_lines": 644,
+      "code_lines": 623,
       "nucleus_count": 11,
       "nucleus_status": {
         "unspecified": 11
@@ -319,7 +319,7 @@
     },
     "docs": {
       "domain": "docs",
-      "md_files": 58,
+      "md_files": 62,
       "py_files": 2,
       "yaml_files": 0,
       "code_lines": 47,
@@ -335,7 +335,7 @@
       "observed_hits": 0,
       "api_routes": 0,
       "test_refs": 8,
-      "identity_violations": 6,
+      "identity_violations": 8,
       "deployed": true,
       "columns": {
         "DOCUMENTED": true,
@@ -392,7 +392,7 @@
       "md_files": 14,
       "py_files": 26,
       "yaml_files": 0,
-      "code_lines": 6958,
+      "code_lines": 6952,
       "nucleus_count": 5,
       "nucleus_status": {
         "unspecified": 5
@@ -1276,7 +1276,7 @@
     "domains_total": 12,
     "domains_proven": 0,
     "findings_total": 121,
-    "identity_violations": 47,
+    "identity_violations": 49,
     "by_severity": {
       "CRITICAL": 18,
       "MEDIUM": 40,
