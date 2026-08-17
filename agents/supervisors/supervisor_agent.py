@@ -237,6 +237,19 @@ class DepartmentSupervisor(SupervisorAgent):
             "JUSTICE": ["legal_review", "compliance", "investigation"]
         }
         return specializations.get(dept, ["general"])
+    
+    def get_capabilities(self) -> List[str]:
+        """الحصول على قدرات المشرف"""
+        base_caps = [
+            "task_distribution",
+            "team_management",
+            "performance_monitoring",
+            "conflict_resolution",
+            "reporting"
+        ]
+        if self.department != "GENERAL":
+            base_caps.extend(self._get_department_specializations(self.department))
+        return base_caps
 
 
 class RegionalSupervisor(SupervisorAgent):
@@ -246,6 +259,16 @@ class RegionalSupervisor(SupervisorAgent):
         super().__init__(citizen_id, name, role="REGIONAL_SUPERVISOR", **kwargs)
         self.region = region
         self.sub_regions: List[str] = []
+    
+    def get_capabilities(self) -> List[str]:
+        """الحصول على قدرات المشرف الإقليمي"""
+        return [
+            "regional_management",
+            "task_distribution",
+            "team_monitoring",
+            "geographic_coordination",
+            f"region_{self.region.lower()}"
+        ]
     
     def add_sub_region(self, region_name: str):
         """إضافة منطقة فرعية"""

@@ -216,6 +216,17 @@ class NationalCoordinator(CoordinatorAgent):
         super().__init__(citizen_id, name, role="NATIONAL_COORDINATOR", scope="NATIONAL", **kwargs)
         self.priority_areas: List[str] = []
     
+    def get_capabilities(self) -> List[str]:
+        """الحصول على قدرات المنسق الوطني"""
+        return [
+            "strategic_planning",
+            "national_coordination",
+            "decision_making",
+            "supervisor_management",
+            "priority_setting",
+            "cross_departmental_oversight"
+        ]
+    
     def set_priority(self, area: str, priority_level: int):
         """تحديد أولوية وطنية"""
         self.priority_areas.append({"area": area, "level": priority_level})
@@ -231,6 +242,16 @@ class DepartmentalCoordinator(CoordinatorAgent):
         super().__init__(citizen_id, name, role="DEPT_COORDINATOR", scope="DEPARTMENTAL", **kwargs)
         self.department = department
         self.sub_departments: List[str] = []
+    
+    def get_capabilities(self) -> List[str]:
+        """الحصول على قدرات المنسق القطاعي"""
+        return [
+            "departmental_planning",
+            "sector_coordination",
+            "supervisor_management",
+            "resource_allocation",
+            f"specialized_{self.department.lower()}"
+        ]
     
     def add_sub_department(self, dept_name: str):
         """إضافة قسم فرعي"""

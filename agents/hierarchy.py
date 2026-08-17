@@ -15,10 +15,10 @@ from datetime import datetime
 import json
 import uuid
 
-from .base_agent import BaseAgent
-from .workers.worker_agent import WorkerAgent
-from .supervisors.supervisor_agent import SupervisorAgent, DepartmentSupervisor, RegionalSupervisor
-from .coordinators.coordinator_agent import CoordinatorAgent, NationalCoordinator, DepartmentalCoordinator
+from agents.base.base_agent import BaseAgent
+from agents.workers.worker_agent import WorkerAgent
+from agents.supervisors.supervisor_agent import SupervisorAgent, DepartmentSupervisor, RegionalSupervisor
+from agents.coordinators.coordinator_agent import CoordinatorAgent, NationalCoordinator, DepartmentalCoordinator
 
 
 class AgentHierarchy:

@@ -1,25 +1,36 @@
-# Runtime-only secrets and local state (NOT committed to repo)
-.runtime/
-*.local
-.env
-
-# Python
+```
+# Dependencies
 __pycache__/
 *.pyc
-.pytest_cache/
-*.egg-info/
-build/
-dist/
+*.pyo
+*.pyd
 
-# Test & coverage artifacts
+# Environment
+.env
+.env.local
+.env.*
+
+# Logs
+*.log
+
+# Coverage
 .coverage
-coverage.xml
-coverage
-*.db
-amos_federation_test.db*
+coverage/
 htmlcov/
 
-# السجل الدستوري — يُولَّد وقت التشغيل، لا يُدفع (السلسلة تُحقَّق محليًا وفي CI)
-core/constitution/ledger/*.jsonl
-royal/crown/*.pem
-royal/crown/*.key
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+```
